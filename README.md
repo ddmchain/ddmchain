@@ -1,0 +1,2 @@
+# ddmchain
+Decentralized Pan-Entertainment digital content distribution platform, "Entertainment Planet" was a new decentralized pan-entertainment ecosystem. Digital products in an ecosystem can be sold as liquid assets using an untrusted (i.e., completely safe) smart contract based on block chain technology. Pan-Entertainment digital contents includes: games, novels, short videos, animations, contents, etc.
