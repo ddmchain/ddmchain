@@ -12,7 +12,7 @@ type DAPI struct {
 	ddmdpos *DDMDPos
 }
 
-func (d *DAPI) GetSnapshot(number *rpc.BlockNumber) (*Snapshot, error) {
+func (d *DAPI) GetSnapshot(number *rpc.BlockNumber) (*Archive, error) {
 	var header *types.Header
 	if number == nil || *number == rpc.LatestBlockNumber {
 		header = d.chain.CurrentHeader()
@@ -25,7 +25,7 @@ func (d *DAPI) GetSnapshot(number *rpc.BlockNumber) (*Snapshot, error) {
 	return d.ddmdpos.snapshot(d.chain, header.Number.Uint64(), header.Hash(), nil)
 }
 
-func (d *DAPI) GetSnapshotAtHash(hash common.Hash) (*Snapshot, error) {
+func (d *DAPI) GetSnapshotAtHash(hash common.Hash) (*Archive, error) {
 	header := d.chain.GetHeaderByHash(hash)
 	if header == nil {
 		return nil, errUnknownBlock
@@ -43,11 +43,11 @@ func (d *DAPI) GetSigners(number *rpc.BlockNumber) ([]common.Address, error) {
 	if header == nil {
 		return nil, errUnknownBlock
 	}
-	snap, err := d.ddmdpos.snapshot(d.chain, header.Number.Uint64(), header.Hash(), nil)
+	archive, err := d.ddmdpos.snapshot(d.chain, header.Number.Uint64(), header.Hash(), nil)
 	if err != nil {
 		return nil, err
 	}
-	return snap.signers(), nil
+	return archive.signers(), nil
 }
 
 func (d *DAPI) GetSignersAtHash(hash common.Hash) ([]common.Address, error) {
@@ -55,11 +55,11 @@ func (d *DAPI) GetSignersAtHash(hash common.Hash) ([]common.Address, error) {
 	if header == nil {
 		return nil, errUnknownBlock
 	}
-	snap, err := d.ddmdpos.snapshot(d.chain, header.Number.Uint64(), header.Hash(), nil)
+	archive, err := d.ddmdpos.snapshot(d.chain, header.Number.Uint64(), header.Hash(), nil)
 	if err != nil {
 		return nil, err
 	}
-	return snap.signers(), nil
+	return archive.signers(), nil
 }
 
 func (d *DAPI) Proposals() map[common.Address]bool {
