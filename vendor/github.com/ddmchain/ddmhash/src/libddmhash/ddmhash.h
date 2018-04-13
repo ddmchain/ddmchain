@@ -16,7 +16,6 @@
 */
 
 /** @file ddmhash.h
-* @date 2015
 */
 #pragma once
 

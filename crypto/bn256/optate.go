@@ -1,4 +1,4 @@
-// Copyright 2012 The Go Authors. All rights reserved.
+
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -188,7 +188,6 @@ var sixuPlus2NAF = []int8{0, 0, 0, 1, 0, 1, 0, -1, 0, 0, 1, -1, 0, 0, 1, 0,
 	1, 0, 0, -1, 0, 0, 0, 1, 1, 0, -1, 0, 0, 1, 0, 1, 1}
 
 // miller implements the Miller loop for calculating the Optimal Ate pairing.
-// See algorithm 1 from http://cryptojedi.org/papers/dclxvi-20100714.pdf
 func miller(q *twistPoint, p *curvePoint, pool *bnPool) *gfP12 {
 	ret := newGFp12(pool)
 	ret.SetOne()
@@ -304,7 +303,6 @@ func miller(q *twistPoint, p *curvePoint, pool *bnPool) *gfP12 {
 
 // finalExponentiation computes the (p¹²-1)/Order-th power of an element of
 // GF(p¹²) to obtain an element of GT (steps 13-15 of algorithm 1 from
-// http://cryptojedi.org/papers/dclxvi-20100714.pdf)
 func finalExponentiation(in *gfP12, pool *bnPool) *gfP12 {
 	t1 := newGFp12(pool)
 

@@ -1,8 +1,8 @@
 /*
  * Windows CE backend for libusb 1.0
- * Copyright © 2011-2013 RealVNC Ltd.
+
  * Portions taken from Windows backend, which is
- * Copyright © 2009-2010 Pete Batard <pbatard@gmail.com>
+ 
  * With contributions from Michael Plante, Orin Eman et al.
  * Parts of this code adapted from libusb-win32-v1 by Stephan Meyer
  * Major code testing contribution by Xiaofan Chen
@@ -83,7 +83,7 @@ typedef struct {
 /* Don't block when waiting for memory allocations */
 #define UKW_TF_DONT_BLOCK_FOR_MEM 0x00080000
 
-/* Value to use when dealing with configuration values, such as UkwGetConfigDescriptor, 
+/* Value to use when dealing with configuration values, such as UkwGetConfigDescriptor,
  * to specify the currently active configuration for the device. */
 #define UKW_ACTIVE_CONFIGURATION -1
 
@@ -123,4 +123,3 @@ struct wince_transfer_priv {
 	struct winfd pollable_fd;
 	uint8_t interface_number;
 };
-

@@ -1,4 +1,4 @@
-// Copyright 2014 The go-ddmchain Authors
+//
 // This file is part of go-ddmchain.
 //
 // go-ddmchain is free software: you can redistribute it and/or modify
@@ -150,7 +150,7 @@ func init() {
 	// Initialize the CLI app and start Gddm
 	app.Action = gddm
 	app.HideVersion = true // we have a command to print the version
-	app.Copyright = "Copyright 2013-2017 The go-ddmchain Authors"
+	app.Copyright = "Copyright The go-ddmchain Authors"
 	app.Commands = []cli.Command{
 		// See chaincmd.go:
 		initCommand,

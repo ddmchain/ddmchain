@@ -16,7 +16,6 @@
 *
 *  (http://opensource.org/licenses/MIT)
 *
-*  Copyright (c) 2013-2017 by Duktape authors (see AUTHORS.rst)
 *
 *  Permission is hereby granted, free of charge, to any person obtaining a copy
 *  of this software and associated documentation files (the "Software"), to deal
@@ -28891,13 +28890,6 @@ DUK_LOCAL const duk_uint32_t duk__parse_iso8601_control[] = {
 	DUK__PACK_RULE(DUK__PM_YEAR | DUK__PM_MONTH | DUK__PM_DAY | DUK__PM_HOUR /*Note1*/ | DUK__PM_MINUTE | DUK__PM_SECOND | DUK__PM_MILLISECOND, DUK__SM_MINUS, DUK__PI_TZHOUR, DUK__CF_NEG),
 	DUK__PACK_RULE(DUK__PM_YEAR | DUK__PM_MONTH | DUK__PM_DAY | DUK__PM_HOUR /*Note1*/ | DUK__PM_MINUTE | DUK__PM_SECOND | DUK__PM_MILLISECOND, DUK__SM_Z, 0, DUK__CF_ACCEPT_NUL),
 	DUK__PACK_RULE(DUK__PM_YEAR | DUK__PM_MONTH | DUK__PM_DAY | DUK__PM_HOUR /*Note1*/ | DUK__PM_MINUTE | DUK__PM_SECOND | DUK__PM_MILLISECOND | DUK__PM_TZHOUR /*Note2*/ | DUK__PM_TZMINUTE, DUK__SM_NUL, 0, DUK__CF_ACCEPT)
-
-	/* Note1: the specification doesn't require matching a time form with
-	 *        just hours ("HH"), but we accept it here, e.g. "2012-01-02T12Z".
-	 *
-	 * Note2: the specification doesn't require matching a timezone offset
-	 *        with just hours ("HH"), but accept it here, e.g. "2012-01-02T03:04:05+02"
-	 */
 };
 
 DUK_LOCAL duk_bool_t duk__parse_string_iso8601_subset(duk_hthread *thr, const char *str) {
@@ -29090,9 +29082,6 @@ DUK_LOCAL duk_bool_t duk__parse_string_iso8601_subset(duk_hthread *thr, const ch
  *
  *  Returns 1 to allow tail calling.
  *
- *  There is much room for improvement here with respect to supporting
- *  alternative datetime formats.  For instance, V8 parses '2012-01-01' as
- *  UTC and '2012/01/01' as local time.
  */
 
 DUK_LOCAL duk_ret_t duk__parse_string(duk_hthread *thr, const char *str) {

@@ -1,6 +1,6 @@
 // @flow
 
-// Copyright 2018 The go-ddmchain Authors
+// 
 // This file is part of the go-ddmchain library.
 //
 // The go-ddmchain library is free software: you can redistribute it and/or modify

@@ -1,4 +1,4 @@
-// Copyright (c) 2012, Suryandaru Triandana <syndtr@gmail.com>
+
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be
@@ -74,7 +74,6 @@ type bloomFilterGenerator struct {
 
 func (g *bloomFilterGenerator) Add(key []byte) {
 	// Use double-hashing to generate a sequence of hash values.
-	// See analysis in [Kirsch,Mitzenmacher 2006].
 	g.keyHashes = append(g.keyHashes, bloomHash(key))
 }
 

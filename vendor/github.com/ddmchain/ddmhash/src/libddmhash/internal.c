@@ -17,7 +17,6 @@
 /** @file internal.c
 * @author Tim Hughes <tim@twistedfury.com>
 * @author Matthew Wampler-Doty
-* @date 2015
 */
 
 #include <assert.h>
@@ -53,9 +52,6 @@ uint64_t ddmhash_get_cachesize(uint64_t const block_number)
 	return cache_sizes[block_number / DDMHASH_EPOCH_LENGTH];
 }
 
-// Follows Sergio's "STRICT MEMORY HARD HASHING FUNCTIONS" (2014)
-// https://bitslog.files.wordpress.com/2013/12/memohash-v0-3.pdf
-// SeqMemoHash(s, R, N)
 bool static ddmhash_compute_cache_nodes(
 	node* const nodes,
 	uint64_t cache_size,

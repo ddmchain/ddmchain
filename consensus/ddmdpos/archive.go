@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 
-	
 	"github.com/ddmchain/go-ddmchain/common"
 	"github.com/ddmchain/go-ddmchain/core/types"
 	"github.com/ddmchain/go-ddmchain/ddmdb"

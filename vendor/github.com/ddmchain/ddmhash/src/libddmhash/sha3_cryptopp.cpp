@@ -17,7 +17,6 @@
 
 /** @file sha3.cpp
 * @author Tim Hughes <tim@twistedfury.com>
-* @date 2015
 */
 #include <stdint.h>
 #include <cryptopp/sha3.h>

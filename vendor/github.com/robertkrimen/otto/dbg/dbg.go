@@ -10,10 +10,8 @@ Package dbg is a println/printf/log-debugging utility library.
     dbg, dbgf := Dbg.New()
 
     dbg("Emit some debug stuff", []byte{120, 121, 122, 122, 121}, math.Pi)
-    # "2013/01/28 16:50:03 Emit some debug stuff [120 121 122 122 121] 3.141592653589793"
 
     dbgf("With a %s formatting %.2f", "little", math.Pi)
-    # "2013/01/28 16:51:55 With a little formatting (3.14)"
 
     dbgf("%/fatal//A fatal debug statement: should not be here")
     # "A fatal debug statement: should not be here"
@@ -24,13 +22,10 @@ Package dbg is a println/printf/log-debugging utility library.
     # ...as a panic, equivalent to: panic("Can also panic this")
 
     dbgf("Any %s arguments without a corresponding %%", "extra", "are treated like arguments to dbg()")
-    # "2013/01/28 17:14:40 Any extra arguments (without a corresponding %) are treated like arguments to dbg()"
 
     dbgf("%d %d", 1, 2, 3, 4, 5)
-    # "2013/01/28 17:16:32 Another example: 1 2 3 4 5"
 
     dbgf("%@: Include the function name for a little context (via %s)", "%@")
-    # "2013... github.com/robertkrimen/dbg.TestSynopsis: Include the function name for a little context (via %@)"
 
 By default, dbg uses log (log.Println, log.Printf, log.Panic, etc.) for output.
 However, you can also provide your own output destination by invoking dbg.New with

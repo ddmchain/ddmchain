@@ -1,8 +1,5 @@
 /* -*- Mode: C; indent-tabs-mode:t ; c-basic-offset:8 -*- */
 /*
- * Hotplug support for libusb
- * Copyright © 2012-2013 Nathan Hjelm <hjelmn@mac.com>
- * Copyright © 2012-2013 Peter Stuge <peter@stuge.se>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

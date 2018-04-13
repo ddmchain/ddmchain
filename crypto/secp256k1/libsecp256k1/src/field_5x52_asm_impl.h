@@ -1,15 +1,7 @@
 /**********************************************************************
- * Copyright (c) 2013-2014 Diederik Huys, Pieter Wuille               *
  * Distributed under the MIT software license, see the accompanying   *
  * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
  **********************************************************************/
-
-/**
- * Changelog:
- * - March 2013, Diederik Huys:    original version
- * - November 2014, Pieter Wuille: updated to use Peter Dettman's parallel multiplication algorithm
- * - December 2014, Pieter Wuille: converted from YASM to GCC inline assembly
- */
 
 #ifndef _SECP256K1_FIELD_INNER5X52_IMPL_H_
 #define _SECP256K1_FIELD_INNER5X52_IMPL_H_

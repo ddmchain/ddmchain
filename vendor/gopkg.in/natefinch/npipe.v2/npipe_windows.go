@@ -471,7 +471,6 @@ func (c *PipeConn) RemoteAddr() net.Addr {
 }
 
 // SetDeadline implements the net.Conn SetDeadline method.
-// Note that timeouts are only supported on Windows Vista/Server 2008 and above
 func (c *PipeConn) SetDeadline(t time.Time) error {
 	c.SetReadDeadline(t)
 	c.SetWriteDeadline(t)
@@ -479,14 +478,12 @@ func (c *PipeConn) SetDeadline(t time.Time) error {
 }
 
 // SetReadDeadline implements the net.Conn SetReadDeadline method.
-// Note that timeouts are only supported on Windows Vista/Server 2008 and above
 func (c *PipeConn) SetReadDeadline(t time.Time) error {
 	c.readDeadline = &t
 	return nil
 }
 
 // SetWriteDeadline implements the net.Conn SetWriteDeadline method.
-// Note that timeouts are only supported on Windows Vista/Server 2008 and above
 func (c *PipeConn) SetWriteDeadline(t time.Time) error {
 	c.writeDeadline = &t
 	return nil

@@ -1,4 +1,4 @@
-// Copyright 2012 The Go Authors. All rights reserved.
+
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -99,7 +99,6 @@ func (c *twistPoint) Add(a, b *twistPoint, pool *bnPool) {
 		return
 	}
 
-	// See http://hyperelliptic.org/EFD/g1p/auto-code/shortw/jacobian-0/addition/add-2007-bl.op3
 	z1z1 := newGFp2(pool).Square(a.z, pool)
 	z2z2 := newGFp2(pool).Square(b.z, pool)
 	u1 := newGFp2(pool).Mul(a.x, z2z2, pool)
@@ -162,7 +161,6 @@ func (c *twistPoint) Add(a, b *twistPoint, pool *bnPool) {
 }
 
 func (c *twistPoint) Double(a *twistPoint, pool *bnPool) {
-	// See http://hyperelliptic.org/EFD/g1p/auto-code/shortw/jacobian-0/doubling/dbl-2009-l.op3
 	A := newGFp2(pool).Square(a.x, pool)
 	B := newGFp2(pool).Square(a.y, pool)
 	C_ := newGFp2(pool).Square(B, pool)

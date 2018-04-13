@@ -1,4 +1,4 @@
-// Copyright 2012 The Go Authors. All rights reserved.
+
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -220,7 +220,6 @@ func smix(b []byte, r, N int, v, xy []uint32) {
 //
 //      dk, err := scrypt.Key([]byte("some password"), salt, 16384, 8, 1, 32)
 //
-// The recommended parameters for interactive logins as of 2017 are N=32768, r=8
 // and p=1. The parameters N, r, and p should be increased as memory latency and
 // CPU parallelism increases; consider setting N to the highest power of 2 you
 // can derive within 100 milliseconds. Remember to get a good random salt.

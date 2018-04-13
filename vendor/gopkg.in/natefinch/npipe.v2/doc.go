@@ -1,4 +1,3 @@
-// Copyright 2013 Nate Finch. All rights reserved.
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
@@ -18,7 +17,6 @@
 //
 // Notes
 //
-// * Deadlines for reading/writing to the connection are only functional in Windows Vista/Server 2008 and above, due to limitations with the Windows API.
 //
 // * The pipes support byte mode only (no support for message mode)
 //

@@ -1,4 +1,4 @@
-// Copyright (c) 2012, Suryandaru Triandana <syndtr@gmail.com>
+
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be
@@ -61,7 +61,6 @@ func (g *NamespaceGetter) Get(key uint64, setFunc func() (size int, value Value)
 // The hash tables implementation is based on:
 // "Dynamic-Sized Nonblocking Hash Tables", by Yujie Liu,
 // Kunlong Zhang, and Michael Spear.
-// ACM Symposium on Principles of Distributed Computing, Jul 2014.
 
 const (
 	mInitialSize           = 1 << 4

@@ -3,13 +3,11 @@
 // Derived from FUSE's fuse_kernel.h, which carries this notice:
 /*
    This file defines the kernel interface of FUSE
-   Copyright (C) 2001-2007  Miklos Szeredi <miklos@szeredi.hu>
 
 
    This -- and only this -- header file may also be distributed under
    the terms of the BSD Licence as follows:
 
-   Copyright (C) 2001-2007 Miklos Szeredi. All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions

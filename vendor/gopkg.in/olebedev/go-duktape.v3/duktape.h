@@ -122,7 +122,7 @@ struct duk_number_list_entry {
 };
 
 struct duk_time_components {
-	duk_double_t year;          /* year, e.g. 2016, Ecmascript year range */
+	duk_double_t year;
 	duk_double_t month;         /* month: 1-12 */
 	duk_double_t day;           /* day: 1-31 */
 	duk_double_t hours;         /* hour: 0-59 */

@@ -1139,7 +1139,6 @@
 #define DUK_USE_BRANCH_HINTS
 #if defined(DUK_F_GCC_VERSION) && (DUK_F_GCC_VERSION >= 40500L)
 /* GCC: test not very accurate; enable only in relatively recent builds
- * because of bugs in gcc-4.4 (http://lists.debian.org/debian-gcc/2010/04/msg00000.html)
  */
 #define DUK_LIKELY(x)    __builtin_expect((x), 1)
 #define DUK_UNLIKELY(x)  __builtin_expect((x), 0)
@@ -1332,7 +1331,6 @@
 #else
 /* (v)snprintf() is missing before MSVC 2015.  Note that _(v)snprintf() does
  * NOT NUL terminate on truncation, but Duktape code never assumes that.
- * http://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010
  */
 #define DUK_SNPRINTF     _snprintf
 #define DUK_VSNPRINTF    _vsnprintf
@@ -2141,8 +2139,6 @@ typedef struct duk_hthread duk_context;
  * (1) pointers must be valid and non-NULL, (2) zero size must otherwise be
  * allowed.  If these are not fulfilled, a macro wrapper is needed.
  *
- *   http://stackoverflow.com/questions/5243012/is-it-guaranteed-to-be-safe-to-perform-memcpy0-0-0
- *   http://lists.cs.uiuc.edu/pipermail/llvmdev/2007-October/011065.html
  *
  * Not sure what's the required behavior when a pointer points just past the
  * end of a buffer, which often happens in practice (e.g. zero size memmoves).
@@ -2156,7 +2152,6 @@ typedef struct duk_hthread duk_context;
 #if !defined(DUK_MEMCPY)
 #if defined(DUK_F_UCLIBC)
 /* Old uclibcs have a broken memcpy so use memmove instead (this is overly wide
- * now on purpose): http://lists.uclibc.org/pipermail/uclibc-cvs/2008-October/025511.html
  */
 #define DUK_MEMCPY       memmove
 #else
@@ -2234,7 +2229,6 @@ typedef struct duk_hthread duk_context;
 #define DUK_DOUBLE_NAN       (0.0 / 0.0)
 #else
 /* In VBCC (0.0 / 0.0) results in a warning and 0.0 instead of NaN.
- * In MSVC (VS2010 Express) (0.0 / 0.0) results in a compile error.
  * Use a computed NaN (initialized when a heap is created at the
  * latest).
  */

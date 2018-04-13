@@ -1,4 +1,3 @@
-// Copyright (c) 2016 Jasper Lievisse Adriaanse <j@jasper.la>.
 
 // +build openbsd
 

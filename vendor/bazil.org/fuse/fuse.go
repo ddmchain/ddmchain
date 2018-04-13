@@ -7,7 +7,6 @@
 //
 // The author of this software is Russ Cox.
 //
-//         Copyright (c) 2006 Russ Cox
 //
 // Permission to use, copy, modify, and distribute this software for any
 // purpose without fee is hereby granted, provided that this entire notice
@@ -1170,7 +1169,7 @@ func (c *Conn) InvalidateNode(nodeID NodeID, off int64, size int64) error {
 //
 // Kernel may or may not cache directory listings. To invalidate
 // those, use InvalidateNode to invalidate all of the data for a
-// directory. (As of 2015-06, Linux FUSE does not cache directory
+// directory. (Linux FUSE does not cache directory
 // listings.)
 //
 // Returns ErrNotCached if the kernel is not currently caching the

@@ -1,4 +1,4 @@
-// Copyright 2009 The Go Authors. All rights reserved.
+
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -189,7 +189,6 @@ func UtimesNano(path string, ts []Timespec) error {
 		return err
 	}
 	// If the utimensat syscall isn't available (utimensat was added to Linux
-	// in 2.6.22, Released, 8 July 2007) then fall back to utimes
 	var tv [2]Timeval
 	for i := 0; i < 2; i++ {
 		tv[i] = NsecToTimeval(TimespecToNsec(ts[i]))

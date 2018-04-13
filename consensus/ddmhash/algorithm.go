@@ -1,4 +1,4 @@
-// Copyright 2017 The go-ddmchain Authors
+//
 // This file is part of the go-ddmchain library.
 //
 // The go-ddmchain library is free software: you can redistribute it and/or modify
@@ -79,7 +79,6 @@ func seedHash(block uint64) []byte {
 // generateCache creates a verification cache of a given size for an input seed.
 // The cache production process involves first sequentially filling up 32 MB of
 // memory, then performing two passes of Sergio Demian Lerner's RandMemoHash
-// algorithm from Strict Memory Hard Hashing Functions (2014). The output is a
 // set of 524288 64-byte values.
 // This method places the result into dest in machine byte order.
 func generateCache(dest []uint32, epoch uint64, seed []byte) {

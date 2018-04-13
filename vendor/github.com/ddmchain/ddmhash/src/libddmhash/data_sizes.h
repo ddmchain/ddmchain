@@ -16,8 +16,6 @@
 */
 
 /** @file data_sizes.h
-* @author Matthew Wampler-Doty <negacthulhu@gmail.com>
-* @date 2015
 */
 
 #pragma once

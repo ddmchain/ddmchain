@@ -1,4 +1,4 @@
-// Copyright 2014 The go-ddmchain Authors
+// 
 // This file is part of the go-ddmchain library.
 //
 // The go-ddmchain library is free software: you can redistribute it and/or modify
@@ -317,29 +317,7 @@ func DefaultGenesisBlock() *Genesis {
 		GasLimit:   4712388, //5000,
 		Difficulty: big.NewInt(1),
 		Alloc:      decodePrealloc(mainnetAllocData),
-		/*GenesisAlloc{
-			common.HexToAddress("a3777cdd63060c7a4e763f2920c7d4054aec50a5"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("3e0387fc209968ab6bb58a0d3cac8cf885ac6eec"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("eab5a782472f3482f2a09342ebe3ba8ac30a5a48"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("97c9a71aeab2c468adf51e339974ce1cedfd670f"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("db5c4485e1e470966baf094b56748d0034ab37ab"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("3629402a070e04c95aa0befcfe21ed7ef20a72bd"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("3351ad215b2f3571e45ea2e2c49ff66c16f3c9d0"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("bbf57ffd5469da0ea4df5e120c81a592919d7608"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("ab25fba275b81b66153dc331787f84ce068893d4"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("7e2678cee05b68b94230918c0216b883067bf2ae"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("b2731340b4d54a0bee46633fb7d17884cac885ac"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-			common.HexToAddress("f06d65a65fc099d5f2f940bd773d5eb52c6eb78f"): {Balance: new(big.Int).Mul(big.NewInt(10000), big.NewInt(1000000000000000000))},
-		},*/
 	}
-	/*return &Genesis{
-		Config:     params.MainnetChainConfig,
-		Nonce:      66,
-		ExtraData:  hexutil.MustDecode("0x11bbe8db4e347b4e8c937c1c8370e4b5ed33adb3db69cbdb7a38e1e50b1b82fa"),
-		GasLimit:   4712388,//5000,
-		Difficulty: big.NewInt(1),//big.NewInt(17179869184),
-		Alloc:      nil,//decodePrealloc(mainnetAllocData),
-	}*/
 }
 
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.

@@ -1,11 +1,4 @@
 /*
- * Public libusb header file
- * Copyright © 2001 Johannes Erdfelt <johannes@erdfelt.com>
- * Copyright © 2007-2008 Daniel Drake <dsd@gentoo.org>
- * Copyright © 2012 Pete Batard <pete@akeo.ie>
- * Copyright © 2012 Nathan Hjelm <hjelmn@cs.unm.edu>
- * For more information, please visit: http://libusb.info
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -1280,7 +1273,7 @@ enum libusb_capability {
 	 * still have to call additional libusb functions such as
 	 * \ref libusb_detach_kernel_driver(). */
 	LIBUSB_CAP_HAS_HID_ACCESS = 0x0100,
-	/** The library supports detaching of the default USB driver, using 
+	/** The library supports detaching of the default USB driver, using
 	 * \ref libusb_detach_kernel_driver(), if one is set by the OS kernel */
 	LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER = 0x0101
 };

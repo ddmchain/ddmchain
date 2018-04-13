@@ -1,8 +1,5 @@
 /* -*- Mode: C; indent-tabs-mode:t ; c-basic-offset:8 -*- */
 /*
- * Hotplug functions for libusb
- * Copyright © 2012-2013 Nathan Hjelm <hjelmn@mac.com>
- * Copyright © 2012-2013 Peter Stuge <peter@stuge.se>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,7 +45,7 @@
  * Version 1.0.16, \ref LIBUSB_API_VERSION >= 0x01000102, has added support
  * for hotplug events on <b>some</b> platforms (you should test if your platform
  * supports hotplug notification by calling \ref libusb_has_capability() with
- * parameter \ref LIBUSB_CAP_HAS_HOTPLUG). 
+ * parameter \ref LIBUSB_CAP_HAS_HOTPLUG).
  *
  * This interface allows you to request notification for the arrival and departure
  * of matching USB devices.

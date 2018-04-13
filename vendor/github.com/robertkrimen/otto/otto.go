@@ -219,8 +219,6 @@ Here is some more discussion of the issue:
 
 * http://en.wikipedia.org/wiki/Reentrancy_%28computing%29
 
-* http://aaroncrane.co.uk/2009/02/perl_safe_signals/
-
 */
 package otto
 

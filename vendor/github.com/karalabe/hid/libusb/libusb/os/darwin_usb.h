@@ -1,6 +1,5 @@
 /*
  * darwin backend for libusb 1.0
- * Copyright © 2008-2015 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -124,7 +123,7 @@ struct darwin_cached_device {
   char                  sys_path[21];
   usb_device_t        **device;
   int                   open_count;
-  UInt8                 first_config, active_config, port;  
+  UInt8                 first_config, active_config, port;
   int                   can_enumerate;
   int                   refcount;
 };

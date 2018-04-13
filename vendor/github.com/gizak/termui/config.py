@@ -4,7 +4,7 @@ import re
 import os
 import io
 
-copyright = """// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
+copyright = """
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 

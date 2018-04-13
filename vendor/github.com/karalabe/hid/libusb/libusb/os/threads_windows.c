@@ -1,7 +1,7 @@
 /*
  * libusb synchronization on Microsoft Windows
  *
- * Copyright © 2010 Michael Plante <michael.plante@gmail.com>
+ 
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

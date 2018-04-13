@@ -1,4 +1,4 @@
-// Copyright 2014 The Go Authors. All rights reserved.
+
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -37,7 +37,6 @@ type state struct {
 	// giving 00000110b (0x06) and 00011111b (0x1f).
 	// [1] http://csrc.nist.gov/publications/drafts/fips-202/fips_202_draft.pdf
 	//     "Draft FIPS 202: SHA-3 Standard: Permutation-Based Hash and
-	//      Extendable-Output Functions (May 2014)"
 	dsbyte  byte
 	storage [maxRate]byte
 

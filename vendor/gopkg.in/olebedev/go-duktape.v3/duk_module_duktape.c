@@ -7,7 +7,6 @@
 
 /* (v)snprintf() is missing before MSVC 2015.  Note that _(v)snprintf() does
  * NOT NUL terminate on truncation, but that's OK here.
- * http://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010
  */
 #if defined(_MSC_VER) && (_MSC_VER < 1900)
 #define snprintf _snprintf

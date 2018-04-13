@@ -15,8 +15,6 @@
   along with ddmhash.  If not, see <http://www.gnu.org/licenses/>.
 */
 /** @file util.h
- * @author Tim Hughes <tim@twistedfury.com>
- * @date 2015
  */
 #pragma once
 #include <stdint.h>

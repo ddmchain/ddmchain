@@ -1,6 +1,6 @@
 /*
  * windows UsbDk backend for libusb 1.0
- * Copyright © 2014 Red Hat, Inc.
+ 
 
  * Authors:
  * Dmitry Fleytman <dmitry@daynix.com>

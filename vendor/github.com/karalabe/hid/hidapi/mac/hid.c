@@ -5,9 +5,6 @@
  Alan Ott
  Signal 11 Software
 
- 2010-07-03
-
- Copyright 2010, All Rights Reserved.
 
  At the discretion of the user of this library,
  this software may be licensed under the terms of the

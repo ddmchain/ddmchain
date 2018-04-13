@@ -1,5 +1,4 @@
 /**********************************************************************
- * Copyright (c) 2013, 2014, 2015 Thomas Daede, Cory Fields           *
  * Distributed under the MIT software license, see the accompanying   *
  * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
  **********************************************************************/
@@ -38,7 +37,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Could not open src/ecmult_static_context.h for writing!\n");
         return -1;
     }
-    
+
     fprintf(fp, "#ifndef _SECP256K1_ECMULT_STATIC_CONTEXT_\n");
     fprintf(fp, "#define _SECP256K1_ECMULT_STATIC_CONTEXT_\n");
     fprintf(fp, "#include \"group.h\"\n");
@@ -65,10 +64,10 @@ int main(int argc, char **argv) {
     }
     fprintf(fp,"};\n");
     secp256k1_ecmult_gen_context_clear(&ctx);
-    
+
     fprintf(fp, "#undef SC\n");
     fprintf(fp, "#endif\n");
     fclose(fp);
-    
+
     return 0;
 }

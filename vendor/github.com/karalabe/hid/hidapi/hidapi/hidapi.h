@@ -5,9 +5,6 @@
  Alan Ott
  Signal 11 Software
 
- 8/22/2009
-
- Copyright 2009, All Rights Reserved.
 
  At the discretion of the user of this library,
  this software may be licensed under the terms of the
@@ -87,7 +84,7 @@ extern "C" {
 			needed.  This function should be called at the beginning of
 			execution however, if there is a chance of HIDAPI handles
 			being opened by different threads simultaneously.
-			
+
 			@ingroup API
 
 			@returns
@@ -388,4 +385,3 @@ extern "C" {
 #endif
 
 #endif
-

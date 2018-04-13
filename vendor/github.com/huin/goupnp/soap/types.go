@@ -261,7 +261,6 @@ var completeDateTimeZoneRegexp = regexp.MustCompile(`^([^T]+)(?:T([^-+Z]+)(.+)?)
 // splitCompleteDateTimeZone splits date, time and timezone apart from an
 // ISO8601 string. It does not ensure that the contents of each part are
 // correct, it merely splits on certain delimiters.
-// e.g "2010-09-08T12:15:10+0700" => "2010-09-08", "12:15:10", "+0700".
 // Timezone can only be present if time is also present.
 func splitCompleteDateTimeZone(s string) (dateStr, timeStr, zoneStr string, err error) {
 	parts := completeDateTimeZoneRegexp.FindStringSubmatch(s)

@@ -1,4 +1,4 @@
-// Copyright 2012 The Go Authors. All rights reserved.
+
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -284,8 +284,6 @@ func (t *table) push(i uint32, depth int) bool {
 }
 
 // The lists of element names and attribute keys were taken from
-// https://html.spec.whatwg.org/multipage/indices.html#index
-// as of the "HTML Living Standard - Last Updated 21 February 2015" version.
 
 var elements = []string{
 	"a",

@@ -1,10 +1,5 @@
 /* -*- Mode: C; c-basic-offset:8 ; indent-tabs-mode:t -*- */
 /*
- * Linux usbfs backend for libusb
- * Copyright (C) 2007-2009 Daniel Drake <dsd@gentoo.org>
- * Copyright (c) 2001 Johannes Erdfelt <johannes@erdfelt.com>
- * Copyright (c) 2012-2013 Nathan Hjelm <hjelmn@mac.com>
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either

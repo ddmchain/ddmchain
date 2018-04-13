@@ -1,4 +1,4 @@
-// Copyright 2011 The Go Authors. All rights reserved.
+
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -19,8 +19,6 @@ type Reader struct {
 // New io.Readers are pushed when a compressed or encrypted packet is processed
 // and recursively treated as a new source of packets. However, a carefully
 // crafted packet can trigger an infinite recursive sequence of packets. See
-// http://mumble.net/~campbell/misc/pgp-quine
-// https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2013-4402
 // This constant limits the number of recursive packets that may be pushed.
 const maxReaders = 32
 

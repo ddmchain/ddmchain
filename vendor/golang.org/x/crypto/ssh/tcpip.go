@@ -1,4 +1,4 @@
-// Copyright 2011 The Go Authors. All rights reserved.
+
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -37,8 +37,7 @@ func (c *Client) Listen(n, addr string) (net.Listener, error) {
 }
 
 // Automatic port allocation is broken with OpenSSH before 6.0. See
-// also https://bugzilla.mindrot.org/show_bug.cgi?id=2017.  In
-// particular, OpenSSH 5.9 sends a channelOpenMsg with port number 0,
+// In particular, OpenSSH 5.9 sends a channelOpenMsg with port number 0,
 // rather than the actual port number. This means you can never open
 // two different listeners with auto allocated ports. We work around
 // this by trying explicit ports until we succeed.

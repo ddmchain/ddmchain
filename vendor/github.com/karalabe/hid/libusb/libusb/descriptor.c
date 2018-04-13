@@ -1,8 +1,5 @@
 /* -*- Mode: C; indent-tabs-mode:t ; c-basic-offset:8 -*- */
 /*
- * USB descriptor handling functions for libusb
- * Copyright © 2007 Daniel Drake <dsd@gentoo.org>
- * Copyright © 2001 Johannes Erdfelt <johannes@erdfelt.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -492,7 +489,7 @@ static int raw_desc_to_config(struct libusb_context *ctx,
 {
 	struct libusb_config_descriptor *_config = malloc(sizeof(*_config));
 	int r;
-	
+
 	if (!_config)
 		return LIBUSB_ERROR_NO_MEM;
 
@@ -504,7 +501,7 @@ static int raw_desc_to_config(struct libusb_context *ctx,
 	} else if (r > 0) {
 		usbi_warn(ctx, "still %d bytes of descriptor data left", r);
 	}
-	
+
 	*config = _config;
 	return LIBUSB_SUCCESS;
 }

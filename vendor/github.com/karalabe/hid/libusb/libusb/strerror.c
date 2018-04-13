@@ -1,7 +1,4 @@
 /*
- * libusb strerror code
- * Copyright © 2013 Hans de Goede <hdegoede@redhat.com>
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -134,7 +131,7 @@ static const char* usbi_localized_errors[ARRAYSIZE(usbi_locale_supported)][LIBUS
  * used, and only 2 letter ISO 639-1 codes are accepted for it, such as "de".
  * The optional region, country_region or codeset parts are ignored. This
  * means that functions which return translatable strings will NOT honor the
- * specified encoding. 
+ * specified encoding.
  * All strings returned are encoded as UTF-8 strings.
  *
  * If libusb_setlocale() is not called, all messages will be in English.

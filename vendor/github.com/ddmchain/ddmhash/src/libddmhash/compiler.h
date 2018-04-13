@@ -15,7 +15,6 @@
   along with cpp-ddmchain.  If not, see <http://www.gnu.org/licenses/>.
 */
 /** @file compiler.h
- * @date 2014
  */
 #pragma once
 
@@ -30,4 +29,3 @@
 #else
 #define restrict __restrict__
 #endif
-

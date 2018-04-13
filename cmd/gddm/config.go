@@ -1,4 +1,4 @@
-// Copyright 2017 The go-ddmchain Authors
+// 
 // This file is part of go-ddmchain.
 //
 // go-ddmchain is free software: you can redistribute it and/or modify

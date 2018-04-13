@@ -1498,7 +1498,6 @@ func (i invalidateEntryDetail) String() string {
 //
 // Kernel may or may not cache directory listings. To invalidate
 // those, use InvalidateNode to invalidate all of the data for a
-// directory. (As of 2015-06, Linux FUSE does not cache directory
 // listings.)
 //
 // Returns ErrNotCached if the kernel is not currently caching the

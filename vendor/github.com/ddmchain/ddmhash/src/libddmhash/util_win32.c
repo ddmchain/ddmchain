@@ -15,8 +15,6 @@
   along with cpp-ddmchain.  If not, see <http://www.gnu.org/licenses/>.
 */
 /** @file util.c
- * @author Tim Hughes <tim@twistedfury.com>
- * @date 2015
  */
 #include <stdarg.h>
 #include <stdio.h>

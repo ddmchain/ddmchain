@@ -9,8 +9,7 @@ import (
 
 const (
 	// TODO Be like V8?
-	// builtinDate_goDateTimeLayout = "Mon Jan 2 2006 15:04:05 GMT-0700 (MST)"
-	builtinDate_goDateTimeLayout = Time.RFC1123 // "Mon, 02 Jan 2006 15:04:05 MST"
+	builtinDate_goDateTimeLayout = Time.RFC1123
 	builtinDate_goDateLayout     = "Mon, 02 Jan 2006"
 	builtinDate_goTimeLayout     = "15:04:05 MST"
 )
