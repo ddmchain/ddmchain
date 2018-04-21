@@ -230,10 +230,27 @@ func (s *Archive) apply(headers []*types.Header) (*Archive, error) {
 	return archive, nil
 }
 
-func (s *Archive) signers() []common.Address {
+func (s *Archive) ableSigners(number uint64) []common.Address {
+	recents := make(map[uint64]common.Address)
+	for block, recent := range s.Recents {
+		recents[block] = recent
+	}
+	if limit := uint64(len(s.Signers)/2 + 1); number >= limit {
+		delete(recents, number-limit)
+	}
+
 	signers := make([]common.Address, 0, len(s.Signers))
 	for signer := range s.Signers {
-		signers = append(signers, signer)
+		isRecent := false
+		for _, recent := range recents {
+			if recent == signer {
+				isRecent = true
+				break
+			}
+		}
+		if (!isRecent) {
+			signers = append(signers, signer)
+		}
 	}
 	for i := 0; i < len(signers); i++ {
 		for j := i + 1; j < len(signers); j++ {
@@ -245,10 +262,20 @@ func (s *Archive) signers() []common.Address {
 	return signers
 }
 
-func (s *Archive) inturn(number uint64, signer common.Address) bool {
-	signers, offset := s.signers(), 0
-	for offset < len(signers) && signers[offset] != signer {
+func (s *Archive) inturn(number uint64, signer common.Address, hash common.Hash) bool {
+	var lowHash int64
+	b_buf := bytes.NewBuffer(hash[len(hash)-8:])
+	binary.Read(b_buf, binary.BigEndian, &lowHash)
+
+	signers, offset := s.ableSigners(number), 0
+	sigLen := len(signers)
+
+	rand.Seed(lowHash)
+ 	curTurn := rand.Intn(sigLen)
+
+	for offset < sigLen && signers[offset] != signer {
 		offset++
 	}
-	return (number % uint64(len(signers))) == uint64(offset)
+
+	return (curTurn == offset)
 }
