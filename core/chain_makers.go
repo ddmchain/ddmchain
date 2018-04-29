@@ -1,4 +1,4 @@
-// 
+//
 // This file is part of the go-ddmchain library.
 //
 // The go-ddmchain library is free software: you can redistribute it and/or modify
@@ -164,8 +164,6 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 	}
 	blocks, receipts := make(types.Blocks, n), make([]types.Receipts, n)
 	genblock := func(i int, parent *types.Block, statedb *state.StateDB) (*types.Block, types.Receipts) {
-		// TODO(karalabe): This is needed for clique, which depends on multiple blocks.
-		// It's nonetheless ugly to spin up a blockchain here. Get rid of this somehow.
 		blockchain, _ := NewBlockChain(db, nil, config, engine, vm.Config{})
 		defer blockchain.Stop()
 

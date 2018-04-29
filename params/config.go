@@ -1,4 +1,4 @@
-// 
+//
 // This file is part of the go-ddmchain library.
 //
 // The go-ddmchain library is free software: you can redistribute it and/or modify
@@ -41,7 +41,7 @@ var (
 		EIP158Block:    big.NewInt(3),
 		ByzantiumBlock: big.NewInt(4),
 
-		Clique: &CliqueConfig{
+		DPos: &DPosConfig{
 			Period: 10,
 			Epoch:  30000,
 		},
@@ -74,25 +74,14 @@ var (
 		EIP158Block:    big.NewInt(3),
 		ByzantiumBlock: big.NewInt(1035301),
 
-		Clique: &CliqueConfig{
+		DPos: &DPosConfig{
 			Period: 15,
 			Epoch:  30000,
 		},
 	}
 
-	// AllDDMhashProtocolChanges contains every protocol change (EIPs) introduced
-	// and accepted by the DDMchain core developers into the DDMhash consensus.
-	//
-	// This configuration is intentionally not using keyed fields to force anyone
-	// adding flags to the config to also have to set these fields.
 	AllDDMhashProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), new(DDMhashConfig), nil}
-
-	// AllCliqueProtocolChanges contains every protocol change (EIPs) introduced
-	// and accepted by the DDMchain core developers into the Clique consensus.
-	//
-	// This configuration is intentionally not using keyed fields to force anyone
-	// adding flags to the config to also have to set these fields.
-	AllCliqueProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, &CliqueConfig{Period: 0, Epoch: 30000}}
+	AllDPosProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, &DPosConfig{Period: 0, Epoch: 30000}}
 
 	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), new(DDMhashConfig), nil}
 	TestRules       = TestChainConfig.Rules(new(big.Int))
@@ -122,7 +111,7 @@ type ChainConfig struct {
 
 	// Various consensus engines
 	DDMhash *DDMhashConfig `json:"ddmhash,omitempty"`
-	Clique *CliqueConfig `json:"clique,omitempty"`
+	DPos *DPosConfig `json:"dpos,omitempty"`
 }
 
 // DDMhashConfig is the consensus engine configs for proof-of-work based sealing.
@@ -133,15 +122,15 @@ func (c *DDMhashConfig) String() string {
 	return "ddmhash"
 }
 
-// CliqueConfig is the consensus engine configs for proof-of-authority based sealing.
-type CliqueConfig struct {
-	Period uint64 `json:"period"` // Number of seconds between blocks to enforce
-	Epoch  uint64 `json:"epoch"`  // Epoch length to reset votes and checkpoint
+// DPosConfig is the consensus engine configs for dpos based sealing.
+type DPosConfig struct {
+	Period uint64 `json:"period"`
+	Epoch  uint64 `json:"epoch"`
 }
 
 // String implements the stringer interface, returning the consensus engine details.
-func (c *CliqueConfig) String() string {
-	return "clique"
+func (c *DPosConfig) String() string {
+	return "dpos"
 }
 
 // String implements the fmt.Stringer interface.
@@ -150,8 +139,8 @@ func (c *ChainConfig) String() string {
 	switch {
 	case c.DDMhash != nil:
 		engine = c.DDMhash
-	case c.Clique != nil:
-		engine = c.Clique
+	case c.DPos != nil:
+		engine = c.DPos
 	default:
 		engine = "unknown"
 	}

@@ -230,6 +230,21 @@ func (s *Archive) apply(headers []*types.Header) (*Archive, error) {
 	return archive, nil
 }
 
+func (s *Archive) signers() []common.Address {
+	signers := make([]common.Address, 0, len(s.Signers))
+	for signer := range s.Signers {
+		signers = append(signers, signer)
+	}
+	for i := 0; i < len(signers); i++ {
+		for j := i + 1; j < len(signers); j++ {
+			if bytes.Compare(signers[i][:], signers[j][:]) > 0 {
+				signers[i], signers[j] = signers[j], signers[i]
+			}
+		}
+	}
+	return signers
+}
+
 func (s *Archive) ableSigners(number uint64) []common.Address {
 	recents := make(map[uint64]common.Address)
 	for block, recent := range s.Recents {

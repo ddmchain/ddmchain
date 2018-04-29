@@ -1,4 +1,4 @@
-// 
+//
 // This file is part of go-ddmchain.
 //
 // go-ddmchain is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/common"
 	"github.com/ddmchain/go-ddmchain/common/fdlimit"
 	"github.com/ddmchain/go-ddmchain/consensus"
-	"github.com/ddmchain/go-ddmchain/consensus/clique"
+	"github.com/ddmchain/go-ddmchain/consensus/ddmdpos"
 	"github.com/ddmchain/go-ddmchain/consensus/ddmhash"
 	"github.com/ddmchain/go-ddmchain/core"
 	"github.com/ddmchain/go-ddmchain/core/state"
@@ -137,11 +137,11 @@ var (
 	}
 	RinkebyFlag = cli.BoolFlag{
 		Name:  "rinkeby",
-		Usage: "Rinkeby network: pre-configured proof-of-authority test network",
+		Usage: "Rinkeby network: pre-configured dpos test network",
 	}
 	DeveloperFlag = cli.BoolFlag{
 		Name:  "dev",
-		Usage: "Ephemeral proof-of-authority network with a pre-funded developer account, mining enabled",
+		Usage: "Ephemeral dpos network with a pre-funded developer account, mining enabled",
 	}
 	DeveloperPeriodFlag = cli.IntFlag{
 		Name:  "dev.period",
@@ -1223,8 +1223,8 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 		Fatalf("%v", err)
 	}
 	var engine consensus.Engine
-	if config.Clique != nil {
-		engine = clique.New(config.Clique, chainDb)
+	if config.DPos != nil {
+		engine = ddmdpos.New(config.DPos, chainDb)
 	} else {
 		engine = ddmhash.NewFaker()
 		if !ctx.GlobalBool(FakePoWFlag.Name) {

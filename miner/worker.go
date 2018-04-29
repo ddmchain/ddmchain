@@ -1,4 +1,4 @@
-// 
+//
 // This file is part of the go-ddmchain library.
 //
 // The go-ddmchain library is free software: you can redistribute it and/or modify
@@ -271,7 +271,7 @@ func (self *worker) update() {
 				self.currentMu.Unlock()
 			} else {
 				// If we're mining, but nothing is being processed, wake on new transactions
-				if self.config.Clique != nil && self.config.Clique.Period == 0 {
+				if self.config.DPos != nil && self.config.DPos.Period == 0 {
 					self.commitNewWork()
 				}
 			}

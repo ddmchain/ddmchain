@@ -1,4 +1,4 @@
-// 
+//
 // This file is part of the go-ddmchain library.
 //
 // The go-ddmchain library is free software: you can redistribute it and/or modify
@@ -29,7 +29,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/common"
 	"github.com/ddmchain/go-ddmchain/common/hexutil"
 	"github.com/ddmchain/go-ddmchain/consensus"
-	"github.com/ddmchain/go-ddmchain/consensus/clique"
+	"github.com/ddmchain/go-ddmchain/consensus/ddmdpos"
 	"github.com/ddmchain/go-ddmchain/consensus/ddmhash"
 	"github.com/ddmchain/go-ddmchain/core"
 	"github.com/ddmchain/go-ddmchain/core/bloombits"
@@ -212,9 +212,8 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ddmdb.Data
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an DDMchain service
 func CreateConsensusEngine(ctx *node.ServiceContext, config *ddmhash.Config, chainConfig *params.ChainConfig, db ddmdb.Database) consensus.Engine {
-	// If proof-of-authority is requested, set it up
-	if chainConfig.Clique != nil {
-		return clique.New(chainConfig.Clique, db)
+	if chainConfig.DPos != nil {
+		return ddmdpos.New(chainConfig.DPos, db)
 	}
 	// Otherwise assume proof-of-work
 	switch {
@@ -340,13 +339,13 @@ func (s *DDMchain) StartMining(local bool) error {
 		log.Error("Cannot start mining without ddmxbase", "err", err)
 		return fmt.Errorf("ddmxbase missing: %v", err)
 	}
-	if clique, ok := s.engine.(*clique.Clique); ok {
+	if dpos, ok := s.engine.(*ddmdpos.DPos); ok {
 		wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
 		if wallet == nil || err != nil {
 			log.Error("DDMXbase account unavailable locally", "err", err)
 			return fmt.Errorf("signer missing: %v", err)
 		}
-		clique.Authorize(eb, wallet.SignHash)
+		dpos.Authorize(eb, wallet.SignHash)
 	}
 	if local {
 		// If local (CPU) mining is started, we can disable the transaction rejection
