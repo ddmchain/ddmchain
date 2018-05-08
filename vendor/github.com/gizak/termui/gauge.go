@@ -1,25 +1,10 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
 import (
 	"strconv"
 	"strings"
 )
-
-// Gauge is a progress bar like widget.
-// A simple example:
-/*
-  g := termui.NewGauge()
-  g.Percent = 40
-  g.Width = 50
-  g.Height = 3
-  g.BorderLabel = "Slim Gauge"
-  g.BarColor = termui.ColorRed
-  g.PercentColor = termui.ColorBlue
-*/
 
 const ColorUndef Attribute = Attribute(^uint16(0))
 
@@ -33,7 +18,6 @@ type Gauge struct {
 	LabelAlign              Align
 }
 
-// NewGauge return a new gauge with current theme.
 func NewGauge() *Gauge {
 	g := &Gauge{
 		Block:                   *NewBlock(),
@@ -49,11 +33,9 @@ func NewGauge() *Gauge {
 	return g
 }
 
-// Buffer implements Bufferer interface.
 func (g *Gauge) Buffer() Buffer {
 	buf := g.Block.Buffer()
 
-	// plot bar
 	w := g.Percent * g.innerArea.Dx() / 100
 	for i := 0; i < g.innerArea.Dy(); i++ {
 		for j := 0; j < w; j++ {
@@ -67,7 +49,6 @@ func (g *Gauge) Buffer() Buffer {
 		}
 	}
 
-	// plot percentage
 	s := strings.Replace(g.Label, "{{percent}}", strconv.Itoa(g.Percent), -1)
 	pry := g.innerArea.Min.Y + g.innerArea.Dy()/2
 	rs := str2runes(s)

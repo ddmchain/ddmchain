@@ -1,9 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// OpenPGP CFB Mode. http://tools.ietf.org/html/rfc4880#section-13.9
-
 package packet
 
 import (
@@ -16,8 +11,6 @@ type ocfbEncrypter struct {
 	outUsed int
 }
 
-// An OCFBResyncOption determines if the "resynchronization step" of OCFB is
-// performed.
 type OCFBResyncOption bool
 
 const (
@@ -25,12 +18,6 @@ const (
 	OCFBNoResync OCFBResyncOption = false
 )
 
-// NewOCFBEncrypter returns a cipher.Stream which encrypts data with OpenPGP's
-// cipher feedback mode using the given cipher.Block, and an initial amount of
-// ciphertext.  randData must be random bytes and be the same length as the
-// cipher.Block's block size. Resync determines if the "resynchronization step"
-// from RFC 4880, 13.9 step 7 is performed. Different parts of OpenPGP vary on
-// this point.
 func NewOCFBEncrypter(block cipher.Block, randData []byte, resync OCFBResyncOption) (cipher.Stream, []byte) {
 	blockSize := block.BlockSize()
 	if len(randData) != blockSize {
@@ -82,13 +69,6 @@ type ocfbDecrypter struct {
 	outUsed int
 }
 
-// NewOCFBDecrypter returns a cipher.Stream which decrypts data with OpenPGP's
-// cipher feedback mode using the given cipher.Block. Prefix must be the first
-// blockSize + 2 bytes of the ciphertext, where blockSize is the cipher.Block's
-// block size. If an incorrect key is detected then nil is returned. On
-// successful exit, blockSize+2 bytes of decrypted data are written into
-// prefix. Resync determines if the "resynchronization step" from RFC 4880,
-// 13.9 step 7 is performed. Different parts of OpenPGP vary on this point.
 func NewOCFBDecrypter(block cipher.Block, prefix []byte, resync OCFBResyncOption) cipher.Stream {
 	blockSize := block.BlockSize()
 	if len(prefix) != blockSize+2 {

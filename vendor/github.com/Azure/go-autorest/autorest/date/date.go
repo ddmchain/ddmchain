@@ -1,8 +1,4 @@
-/*
-Package date provides time.Time derivatives that conform to the Swagger.io (https://swagger.io/)
-defined date   formats: Date and DateTime. Both types may, in most cases, be used in lieu of
-time.Time types. And both convert to time.Time through a ToTime method.
-*/
+
 package date
 
 import (
@@ -21,7 +17,6 @@ type Date struct {
 	time.Time
 }
 
-// ParseDate create a new Date from the passed string.
 func ParseDate(date string) (d Date, err error) {
 	return parseDate(date, fullDate)
 }
@@ -61,7 +56,6 @@ func (d Date) String() string {
 	return fmt.Sprintf(dateFormat, d.Year(), d.Month(), d.Day())
 }
 
-// ToTime returns a Date as a time.Time
 func (d Date) ToTime() time.Time {
 	return d.Time
 }

@@ -1,42 +1,34 @@
 
-// Use of this source code is governed by the MIT license that can be
-// found in the LICENSE file.
-
 // +build linux
 
 package notify
 
 import "golang.org/x/sys/unix"
 
-// Platform independent event values.
 const (
 	osSpecificCreate Event = 0x100000 << iota
 	osSpecificRemove
 	osSpecificWrite
 	osSpecificRename
-	// internal
-	// recursive is used to distinguish recursive eventsets from non-recursive ones
+
 	recursive
-	// omit is used for dispatching internal events; only those events are sent
-	// for which both the event and the watchpoint has omit in theirs event sets.
+
 	omit
 )
 
-// Inotify specific masks are legal, implemented events that are guaranteed to
-// work with notify package on linux-based systems.
 const (
-	InAccess       = Event(unix.IN_ACCESS)        // File was accessed
-	InModify       = Event(unix.IN_MODIFY)        // File was modified
-	InAttrib       = Event(unix.IN_ATTRIB)        // Metadata changed
-	InCloseWrite   = Event(unix.IN_CLOSE_WRITE)   // Writtable file was closed
-	InCloseNowrite = Event(unix.IN_CLOSE_NOWRITE) // Unwrittable file closed
-	InOpen         = Event(unix.IN_OPEN)          // File was opened
-	InMovedFrom    = Event(unix.IN_MOVED_FROM)    // File was moved from X
-	InMovedTo      = Event(unix.IN_MOVED_TO)      // File was moved to Y
-	InCreate       = Event(unix.IN_CREATE)        // Subfile was created
-	InDelete       = Event(unix.IN_DELETE)        // Subfile was deleted
-	InDeleteSelf   = Event(unix.IN_DELETE_SELF)   // Self was deleted
-	InMoveSelf     = Event(unix.IN_MOVE_SELF)     // Self was moved
+	InAccess       = Event(unix.IN_ACCESS)        
+	InModify       = Event(unix.IN_MODIFY)        
+	InAttrib       = Event(unix.IN_ATTRIB)        
+	InCloseWrite   = Event(unix.IN_CLOSE_WRITE)   
+	InCloseNowrite = Event(unix.IN_CLOSE_NOWRITE) 
+	InOpen         = Event(unix.IN_OPEN)          
+	InMovedFrom    = Event(unix.IN_MOVED_FROM)    
+	InMovedTo      = Event(unix.IN_MOVED_TO)      
+	InCreate       = Event(unix.IN_CREATE)        
+	InDelete       = Event(unix.IN_DELETE)        
+	InDeleteSelf   = Event(unix.IN_DELETE_SELF)   
+	InMoveSelf     = Event(unix.IN_MOVE_SELF)     
 )
 
 var osestr = map[Event]string{
@@ -54,7 +46,6 @@ var osestr = map[Event]string{
 	InMoveSelf:     "notify.InMoveSelf",
 }
 
-// Inotify behavior events are not **currently** supported by notify package.
 const (
 	inDontFollow = Event(unix.IN_DONT_FOLLOW)
 	inExclUnlink = Event(unix.IN_EXCL_UNLINK)

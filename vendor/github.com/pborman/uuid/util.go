@@ -1,21 +1,16 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package uuid
 
 import (
 	"io"
 )
 
-// randomBits completely fills slice b with random data.
 func randomBits(b []byte) {
 	if _, err := io.ReadFull(rander, b); err != nil {
-		panic(err.Error()) // rand should never fail
+		panic(err.Error()) 
 	}
 }
 
-// xvalues returns the value of a byte as a hexadecimal digit or 255.
 var xvalues = [256]byte{
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
@@ -35,7 +30,6 @@ var xvalues = [256]byte{
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 }
 
-// xtob converts the the first two hex bytes of x into a byte.
 func xtob(x string) (byte, bool) {
 	b1 := xvalues[x[0]]
 	b2 := xvalues[x[1]]

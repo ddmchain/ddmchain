@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package packet
 
 import (
@@ -17,13 +14,11 @@ import (
 
 const encryptedKeyVersion = 3
 
-// EncryptedKey represents a public-key encrypted session key. See RFC 4880,
-// section 5.1.
 type EncryptedKey struct {
 	KeyId      uint64
 	Algo       PublicKeyAlgorithm
-	CipherFunc CipherFunction // only valid after a successful Decrypt
-	Key        []byte         // only valid after a successful Decrypt
+	CipherFunc CipherFunction 
+	Key        []byte         
 
 	encryptedMPI1, encryptedMPI2 parsedMPI
 }
@@ -61,15 +56,10 @@ func checksumKeyMaterial(key []byte) uint16 {
 	return checksum
 }
 
-// Decrypt decrypts an encrypted session key with the given private key. The
-// private key must have been decrypted first.
-// If config is nil, sensible defaults will be used.
 func (e *EncryptedKey) Decrypt(priv *PrivateKey, config *Config) error {
 	var err error
 	var b []byte
 
-	// TODO(agl): use session key decryption routines here to avoid
-	// padding oracle attacks.
 	switch priv.PubKeyAlgo {
 	case PubKeyAlgoRSA, PubKeyAlgoRSAEncryptOnly:
 		b, err = rsa.DecryptPKCS1v15(config.Random(), priv.PrivateKey.(*rsa.PrivateKey), e.encryptedMPI1.bytes)
@@ -96,7 +86,6 @@ func (e *EncryptedKey) Decrypt(priv *PrivateKey, config *Config) error {
 	return nil
 }
 
-// Serialize writes the encrypted key packet, e, to w.
 func (e *EncryptedKey) Serialize(w io.Writer) error {
 	var mpiLen int
 	switch e.Algo {
@@ -108,7 +97,7 @@ func (e *EncryptedKey) Serialize(w io.Writer) error {
 		return errors.InvalidArgumentError("don't know how to serialize encrypted key type " + strconv.Itoa(int(e.Algo)))
 	}
 
-	serializeHeader(w, packetTypeEncryptedKey, 1 /* version */ +8 /* key id */ +1 /* algo */ +mpiLen)
+	serializeHeader(w, packetTypeEncryptedKey, 1  +8  +1  +mpiLen)
 
 	w.Write([]byte{encryptedKeyVersion})
 	binary.Write(w, binary.BigEndian, e.KeyId)
@@ -126,16 +115,13 @@ func (e *EncryptedKey) Serialize(w io.Writer) error {
 	return nil
 }
 
-// SerializeEncryptedKey serializes an encrypted key packet to w that contains
-// key, encrypted to pub.
-// If config is nil, sensible defaults will be used.
 func SerializeEncryptedKey(w io.Writer, pub *PublicKey, cipherFunc CipherFunction, key []byte, config *Config) error {
 	var buf [10]byte
 	buf[0] = encryptedKeyVersion
 	binary.BigEndian.PutUint64(buf[1:9], pub.KeyId)
 	buf[9] = byte(pub.PubKeyAlgo)
 
-	keyBlock := make([]byte, 1 /* cipher type */ +len(key)+2 /* checksum */)
+	keyBlock := make([]byte, 1  +len(key)+2 )
 	keyBlock[0] = byte(cipherFunc)
 	copy(keyBlock[1:], key)
 	checksum := checksumKeyMaterial(key)
@@ -160,7 +146,7 @@ func serializeEncryptedKeyRSA(w io.Writer, rand io.Reader, header [10]byte, pub 
 		return errors.InvalidArgumentError("RSA encryption failed: " + err.Error())
 	}
 
-	packetLen := 10 /* header length */ + 2 /* mpi size */ + len(cipherText)
+	packetLen := 10  + 2  + len(cipherText)
 
 	err = serializeHeader(w, packetTypeEncryptedKey, packetLen)
 	if err != nil {
@@ -179,9 +165,9 @@ func serializeEncryptedKeyElGamal(w io.Writer, rand io.Reader, header [10]byte, 
 		return errors.InvalidArgumentError("ElGamal encryption failed: " + err.Error())
 	}
 
-	packetLen := 10 /* header length */
-	packetLen += 2 /* mpi size */ + (c1.BitLen()+7)/8
-	packetLen += 2 /* mpi size */ + (c2.BitLen()+7)/8
+	packetLen := 10 
+	packetLen += 2  + (c1.BitLen()+7)/8
+	packetLen += 2  + (c2.BitLen()+7)/8
 
 	err = serializeHeader(w, packetTypeEncryptedKey, packetLen)
 	if err != nil {

@@ -5,8 +5,6 @@ import (
 	"strconv"
 )
 
-// Number
-
 func numberValueFromNumberArgumentList(argumentList []Value) Value {
 	if len(argumentList) > 0 {
 		return argumentList[0].numberValue()
@@ -23,7 +21,7 @@ func builtinNewNumber(self *_object, argumentList []Value) Value {
 }
 
 func builtinNumber_toString(call FunctionCall) Value {
-	// Will throw a TypeError if ThisObject is not a Number
+
 	value := call.thisClassObject("Number").primitiveValue()
 	radix := 10
 	radixArgument := call.Argument(0)

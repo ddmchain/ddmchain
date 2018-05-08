@@ -4,8 +4,6 @@ import (
 	"fmt"
 )
 
-// Object
-
 func builtinObject(call FunctionCall) Value {
 	value := call.Argument(0)
 	switch value.kind {

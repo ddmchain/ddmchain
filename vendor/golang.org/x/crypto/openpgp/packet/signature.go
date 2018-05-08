@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package packet
 
 import (
@@ -22,23 +19,20 @@ import (
 )
 
 const (
-	// See RFC 4880, section 5.2.3.21 for details.
+
 	KeyFlagCertify = 1 << iota
 	KeyFlagSign
 	KeyFlagEncryptCommunications
 	KeyFlagEncryptStorage
 )
 
-// Signature represents a signature. See RFC 4880, section 5.2.
 type Signature struct {
 	SigType    SignatureType
 	PubKeyAlgo PublicKeyAlgorithm
 	Hash       crypto.Hash
 
-	// HashSuffix is extra data that is hashed in after the signed data.
 	HashSuffix []byte
-	// HashTag contains the first two bytes of the hash for fast rejection
-	// of bad signed data.
+
 	HashTag      [2]byte
 	CreationTime time.Time
 
@@ -46,41 +40,28 @@ type Signature struct {
 	DSASigR, DSASigS     parsedMPI
 	ECDSASigR, ECDSASigS parsedMPI
 
-	// rawSubpackets contains the unparsed subpackets, in order.
 	rawSubpackets []outputSubpacket
-
-	// The following are optional so are nil when not included in the
-	// signature.
 
 	SigLifetimeSecs, KeyLifetimeSecs                        *uint32
 	PreferredSymmetric, PreferredHash, PreferredCompression []uint8
 	IssuerKeyId                                             *uint64
 	IsPrimaryId                                             *bool
 
-	// FlagsValid is set if any flags were given. See RFC 4880, section
-	// 5.2.3.21 for details.
 	FlagsValid                                                           bool
 	FlagCertify, FlagSign, FlagEncryptCommunications, FlagEncryptStorage bool
 
-	// RevocationReason is set if this signature has been revoked.
-	// See RFC 4880, section 5.2.3.23 for details.
 	RevocationReason     *uint8
 	RevocationReasonText string
 
-	// MDC is set if this signature has a feature packet that indicates
-	// support for MDC subpackets.
 	MDC bool
 
-	// EmbeddedSignature, if non-nil, is a signature of the parent key, by
-	// this key. This prevents an attacker from claiming another's signing
-	// subkey as their own.
 	EmbeddedSignature *Signature
 
 	outSubpackets []outputSubpacket
 }
 
 func (sig *Signature) parse(r io.Reader) (err error) {
-	// RFC 4880, section 5.2.3
+
 	var buf [5]byte
 	_, err = readFull(r, buf[:1])
 	if err != nil {
@@ -120,7 +101,7 @@ func (sig *Signature) parse(r io.Reader) (err error) {
 	if err != nil {
 		return
 	}
-	// See RFC 4880, section 5.2.4
+
 	trailer := sig.HashSuffix[l:]
 	trailer[0] = 4
 	trailer[1] = 0xff
@@ -173,8 +154,6 @@ func (sig *Signature) parse(r io.Reader) (err error) {
 	return
 }
 
-// parseSignatureSubpackets parses subpackets of the main signature packet. See
-// RFC 4880, section 5.2.3.1.
 func parseSignatureSubpackets(sig *Signature, subpackets []byte, isHashed bool) (err error) {
 	for len(subpackets) > 0 {
 		subpackets, err = parseSignatureSubpacket(sig, subpackets, isHashed)
@@ -207,9 +186,8 @@ const (
 	embeddedSignatureSubpacket   signatureSubpacketType = 32
 )
 
-// parseSignatureSubpacket parses a single subpacket. len(subpacket) is >= 1.
 func parseSignatureSubpacket(sig *Signature, subpacket []byte, isHashed bool) (rest []byte, err error) {
-	// RFC 4880, section 5.2.3.1
+
 	var (
 		length     uint32
 		packetType signatureSubpacketType
@@ -261,7 +239,7 @@ func parseSignatureSubpacket(sig *Signature, subpacket []byte, isHashed bool) (r
 		t := binary.BigEndian.Uint32(subpacket)
 		sig.CreationTime = time.Unix(int64(t), 0)
 	case signatureExpirationSubpacket:
-		// Signature expiration time, section 5.2.3.10
+
 		if !isHashed {
 			return
 		}
@@ -272,7 +250,7 @@ func parseSignatureSubpacket(sig *Signature, subpacket []byte, isHashed bool) (r
 		sig.SigLifetimeSecs = new(uint32)
 		*sig.SigLifetimeSecs = binary.BigEndian.Uint32(subpacket)
 	case keyExpirationSubpacket:
-		// Key expiration time, section 5.2.3.6
+
 		if !isHashed {
 			return
 		}
@@ -283,14 +261,14 @@ func parseSignatureSubpacket(sig *Signature, subpacket []byte, isHashed bool) (r
 		sig.KeyLifetimeSecs = new(uint32)
 		*sig.KeyLifetimeSecs = binary.BigEndian.Uint32(subpacket)
 	case prefSymmetricAlgosSubpacket:
-		// Preferred symmetric algorithms, section 5.2.3.7
+
 		if !isHashed {
 			return
 		}
 		sig.PreferredSymmetric = make([]byte, len(subpacket))
 		copy(sig.PreferredSymmetric, subpacket)
 	case issuerSubpacket:
-		// Issuer, section 5.2.3.5
+
 		if len(subpacket) != 8 {
 			err = errors.StructuralError("issuer subpacket with bad length")
 			return
@@ -298,21 +276,21 @@ func parseSignatureSubpacket(sig *Signature, subpacket []byte, isHashed bool) (r
 		sig.IssuerKeyId = new(uint64)
 		*sig.IssuerKeyId = binary.BigEndian.Uint64(subpacket)
 	case prefHashAlgosSubpacket:
-		// Preferred hash algorithms, section 5.2.3.8
+
 		if !isHashed {
 			return
 		}
 		sig.PreferredHash = make([]byte, len(subpacket))
 		copy(sig.PreferredHash, subpacket)
 	case prefCompressionSubpacket:
-		// Preferred compression algorithms, section 5.2.3.9
+
 		if !isHashed {
 			return
 		}
 		sig.PreferredCompression = make([]byte, len(subpacket))
 		copy(sig.PreferredCompression, subpacket)
 	case primaryUserIdSubpacket:
-		// Primary User ID, section 5.2.3.19
+
 		if !isHashed {
 			return
 		}
@@ -325,7 +303,7 @@ func parseSignatureSubpacket(sig *Signature, subpacket []byte, isHashed bool) (r
 			*sig.IsPrimaryId = true
 		}
 	case keyFlagsSubpacket:
-		// Key flags, section 5.2.3.21
+
 		if !isHashed {
 			return
 		}
@@ -347,7 +325,7 @@ func parseSignatureSubpacket(sig *Signature, subpacket []byte, isHashed bool) (r
 			sig.FlagEncryptStorage = true
 		}
 	case reasonForRevocationSubpacket:
-		// Reason For Revocation, section 5.2.3.23
+
 		if !isHashed {
 			return
 		}
@@ -359,23 +337,16 @@ func parseSignatureSubpacket(sig *Signature, subpacket []byte, isHashed bool) (r
 		*sig.RevocationReason = subpacket[0]
 		sig.RevocationReasonText = string(subpacket[1:])
 	case featuresSubpacket:
-		// Features subpacket, section 5.2.3.24 specifies a very general
-		// mechanism for OpenPGP implementations to signal support for new
-		// features. In practice, the subpacket is used exclusively to
-		// indicate support for MDC-protected encryption.
+
 		sig.MDC = len(subpacket) >= 1 && subpacket[0]&1 == 1
 	case embeddedSignatureSubpacket:
-		// Only usage is in signatures that cross-certify
-		// signing subkeys. section 5.2.3.26 describes the
-		// format, with its usage described in section 11.1
+
 		if sig.EmbeddedSignature != nil {
 			err = errors.StructuralError("Cannot have multiple embedded signatures")
 			return
 		}
 		sig.EmbeddedSignature = new(Signature)
-		// Embedded signatures are required to be v4 signatures see
-		// section 12.1. However, we only parse v4 signatures in this
-		// file anyway.
+
 		if err := sig.EmbeddedSignature.parse(bytes.NewBuffer(subpacket)); err != nil {
 			return nil, err
 		}
@@ -395,7 +366,6 @@ Truncated:
 	return
 }
 
-// subpacketLengthLength returns the length, in bytes, of an encoded length value.
 func subpacketLengthLength(length int) int {
 	if length < 192 {
 		return 1
@@ -406,9 +376,8 @@ func subpacketLengthLength(length int) int {
 	return 5
 }
 
-// serializeSubpacketLength marshals the given length into to.
 func serializeSubpacketLength(to []byte, length int) int {
-	// RFC 4880, Section 4.2.2.
+
 	if length < 192 {
 		to[0] = byte(length)
 		return 1
@@ -427,20 +396,17 @@ func serializeSubpacketLength(to []byte, length int) int {
 	return 5
 }
 
-// subpacketsLength returns the serialized length, in bytes, of the given
-// subpackets.
 func subpacketsLength(subpackets []outputSubpacket, hashed bool) (length int) {
 	for _, subpacket := range subpackets {
 		if subpacket.hashed == hashed {
 			length += subpacketLengthLength(len(subpacket.contents) + 1)
-			length += 1 // type byte
+			length += 1 
 			length += len(subpacket.contents)
 		}
 	}
 	return
 }
 
-// serializeSubpackets marshals the given subpackets into to.
 func serializeSubpackets(to []byte, subpackets []outputSubpacket, hashed bool) {
 	for _, subpacket := range subpackets {
 		if subpacket.hashed == hashed {
@@ -454,8 +420,6 @@ func serializeSubpackets(to []byte, subpackets []outputSubpacket, hashed bool) {
 	return
 }
 
-// KeyExpired returns whether sig is a self-signature of a key that has
-// expired.
 func (sig *Signature) KeyExpired(currentTime time.Time) bool {
 	if sig.KeyLifetimeSecs == nil {
 		return false
@@ -464,7 +428,6 @@ func (sig *Signature) KeyExpired(currentTime time.Time) bool {
 	return currentTime.After(expiry)
 }
 
-// buildHashSuffix constructs the HashSuffix member of sig in preparation for signing.
 func (sig *Signature) buildHashSuffix() (err error) {
 	hashedSubpacketsLen := subpacketsLength(sig.outSubpackets, true)
 
@@ -504,10 +467,6 @@ func (sig *Signature) signPrepareHash(h hash.Hash) (digest []byte, err error) {
 	return
 }
 
-// Sign signs a message with a private key. The hash, h, must contain
-// the hash of the message to be signed and will be mutated by this function.
-// On success, the signature is stored in sig. Call Serialize to write it out.
-// If config is nil, sensible defaults will be used.
 func (sig *Signature) Sign(h hash.Hash, priv *PrivateKey, config *Config) (err error) {
 	sig.outSubpackets = sig.buildSubpackets()
 	digest, err := sig.signPrepareHash(h)
@@ -517,13 +476,12 @@ func (sig *Signature) Sign(h hash.Hash, priv *PrivateKey, config *Config) (err e
 
 	switch priv.PubKeyAlgo {
 	case PubKeyAlgoRSA, PubKeyAlgoRSASignOnly:
-		// supports both *rsa.PrivateKey and crypto.Signer
+
 		sig.RSASignature.bytes, err = priv.PrivateKey.(crypto.Signer).Sign(config.Random(), digest, sig.Hash)
 		sig.RSASignature.bitLength = uint16(8 * len(sig.RSASignature.bytes))
 	case PubKeyAlgoDSA:
 		dsaPriv := priv.PrivateKey.(*dsa.PrivateKey)
 
-		// Need to truncate hashBytes to match FIPS 186-3 section 4.6.
 		subgroupSize := (dsaPriv.Q.BitLen() + 7) / 8
 		if len(digest) > subgroupSize {
 			digest = digest[:subgroupSize]
@@ -538,7 +496,7 @@ func (sig *Signature) Sign(h hash.Hash, priv *PrivateKey, config *Config) (err e
 	case PubKeyAlgoECDSA:
 		var r, s *big.Int
 		if pk, ok := priv.PrivateKey.(*ecdsa.PrivateKey); ok {
-			// direct support, avoid asn1 wrapping/unwrapping
+
 			r, s, err = ecdsa.Sign(config.Random(), pk, digest)
 		} else {
 			var b []byte
@@ -558,8 +516,6 @@ func (sig *Signature) Sign(h hash.Hash, priv *PrivateKey, config *Config) (err e
 	return
 }
 
-// unwrapECDSASig parses the two integer components of an ASN.1-encoded ECDSA
-// signature.
 func unwrapECDSASig(b []byte) (r, s *big.Int, err error) {
 	var ecsdaSig struct {
 		R, S *big.Int
@@ -571,10 +527,6 @@ func unwrapECDSASig(b []byte) (r, s *big.Int, err error) {
 	return ecsdaSig.R, ecsdaSig.S, nil
 }
 
-// SignUserId computes a signature from priv, asserting that pub is a valid
-// key for the identity id.  On success, the signature is stored in sig. Call
-// Serialize to write it out.
-// If config is nil, sensible defaults will be used.
 func (sig *Signature) SignUserId(id string, pub *PublicKey, priv *PrivateKey, config *Config) error {
 	h, err := userIdSignatureHash(id, pub, sig.Hash)
 	if err != nil {
@@ -583,9 +535,6 @@ func (sig *Signature) SignUserId(id string, pub *PublicKey, priv *PrivateKey, co
 	return sig.Sign(h, priv, config)
 }
 
-// SignKey computes a signature from priv, asserting that pub is a subkey. On
-// success, the signature is stored in sig. Call Serialize to write it out.
-// If config is nil, sensible defaults will be used.
 func (sig *Signature) SignKey(pub *PublicKey, priv *PrivateKey, config *Config) error {
 	h, err := keySignatureHash(&priv.PublicKey, pub, sig.Hash)
 	if err != nil {
@@ -594,8 +543,6 @@ func (sig *Signature) SignKey(pub *PublicKey, priv *PrivateKey, config *Config) 
 	return sig.Sign(h, priv, config)
 }
 
-// Serialize marshals sig to w. Sign, SignUserId or SignKey must have been
-// called first.
 func (sig *Signature) Serialize(w io.Writer) (err error) {
 	if len(sig.outSubpackets) == 0 {
 		sig.outSubpackets = sig.rawSubpackets
@@ -619,9 +566,9 @@ func (sig *Signature) Serialize(w io.Writer) (err error) {
 	}
 
 	unhashedSubpacketsLen := subpacketsLength(sig.outSubpackets, false)
-	length := len(sig.HashSuffix) - 6 /* trailer not included */ +
-		2 /* length of unhashed subpackets */ + unhashedSubpacketsLen +
-		2 /* hash tag */ + sigLength
+	length := len(sig.HashSuffix) - 6  +
+		2  + unhashedSubpacketsLen +
+		2  + sigLength
 	err = serializeHeader(w, packetTypeSignature, length)
 	if err != nil {
 		return
@@ -659,9 +606,8 @@ func (sig *Signature) Serialize(w io.Writer) (err error) {
 	return
 }
 
-// outputSubpacket represents a subpacket to be marshaled.
 type outputSubpacket struct {
-	hashed        bool // true if this subpacket is in the hashed area.
+	hashed        bool 
 	subpacketType signatureSubpacketType
 	isCritical    bool
 	contents      []byte
@@ -684,8 +630,6 @@ func (sig *Signature) buildSubpackets() (subpackets []outputSubpacket) {
 		subpackets = append(subpackets, outputSubpacket{true, signatureExpirationSubpacket, true, sigLifetime})
 	}
 
-	// Key flags may only appear in self-signatures or certification signatures.
-
 	if sig.FlagsValid {
 		var flags byte
 		if sig.FlagCertify {
@@ -702,8 +646,6 @@ func (sig *Signature) buildSubpackets() (subpackets []outputSubpacket) {
 		}
 		subpackets = append(subpackets, outputSubpacket{true, keyFlagsSubpacket, false, []byte{flags}})
 	}
-
-	// The following subpackets may only appear in self-signatures
 
 	if sig.KeyLifetimeSecs != nil && *sig.KeyLifetimeSecs != 0 {
 		keyLifetime := make([]byte, 4)

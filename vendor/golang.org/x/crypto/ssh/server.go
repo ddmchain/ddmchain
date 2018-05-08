@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package ssh
 
 import (
@@ -13,93 +10,34 @@ import (
 	"strings"
 )
 
-// The Permissions type holds fine-grained permissions that are
-// specific to a user or a specific authentication method for a user.
-// The Permissions value for a successful authentication attempt is
-// available in ServerConn, so it can be used to pass information from
-// the user-authentication phase to the application layer.
 type Permissions struct {
-	// CriticalOptions indicate restrictions to the default
-	// permissions, and are typically used in conjunction with
-	// user certificates. The standard for SSH certificates
-	// defines "force-command" (only allow the given command to
-	// execute) and "source-address" (only allow connections from
-	// the given address). The SSH package currently only enforces
-	// the "source-address" critical option. It is up to server
-	// implementations to enforce other critical options, such as
-	// "force-command", by checking them after the SSH handshake
-	// is successful. In general, SSH servers should reject
-	// connections that specify critical options that are unknown
-	// or not supported.
+
 	CriticalOptions map[string]string
 
-	// Extensions are extra functionality that the server may
-	// offer on authenticated connections. Lack of support for an
-	// extension does not preclude authenticating a user. Common
-	// extensions are "permit-agent-forwarding",
-	// "permit-X11-forwarding". The Go SSH library currently does
-	// not act on any extension, and it is up to server
-	// implementations to honor them. Extensions can be used to
-	// pass data from the authentication callbacks to the server
-	// application layer.
 	Extensions map[string]string
 }
 
-// ServerConfig holds server specific configuration data.
 type ServerConfig struct {
-	// Config contains configuration shared between client and server.
+
 	Config
 
 	hostKeys []Signer
 
-	// NoClientAuth is true if clients are allowed to connect without
-	// authenticating.
 	NoClientAuth bool
 
-	// MaxAuthTries specifies the maximum number of authentication attempts
-	// permitted per connection. If set to a negative number, the number of
-	// attempts are unlimited. If set to zero, the number of attempts are limited
-	// to 6.
 	MaxAuthTries int
 
-	// PasswordCallback, if non-nil, is called when a user
-	// attempts to authenticate using a password.
 	PasswordCallback func(conn ConnMetadata, password []byte) (*Permissions, error)
 
-	// PublicKeyCallback, if non-nil, is called when a client
-	// offers a public key for authentication. It must return a nil error
-	// if the given public key can be used to authenticate the
-	// given user. For example, see CertChecker.Authenticate. A
-	// call to this function does not guarantee that the key
-	// offered is in fact used to authenticate. To record any data
-	// depending on the public key, store it inside a
-	// Permissions.Extensions entry.
 	PublicKeyCallback func(conn ConnMetadata, key PublicKey) (*Permissions, error)
 
-	// KeyboardInteractiveCallback, if non-nil, is called when
-	// keyboard-interactive authentication is selected (RFC
-	// 4256). The client object's Challenge function should be
-	// used to query the user. The callback may offer multiple
-	// Challenge rounds. To avoid information leaks, the client
-	// should be presented a challenge even if the user is
-	// unknown.
 	KeyboardInteractiveCallback func(conn ConnMetadata, client KeyboardInteractiveChallenge) (*Permissions, error)
 
-	// AuthLogCallback, if non-nil, is called to log all authentication
-	// attempts.
 	AuthLogCallback func(conn ConnMetadata, method string, err error)
 
-	// ServerVersion is the version identification string to announce in
-	// the public handshake.
-	// If empty, a reasonable default is used.
-	// Note that RFC 4253 section 4.2 requires that this string start with
-	// "SSH-2.0-".
 	ServerVersion string
 }
 
-// AddHostKey adds a private key as a host key. If an existing host
-// key exists with the same algorithm, it is overwritten. Each server
-// config must have at least one host key.
 func (s *ServerConfig) AddHostKey(key Signer) {
 	for i, k := range s.hostKeys {
 		if k.PublicKey().Type() == key.PublicKey().Type() {
@@ -111,8 +49,6 @@ func (s *ServerConfig) AddHostKey(key Signer) {
 	s.hostKeys = append(s.hostKeys, key)
 }
 
-// cachedPubKey contains the results of querying whether a public key is
-// acceptable for a user.
 type cachedPubKey struct {
 	user       string
 	pubKeyData []byte
@@ -122,15 +58,10 @@ type cachedPubKey struct {
 
 const maxCachedPubKeys = 16
 
-// pubKeyCache caches tests for public keys.  Since SSH clients
-// will query whether a public key is acceptable before attempting to
-// authenticate with it, we end up with duplicate queries for public
-// key validity.  The cache only applies to a single ServerConn.
 type pubKeyCache struct {
 	keys []cachedPubKey
 }
 
-// get returns the result for a given user/algo/key tuple.
 func (c *pubKeyCache) get(user string, pubKeyData []byte) (cachedPubKey, bool) {
 	for _, k := range c.keys {
 		if k.user == user && bytes.Equal(k.pubKeyData, pubKeyData) {
@@ -140,28 +71,18 @@ func (c *pubKeyCache) get(user string, pubKeyData []byte) (cachedPubKey, bool) {
 	return cachedPubKey{}, false
 }
 
-// add adds the given tuple to the cache.
 func (c *pubKeyCache) add(candidate cachedPubKey) {
 	if len(c.keys) < maxCachedPubKeys {
 		c.keys = append(c.keys, candidate)
 	}
 }
 
-// ServerConn is an authenticated SSH connection, as seen from the
-// server
 type ServerConn struct {
 	Conn
 
-	// If the succeeding authentication callback returned a
-	// non-nil Permissions pointer, it is stored here.
 	Permissions *Permissions
 }
 
-// NewServerConn starts a new SSH server with c as the underlying
-// transport.  It starts with a handshake and, if the handshake is
-// unsuccessful, it closes the connection and returns an error.  The
-// Request and NewChannel channels must be serviced, or the connection
-// will hang.
 func NewServerConn(c net.Conn, config *ServerConfig) (*ServerConn, <-chan NewChannel, <-chan *Request, error) {
 	fullConf := *config
 	fullConf.SetDefaults()
@@ -180,8 +101,6 @@ func NewServerConn(c net.Conn, config *ServerConfig) (*ServerConn, <-chan NewCha
 	return &ServerConn{s, perms}, s.mux.incomingChannels, s.mux.incomingRequests, nil
 }
 
-// signAndMarshal signs the data with the appropriate algorithm,
-// and serializes the result in SSH wire format.
 func signAndMarshal(k Signer, rand io.Reader, data []byte) ([]byte, error) {
 	sig, err := k.Sign(rand, data)
 	if err != nil {
@@ -191,7 +110,6 @@ func signAndMarshal(k Signer, rand io.Reader, data []byte) ([]byte, error) {
 	return Marshal(sig), nil
 }
 
-// handshake performs key exchange and user authentication.
 func (s *connection) serverHandshake(config *ServerConfig) (*Permissions, error) {
 	if len(config.hostKeys) == 0 {
 		return nil, errors.New("ssh: server has no host keys")
@@ -212,14 +130,13 @@ func (s *connection) serverHandshake(config *ServerConfig) (*Permissions, error)
 		return nil, err
 	}
 
-	tr := newTransport(s.sshConn.conn, config.Rand, false /* not client */)
+	tr := newTransport(s.sshConn.conn, config.Rand, false )
 	s.transport = newServerTransport(tr, s.clientVersion, s.serverVersion, config)
 
 	if err := s.transport.waitSession(); err != nil {
 		return nil, err
 	}
 
-	// We just did the key change, so the session ID is established.
 	s.sessionID = s.transport.getSessionID()
 
 	var packet []byte
@@ -288,12 +205,8 @@ func checkSourceAddress(addr net.Addr, sourceAddrs string) error {
 	return fmt.Errorf("ssh: remote address %v is not allowed because of source-address restriction", addr)
 }
 
-// ServerAuthError implements the error interface. It appends any authentication
-// errors that may occur, and is returned if all of the authentication methods
-// provided by the user failed to authenticate.
 type ServerAuthError struct {
-	// Errors contains authentication errors returned by the authentication
-	// callback methods.
+
 	Errors []error
 }
 
@@ -352,7 +265,6 @@ userAuthLoop:
 				authErr = nil
 			}
 
-			// allow initial attempt of 'none' without penalty
 			if authFailures == 0 {
 				authFailures--
 			}
@@ -425,8 +337,6 @@ userAuthLoop:
 			}
 
 			if isQuery {
-				// The client can query if the given public key
-				// would be okay.
 
 				if len(payload) > 0 {
 					return nil, parseError(msgUserAuthRequest)
@@ -448,11 +358,7 @@ userAuthLoop:
 				if !ok || len(payload) > 0 {
 					return nil, parseError(msgUserAuthRequest)
 				}
-				// Ensure the public key algo and signature algo
-				// are supported.  Compare the private key
-				// algorithm name that corresponds to algo with
-				// sig.Format.  This is usually the same, but
-				// for certs, the names differ.
+
 				if !isAcceptableAlgo(sig.Format) {
 					break
 				}
@@ -507,8 +413,6 @@ userAuthLoop:
 	return perms, nil
 }
 
-// sshClientKeyboardInteractive implements a ClientKeyboardInteractive by
-// asking the client on the other side of a ServerConn.
 type sshClientKeyboardInteractive struct {
 	*connection
 }

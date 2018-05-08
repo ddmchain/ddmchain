@@ -8,8 +8,6 @@ import (
 	"unicode/utf8"
 )
 
-// String
-
 func stringValueFromStringArgumentList(argumentList []Value) Value {
 	if len(argumentList) > 0 {
 		return toValue_string(argumentList[0].string())
@@ -105,8 +103,8 @@ func builtinString_lastIndexOf(call FunctionCall) Value {
 		return toValue_int(strings.LastIndex(value, target))
 	}
 	start := call.ArgumentList[1].number()
-	if start.kind == numberInfinity { // FIXME
-		// startNumber is infinity, so start is the end of string (start = length)
+	if start.kind == numberInfinity { 
+
 		return toValue_int(strings.LastIndex(value, target))
 	}
 	if 0 > start.int64 {
@@ -141,7 +139,7 @@ func builtinString_match(call FunctionCall) Value {
 		matchCount := len(result)
 		if result == nil {
 			matcher.put("lastIndex", toValue_int(0), true)
-			return Value{} // !match
+			return Value{} 
 		}
 		matchCount = len(result)
 		valueArray := make([]Value, matchCount)
@@ -162,7 +160,7 @@ func builtinString_findAndReplaceString(input []byte, lastIndex int, match []int
 		output = append(output, target[lastIndex:match[0]]...)
 	}
 	replacement := builtinString_replace_Regexp.ReplaceAllFunc(replaceValue, func(part []byte) []byte {
-		// TODO Check if match[0] or match[1] can be -1 in this scenario
+
 		switch part[1] {
 		case '$':
 			return []byte{'$'}
@@ -182,7 +180,7 @@ func builtinString_findAndReplaceString(input []byte, lastIndex int, match []int
 		if match[offset] != -1 {
 			return target[match[offset]:match[offset+1]]
 		}
-		return []byte{} // The empty string
+		return []byte{} 
 	})
 	output = append(output, replacement...)
 	return output
@@ -194,7 +192,6 @@ func builtinString_replace(call FunctionCall) Value {
 	searchValue := call.Argument(0)
 	searchObject := searchValue._object()
 
-	// TODO If a capture is -1?
 	var search *regexp.Regexp
 	global := false
 	find := 1
@@ -210,7 +207,7 @@ func builtinString_replace(call FunctionCall) Value {
 
 	found := search.FindAllSubmatchIndex(target, find)
 	if found == nil {
-		return toValue_string(string(target)) // !match
+		return toValue_string(string(target)) 
 	}
 
 	{
@@ -317,7 +314,7 @@ func builtinString_split(call FunctionCall) Value {
 
 		for _, match := range result {
 			if match[0] == match[1] {
-				// FIXME Ugh, this is a hack
+
 				if match[0] == 0 || match[0] == targetLength {
 					continue
 				}
@@ -428,10 +425,7 @@ func builtinString_substr(call FunctionCall) Value {
 	}
 
 	if start+length >= size {
-		// Cap length to be to the end of the string
-		// start = 3, length = 5, size = 4 [0, 1, 2, 3]
-		// 4 - 3 = 1
-		// target[3:4]
+
 		length = size - start
 	}
 
@@ -448,7 +442,6 @@ func builtinString_toUpperCase(call FunctionCall) Value {
 	return toValue_string(strings.ToUpper(call.This.string()))
 }
 
-// 7.2 Table 2 — Whitespace Characters & 7.3 Table 3 - Line Terminator Characters
 const builtinString_trim_whitespace = "\u0009\u000A\u000B\u000C\u000D\u0020\u00A0\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF"
 
 func builtinString_trim(call FunctionCall) Value {
@@ -457,14 +450,12 @@ func builtinString_trim(call FunctionCall) Value {
 		builtinString_trim_whitespace))
 }
 
-// Mozilla extension, not ECMAScript 5
 func builtinString_trimLeft(call FunctionCall) Value {
 	checkObjectCoercible(call.runtime, call.This)
 	return toValue(strings.TrimLeft(call.This.string(),
 		builtinString_trim_whitespace))
 }
 
-// Mozilla extension, not ECMAScript 5
 func builtinString_trimRight(call FunctionCall) Value {
 	checkObjectCoercible(call.runtime, call.This)
 	return toValue(strings.TrimRight(call.This.string(),
@@ -482,14 +473,6 @@ func builtinString_localeCompare(call FunctionCall) Value {
 	}
 	return toValue_int(1)
 }
-
-/*
-An alternate version of String.trim
-func builtinString_trim(call FunctionCall) Value {
-	checkObjectCoercible(call.This)
-	return toValue_string(strings.TrimFunc(call.string(.This), isWhiteSpaceOrLineTerminator))
-}
-*/
 
 func builtinString_toLocaleLowerCase(call FunctionCall) Value {
 	return builtinString_toLowerCase(call)

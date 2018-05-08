@@ -1,21 +1,16 @@
 
-// Use of this source code is governed by the MIT license that can be
-// found in the LICENSE file.
-
 package notify
 
 import "sync"
 
-// nonrecursiveTree TODO(rjeczalik)
 type nonrecursiveTree struct {
-	rw   sync.RWMutex // protects root
+	rw   sync.RWMutex 
 	root root
 	w    watcher
 	c    chan EventInfo
 	rec  chan EventInfo
 }
 
-// newNonrecursiveTree TODO(rjeczalik)
 func newNonrecursiveTree(w watcher, c, rec chan EventInfo) *nonrecursiveTree {
 	if rec == nil {
 		rec = make(chan EventInfo, buffer)
@@ -31,7 +26,6 @@ func newNonrecursiveTree(w watcher, c, rec chan EventInfo) *nonrecursiveTree {
 	return t
 }
 
-// dispatch TODO(rjeczalik)
 func (t *nonrecursiveTree) dispatch(c <-chan EventInfo) {
 	for ei := range c {
 		dbgprintf("dispatching %v on %q", ei.Event(), ei.Path())
@@ -49,22 +43,22 @@ func (t *nonrecursiveTree) dispatch(c <-chan EventInfo) {
 				return nil
 			}
 			t.rw.RLock()
-			// Notify recursive watchpoints found on the path.
+
 			if err := t.root.WalkPath(dir, fn); err != nil {
 				dbgprint("dispatch did not reach leaf:", err)
 				t.rw.RUnlock()
 				return
 			}
-			// Notify parent watchpoint.
+
 			nd.Watch.Dispatch(ei, 0)
 			isrec = isrec || nd.Watch.IsRecursive()
-			// If leaf watchpoint exists, notify it.
+
 			if nd, ok := nd.Child[base]; ok {
 				isrec = isrec || nd.Watch.IsRecursive()
 				nd.Watch.Dispatch(ei, 0)
 			}
 			t.rw.RUnlock()
-			// If the event describes newly leaf directory created within
+
 			if !isrec || ei.Event() != Create {
 				return
 			}
@@ -76,7 +70,6 @@ func (t *nonrecursiveTree) dispatch(c <-chan EventInfo) {
 	}
 }
 
-// internal TODO(rjeczalik)
 func (t *nonrecursiveTree) internal(rec <-chan EventInfo) {
 	for ei := range rec {
 		var nd node
@@ -101,7 +94,6 @@ func (t *nonrecursiveTree) internal(rec <-chan EventInfo) {
 	}
 }
 
-// watchAdd TODO(rjeczalik)
 func (t *nonrecursiveTree) watchAdd(nd node, c chan<- EventInfo, e Event) eventDiff {
 	if e&recursive != 0 {
 		diff := nd.Watch.Add(t.rec, e|Create|omit)
@@ -111,7 +103,6 @@ func (t *nonrecursiveTree) watchAdd(nd node, c chan<- EventInfo, e Event) eventD
 	return nd.Watch.Add(c, e)
 }
 
-// watchDelMin TODO(rjeczalik)
 func (t *nonrecursiveTree) watchDelMin(min Event, nd node, c chan<- EventInfo, e Event) eventDiff {
 	old, ok := nd.Watch[t.rec]
 	if ok {
@@ -139,17 +130,15 @@ func (t *nonrecursiveTree) watchDelMin(min Event, nd node, c chan<- EventInfo, e
 	return diff
 }
 
-// watchDel TODO(rjeczalik)
 func (t *nonrecursiveTree) watchDel(nd node, c chan<- EventInfo, e Event) eventDiff {
 	return t.watchDelMin(0, nd, c, e)
 }
 
-// Watch TODO(rjeczalik)
 func (t *nonrecursiveTree) Watch(path string, c chan<- EventInfo, events ...Event) error {
 	if c == nil {
 		panic("notify: Watch using nil channel")
 	}
-	// Expanding with empty event set is a nop.
+
 	if len(events) == 0 {
 		return nil
 	}
@@ -173,7 +162,7 @@ func (t *nonrecursiveTree) watch(nd node, c chan<- EventInfo, e Event) (err erro
 	case diff == none:
 		return nil
 	case diff[1] == 0:
-		// TODO(rjeczalik): cleanup this panic after implementation is stable
+
 		panic("eset is empty: " + nd.Name)
 	case diff[0] == 0:
 		err = t.w.Watch(nd.Name, diff[1])
@@ -192,7 +181,7 @@ func (t *nonrecursiveTree) recFunc(e Event) walkFunc {
 		switch diff := nd.Watch.Add(t.rec, e|omit|Create); {
 		case diff == none:
 		case diff[1] == 0:
-			// TODO(rjeczalik): cleanup this panic after implementation is stable
+
 			panic("eset is empty: " + nd.Name)
 		case diff[0] == 0:
 			t.w.Watch(nd.Name, diff[1])
@@ -205,26 +194,22 @@ func (t *nonrecursiveTree) recFunc(e Event) walkFunc {
 
 func (t *nonrecursiveTree) watchrec(nd node, c chan<- EventInfo, e Event) error {
 	var traverse func(walkFunc) error
-	// Non-recursive tree listens on Create event for every recursive
-	// watchpoint in order to automagically set a watch for every
-	// created directory.
+
 	switch diff := nd.Watch.dryAdd(t.rec, e|Create); {
 	case diff == none:
 		t.watchAdd(nd, c, e)
 		nd.Watch.Add(t.rec, e|omit|Create)
 		return nil
 	case diff[1] == 0:
-		// TODO(rjeczalik): cleanup this panic after implementation is stable
+
 		panic("eset is empty: " + nd.Name)
 	case diff[0] == 0:
-		// TODO(rjeczalik): BFS into directories and skip subtree as soon as first
-		// recursive watchpoint is encountered.
+
 		traverse = nd.AddDir
 	default:
 		traverse = nd.Walk
 	}
-	// TODO(rjeczalik): account every path that failed to be (re)watched
-	// and retry.
+
 	if err := traverse(t.recFunc(e)); err != nil {
 		return err
 	}
@@ -244,9 +229,7 @@ func (t *nonrecursiveTree) walkWatchpoint(nd node, fn walkWatchpointFunc) error 
 Traverse:
 	for n := len(stack); n != 0; n = len(stack) {
 		mnd, stack = stack[n-1], stack[:n-1]
-		// There must be no recursive watchpoints if the node has no watchpoints
-		// itself (every node in subtree rooted at recursive watchpoints must
-		// have at least nil (total) and t.rec watchpoints).
+
 		if len(mnd.nd.Watch) != 0 {
 			switch err := fn(mnd.min, mnd.nd); err {
 			case nil:
@@ -263,11 +246,9 @@ Traverse:
 	return nil
 }
 
-// Stop TODO(rjeczalik)
 func (t *nonrecursiveTree) Stop(c chan<- EventInfo) {
 	fn := func(min Event, nd node) error {
-		// TODO(rjeczalik): aggregate watcher errors and retry; in worst case
-		// forward to the user.
+
 		switch diff := t.watchDelMin(min, nd, c, all); {
 		case diff == none:
 			return nil
@@ -279,12 +260,11 @@ func (t *nonrecursiveTree) Stop(c chan<- EventInfo) {
 		return nil
 	}
 	t.rw.Lock()
-	err := t.walkWatchpoint(t.root.nd, fn) // TODO(rjeczalik): store max root per c
+	err := t.walkWatchpoint(t.root.nd, fn) 
 	t.rw.Unlock()
 	dbgprintf("Stop(%p) error: %v\n", c, err)
 }
 
-// Close TODO(rjeczalik)
 func (t *nonrecursiveTree) Close() error {
 	err := t.w.Close()
 	close(t.c)

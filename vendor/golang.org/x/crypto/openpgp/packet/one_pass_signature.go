@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package packet
 
 import (
@@ -13,8 +10,6 @@ import (
 	"strconv"
 )
 
-// OnePassSignature represents a one-pass signature packet. See RFC 4880,
-// section 5.4.
 type OnePassSignature struct {
 	SigType    SignatureType
 	Hash       crypto.Hash
@@ -49,7 +44,6 @@ func (ops *OnePassSignature) parse(r io.Reader) (err error) {
 	return
 }
 
-// Serialize marshals the given OnePassSignature to w.
 func (ops *OnePassSignature) Serialize(w io.Writer) error {
 	var buf [13]byte
 	buf[0] = onePassSignatureVersion

@@ -2,10 +2,6 @@
 #include "duktape.h"
 #include "duk_v1_compat.h"
 
-/*
- *  duk_dump_context_{stdout,stderr}()
- */
-
 void duk_dump_context_stdout(duk_context *ctx) {
 	duk_push_context_dump(ctx);
 	fprintf(stdout, "%s\n", duk_safe_to_string(ctx, -1));
@@ -18,14 +14,10 @@ void duk_dump_context_stderr(duk_context *ctx) {
 	duk_pop(ctx);
 }
 
-/*
- *  duk_push_string_file() and duk_push_string_file_raw()
- */
-
 const char *duk_push_string_file_raw(duk_context *ctx, const char *path, duk_uint_t flags) {
 	FILE *f = NULL;
 	char *buf;
-	long sz;  /* ANSI C typing */
+	long sz;  
 
 	if (!path) {
 		goto fail;
@@ -49,12 +41,12 @@ const char *duk_push_string_file_raw(duk_context *ctx, const char *path, duk_uin
 		duk_pop(ctx);
 		goto fail;
 	}
-	(void) fclose(f);  /* ignore fclose() error */
+	(void) fclose(f);  
 	return duk_buffer_to_string(ctx, -1);
 
  fail:
 	if (f) {
-		(void) fclose(f);  /* ignore fclose() error */
+		(void) fclose(f);  
 	}
 
 	if (flags & DUK_STRING_PUSH_SAFE) {
@@ -65,15 +57,11 @@ const char *duk_push_string_file_raw(duk_context *ctx, const char *path, duk_uin
 	return NULL;
 }
 
-/*
- *  duk_eval_file(), duk_compile_file(), and their variants
- */
-
 void duk_eval_file(duk_context *ctx, const char *path) {
 	duk_push_string_file_raw(ctx, path, 0);
 	duk_push_string(ctx, path);
 	duk_compile(ctx, DUK_COMPILE_EVAL);
-	duk_push_global_object(ctx);  /* 'this' binding */
+	duk_push_global_object(ctx);  
 	duk_call_method(ctx, 0);
 }
 
@@ -91,7 +79,7 @@ duk_int_t duk_peval_file(duk_context *ctx, const char *path) {
 	if (rc != 0) {
 		return rc;
 	}
-	duk_push_global_object(ctx);  /* 'this' binding */
+	duk_push_global_object(ctx);  
 	rc = duk_pcall_method(ctx, 0);
 	return rc;
 }
@@ -118,10 +106,6 @@ duk_int_t duk_pcompile_file(duk_context *ctx, duk_uint_t flags, const char *path
 	rc = duk_pcompile(ctx, flags);
 	return rc;
 }
-
-/*
- *  duk_to_defaultvalue()
- */
 
 void duk_to_defaultvalue(duk_context *ctx, duk_idx_t idx, duk_int_t hint) {
 	duk_require_type_mask(ctx, idx, DUK_TYPE_MASK_OBJECT |

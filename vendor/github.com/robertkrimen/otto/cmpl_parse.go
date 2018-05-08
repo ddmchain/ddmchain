@@ -490,7 +490,7 @@ type (
 
 	_nodeRegExpLiteral struct {
 		flags   string
-		pattern string // Value?
+		pattern string 
 		regexp  *regexp.Regexp
 	}
 
@@ -613,8 +613,6 @@ type (
 	}
 )
 
-// _expressionNode
-
 func (*_nodeArrayLiteral) _expressionNode()          {}
 func (*_nodeAssignExpression) _expressionNode()      {}
 func (*_nodeBinaryExpression) _expressionNode()      {}
@@ -632,8 +630,6 @@ func (*_nodeSequenceExpression) _expressionNode()    {}
 func (*_nodeThisExpression) _expressionNode()        {}
 func (*_nodeUnaryExpression) _expressionNode()       {}
 func (*_nodeVariableExpression) _expressionNode()    {}
-
-// _statementNode
 
 func (*_nodeBlockStatement) _statementNode()      {}
 func (*_nodeBranchStatement) _statementNode()     {}

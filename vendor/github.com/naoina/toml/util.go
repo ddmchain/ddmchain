@@ -8,10 +8,9 @@ import (
 
 const fieldTagName = "toml"
 
-// fieldCache maps normalized field names to their position in a struct.
 type fieldCache struct {
-	named map[string]fieldInfo // fields with an explicit name in tag
-	auto  map[string]fieldInfo // fields with auto-assigned normalized names
+	named map[string]fieldInfo 
+	auto  map[string]fieldInfo 
 }
 
 type fieldInfo struct {
@@ -24,7 +23,7 @@ func makeFieldCache(cfg *Config, rt reflect.Type) fieldCache {
 	named, auto := make(map[string]fieldInfo), make(map[string]fieldInfo)
 	for i := 0; i < rt.NumField(); i++ {
 		ft := rt.Field(i)
-		// skip unexported fields
+
 		if ft.PkgPath != "" && !ft.Anonymous {
 			continue
 		}

@@ -18,7 +18,6 @@ type nexter struct {
 	err error
 }
 
-// State represents an open terminal
 type State struct {
 	commonState
 	origMode    termios
@@ -29,8 +28,6 @@ type State struct {
 	useCHA      bool
 }
 
-// NewLiner initializes a new *State, and sets the terminal into raw mode. To
-// restore the terminal to its previous state, call State.Close().
 func NewLiner() *State {
 	var s State
 	s.r = bufio.NewReader(os.Stdin)
@@ -93,7 +90,7 @@ func (s *State) restartPrompt() {
 			var n nexter
 			n.r, _, n.err = s.r.ReadRune()
 			next <- n
-			// Shut down nexter loop when an end condition has been reached
+
 			if n.err != nil || n.r == '\n' || n.r == '\r' || n.r == ctrlC || n.r == ctrlD {
 				close(next)
 				return
@@ -152,8 +149,6 @@ func (s *State) readNext() (interface{}, error) {
 	}
 	s.pending = append(s.pending, r)
 
-	// Wait at most 50 ms for the rest of the escape sequence
-	// If nothing else arrives, it was an actual press of the esc key
 	timeout := time.After(50 * time.Millisecond)
 	flag, err := s.nextPending(timeout)
 	if err != nil {
@@ -174,25 +169,25 @@ func (s *State) readNext() (interface{}, error) {
 		}
 		switch code {
 		case 'A':
-			s.pending = s.pending[:0] // escape code complete
+			s.pending = s.pending[:0] 
 			return up, nil
 		case 'B':
-			s.pending = s.pending[:0] // escape code complete
+			s.pending = s.pending[:0] 
 			return down, nil
 		case 'C':
-			s.pending = s.pending[:0] // escape code complete
+			s.pending = s.pending[:0] 
 			return right, nil
 		case 'D':
-			s.pending = s.pending[:0] // escape code complete
+			s.pending = s.pending[:0] 
 			return left, nil
 		case 'F':
-			s.pending = s.pending[:0] // escape code complete
+			s.pending = s.pending[:0] 
 			return end, nil
 		case 'H':
-			s.pending = s.pending[:0] // escape code complete
+			s.pending = s.pending[:0] 
 			return home, nil
 		case 'Z':
-			s.pending = s.pending[:0] // escape code complete
+			s.pending = s.pending[:0] 
 			return shiftTab, nil
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			num := []rune{code}
@@ -208,11 +203,10 @@ func (s *State) readNext() (interface{}, error) {
 				case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 					num = append(num, code)
 				case ';':
-					// Modifier code to follow
-					// This only supports Ctrl-left and Ctrl-right for now
+
 					x, _ := strconv.ParseInt(string(num), 10, 32)
 					if x != 1 {
-						// Can't be left or right
+
 						rv := s.pending[0]
 						s.pending = s.pending[1:]
 						return rv, nil
@@ -232,28 +226,28 @@ func (s *State) readNext() (interface{}, error) {
 						case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 							num = append(num, code)
 						case 'C', 'D':
-							// right, left
+
 							mod, _ := strconv.ParseInt(string(num), 10, 32)
 							if mod != 5 {
-								// Not bare Ctrl
+
 								rv := s.pending[0]
 								s.pending = s.pending[1:]
 								return rv, nil
 							}
-							s.pending = s.pending[:0] // escape code complete
+							s.pending = s.pending[:0] 
 							if code == 'C' {
 								return wordRight, nil
 							}
 							return wordLeft, nil
 						default:
-							// Not left or right
+
 							rv := s.pending[0]
 							s.pending = s.pending[1:]
 							return rv, nil
 						}
 					}
 				case '~':
-					s.pending = s.pending[:0] // escape code complete
+					s.pending = s.pending[:0] 
 					x, _ := strconv.ParseInt(string(num), 10, 32)
 					switch x {
 					case 2:
@@ -288,7 +282,7 @@ func (s *State) readNext() (interface{}, error) {
 						return unknown, nil
 					}
 				default:
-					// unrecognized escape code
+
 					rv := s.pending[0]
 					s.pending = s.pending[1:]
 					return rv, nil
@@ -304,7 +298,7 @@ func (s *State) readNext() (interface{}, error) {
 			}
 			return nil, err
 		}
-		s.pending = s.pending[:0] // escape code complete
+		s.pending = s.pending[:0] 
 		switch code {
 		case 'c':
 			return wordRight, nil
@@ -326,13 +320,13 @@ func (s *State) readNext() (interface{}, error) {
 			return unknown, nil
 		}
 	case 'b':
-		s.pending = s.pending[:0] // escape code complete
+		s.pending = s.pending[:0] 
 		return altB, nil
 	case 'f':
-		s.pending = s.pending[:0] // escape code complete
+		s.pending = s.pending[:0] 
 		return altF, nil
 	case 'y':
-		s.pending = s.pending[:0] // escape code complete
+		s.pending = s.pending[:0] 
 		return altY, nil
 	default:
 		rv := s.pending[0]
@@ -340,11 +334,9 @@ func (s *State) readNext() (interface{}, error) {
 		return rv, nil
 	}
 
-	// not reached
 	return r, nil
 }
 
-// Close returns the terminal to its previous mode
 func (s *State) Close() error {
 	signal.Stop(s.winch)
 	if !s.inputRedirected {
@@ -353,11 +345,6 @@ func (s *State) Close() error {
 	return nil
 }
 
-// TerminalSupported returns true if the current terminal supports
-// line editing features, and false if liner will use the 'dumb'
-// fallback for input.
-// Note that TerminalSupported does not check all factors that may
-// cause liner to not fully support the terminal (such as stdin redirection)
 func TerminalSupported() bool {
 	bad := map[string]bool{"": true, "dumb": true, "cons25": true}
 	return !bad[strings.ToLower(os.Getenv("TERM"))]

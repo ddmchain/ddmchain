@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package ssh
 
 import (
@@ -13,26 +10,17 @@ import (
 	"sync/atomic"
 )
 
-// debugMux, if set, causes messages in the connection protocol to be
-// logged.
 const debugMux = false
 
-// chanList is a thread safe channel list.
 type chanList struct {
-	// protects concurrent access to chans
+
 	sync.Mutex
 
-	// chans are indexed by the local id of the channel, which the
-	// other side should send in the PeersId field.
 	chans []*channel
 
-	// This is a debugging aid: it offsets all IDs by this
-	// amount. This helps distinguish otherwise identical
-	// server/client muxes
 	offset uint32
 }
 
-// Assigns a channel ID to the given channel.
 func (c *chanList) add(ch *channel) uint32 {
 	c.Lock()
 	defer c.Unlock()
@@ -46,7 +34,6 @@ func (c *chanList) add(ch *channel) uint32 {
 	return uint32(len(c.chans)-1) + c.offset
 }
 
-// getChan returns the channel for the given ID.
 func (c *chanList) getChan(id uint32) *channel {
 	id -= c.offset
 
@@ -67,7 +54,6 @@ func (c *chanList) remove(id uint32) {
 	c.Unlock()
 }
 
-// dropAll forgets all channels it knows, returning them in a slice.
 func (c *chanList) dropAll() []*channel {
 	c.Lock()
 	defer c.Unlock()
@@ -83,8 +69,6 @@ func (c *chanList) dropAll() []*channel {
 	return r
 }
 
-// mux represents the state for the SSH connection protocol, which
-// multiplexes many channels onto a single packet transport.
 type mux struct {
 	conn     packetConn
 	chanList chanList
@@ -99,8 +83,6 @@ type mux struct {
 	err     error
 }
 
-// When debugging, each new chanList instantiation has a different
-// offset.
 var globalOff uint32
 
 func (m *mux) Wait() error {
@@ -112,7 +94,6 @@ func (m *mux) Wait() error {
 	return m.err
 }
 
-// newMux returns a mux that runs over the given connection.
 func newMux(p packetConn) *mux {
 	m := &mux{
 		conn:             p,
@@ -169,8 +150,6 @@ func (m *mux) SendRequest(name string, wantReply bool, payload []byte) (bool, []
 	}
 }
 
-// ackRequest must be called after processing a global request that
-// has WantReply set.
 func (m *mux) ackRequest(ok bool, data []byte) error {
 	if ok {
 		return m.sendMessage(globalRequestSuccessMsg{Data: data})
@@ -182,8 +161,6 @@ func (m *mux) Close() error {
 	return m.conn.Close()
 }
 
-// loop runs the connection machine. It will process packets until an
-// error is encountered. To synchronize on loop exit, use mux.Wait.
 func (m *mux) loop() {
 	var err error
 	for err == nil {
@@ -210,7 +187,6 @@ func (m *mux) loop() {
 	}
 }
 
-// onePacket reads and processes one packet.
 func (m *mux) onePacket() error {
 	packet, err := m.conn.readPacket()
 	if err != nil {
@@ -233,7 +209,6 @@ func (m *mux) onePacket() error {
 		return m.handleGlobalPacket(packet)
 	}
 
-	// assume a channel packet.
 	if len(packet) < 5 {
 		return parseError(packet[0])
 	}
@@ -269,7 +244,6 @@ func (m *mux) handleGlobalPacket(packet []byte) error {
 	return nil
 }
 
-// handleChannelOpen schedules a channel to be Accept()ed.
 func (m *mux) handleChannelOpen(packet []byte) error {
 	var msg channelOpenMsg
 	if err := Unmarshal(packet, &msg); err != nil {

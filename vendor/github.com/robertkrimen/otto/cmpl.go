@@ -8,7 +8,7 @@ import (
 type _file struct {
 	name string
 	src  string
-	base int // This will always be 1 or greater
+	base int 
 }
 
 type _compiler struct {

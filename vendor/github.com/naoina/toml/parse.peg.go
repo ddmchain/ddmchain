@@ -9,7 +9,6 @@ import (
 
 const endSymbol rune = 1114112
 
-/* The rule types inferred from the grammar are below. */
 type pegRule uint8
 
 const (
@@ -502,25 +501,9 @@ func (p *tomlParser) Init() {
 		return false
 	}
 
-	/*matchChar := func(c byte) bool {
-		if buffer[position] == c {
-			position++
-			return true
-		}
-		return false
-	}*/
-
-	/*matchRange := func(lower byte, upper byte) bool {
-		if c := buffer[position]; c >= lower && c <= upper {
-			position++
-			return true
-		}
-		return false
-	}*/
-
 	_rules = [...]func() bool{
 		nil,
-		/* 0 TOML <- <(Expression (newline Expression)* newline? !. Action0)> */
+
 		func() bool {
 			position0, tokenIndex0 := position, tokenIndex
 			{
@@ -570,7 +553,7 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position0, tokenIndex0
 			return false
 		},
-		/* 1 Expression <- <((<(ws table ws comment? (wsnl keyval ws comment?)*)> Action1) / (ws keyval ws comment?) / (ws comment?) / ws)> */
+
 		func() bool {
 			position8, tokenIndex8 := position, tokenIndex
 			{
@@ -754,7 +737,7 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position8, tokenIndex8
 			return false
 		},
-		/* 2 newline <- <(<('\r' / '\n')+> Action2)> */
+
 		func() bool {
 			position35, tokenIndex35 := position, tokenIndex
 			{
@@ -810,7 +793,7 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position35, tokenIndex35
 			return false
 		},
-		/* 3 ws <- <(' ' / '\t')*> */
+
 		func() bool {
 			{
 				position46 := position
@@ -840,7 +823,7 @@ func (p *tomlParser) Init() {
 			}
 			return true
 		},
-		/* 4 wsnl <- <((&('\t') '\t') | (&(' ') ' ') | (&('\n' | '\r') (<('\r' / '\n')> Action3)))*> */
+
 		func() bool {
 			{
 				position52 := position
@@ -896,7 +879,7 @@ func (p *tomlParser) Init() {
 			}
 			return true
 		},
-		/* 5 comment <- <('#' <('\t' / [ -\U0010ffff])*>)> */
+
 		func() bool {
 			position60, tokenIndex60 := position, tokenIndex
 			{
@@ -938,7 +921,7 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position60, tokenIndex60
 			return false
 		},
-		/* 6 keyval <- <(key ws '=' ws val Action4)> */
+
 		func() bool {
 			position67, tokenIndex67 := position, tokenIndex
 			{
@@ -969,7 +952,7 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position67, tokenIndex67
 			return false
 		},
-		/* 7 key <- <(bareKey / quotedKey)> */
+
 		func() bool {
 			position70, tokenIndex70 := position, tokenIndex
 			{
@@ -1108,11 +1091,11 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position70, tokenIndex70
 			return false
 		},
-		/* 8 bareKey <- <(<((&('_') '_') | (&('-') '-') | (&('a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z') [a-z]) | (&('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') [0-9]) | (&('A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N' | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z') [A-Z]))+> Action5)> */
+
 		nil,
-		/* 9 quotedKey <- <('"' <basicChar+> '"' Action6)> */
+
 		nil,
-		/* 10 val <- <((<datetime> Action7) / (<float> Action8) / ((&('{') inlineTable) | (&('[') (<array> Action12)) | (&('f' | 't') (<boolean> Action11)) | (&('"' | '\'') (<string> Action10)) | (&('+' | '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') (<integer> Action9))))> */
+
 		func() bool {
 			position88, tokenIndex88 := position, tokenIndex
 			{
@@ -1838,17 +1821,17 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position88, tokenIndex88
 			return false
 		},
-		/* 11 table <- <(stdTable / arrayTable)> */
+
 		nil,
-		/* 12 stdTable <- <('[' ws <tableKey> ws ']' Action13)> */
+
 		nil,
-		/* 13 arrayTable <- <('[' '[' ws <tableKey> ws (']' ']') Action14)> */
+
 		nil,
-		/* 14 inlineTable <- <('{' Action15 ws inlineTableKeyValues ws '}' Action16)> */
+
 		nil,
-		/* 15 inlineTableKeyValues <- <(keyval inlineTableValSep?)*> */
+
 		nil,
-		/* 16 tableKey <- <(key (tableKeySep key)*)> */
+
 		func() bool {
 			position204, tokenIndex204 := position, tokenIndex
 			{
@@ -1887,11 +1870,11 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position204, tokenIndex204
 			return false
 		},
-		/* 17 tableKeySep <- <(ws '.' ws)> */
+
 		nil,
-		/* 18 inlineTableValSep <- <(ws ',' ws)> */
+
 		nil,
-		/* 19 integer <- <(('-' / '+')? int)> */
+
 		func() bool {
 			position211, tokenIndex211 := position, tokenIndex
 			{
@@ -1984,11 +1967,11 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position211, tokenIndex211
 			return false
 		},
-		/* 20 int <- <(([1-9] (digit / ('_' digit))+) / digit)> */
+
 		nil,
-		/* 21 float <- <(integer ((frac exp?) / (frac? exp)))> */
+
 		nil,
-		/* 22 frac <- <('.' digit (digit / ('_' digit))*)> */
+
 		func() bool {
 			position228, tokenIndex228 := position, tokenIndex
 			{
@@ -2031,7 +2014,7 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position228, tokenIndex228
 			return false
 		},
-		/* 23 exp <- <(('e' / 'E') ('-' / '+')? digit (digit / ('_' digit))*)> */
+
 		func() bool {
 			position234, tokenIndex234 := position, tokenIndex
 			{
@@ -2107,11 +2090,11 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position234, tokenIndex234
 			return false
 		},
-		/* 24 string <- <(mlLiteralString / literalString / mlBasicString / basicString)> */
+
 		nil,
-		/* 25 basicString <- <(<('"' basicChar* '"')> Action17)> */
+
 		nil,
-		/* 26 basicChar <- <(basicUnescaped / escaped)> */
+
 		func() bool {
 			position248, tokenIndex248 := position, tokenIndex
 			{
@@ -2238,11 +2221,11 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position248, tokenIndex248
 			return false
 		},
-		/* 27 escaped <- <(escape ((&('U') ('U' hexQuad hexQuad)) | (&('u') ('u' hexQuad)) | (&('\\') '\\') | (&('/') '/') | (&('"') '"') | (&('r') 'r') | (&('f') 'f') | (&('n') 'n') | (&('t') 't') | (&('b') 'b')))> */
+
 		nil,
-		/* 28 basicUnescaped <- <((&(' ' | '!') [ -!]) | (&('#' | '$' | '%' | '&' | '\'' | '(' | ')' | '*' | '+' | ',' | '-' | '.' | '/' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | ':' | ';' | '<' | '=' | '>' | '?' | '@' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N' | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z' | '[') [#-[]) | (&(']' | '^' | '_' | '`' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z' | '{' | '|' | '}' | '~' | '\u007f' | '\u0080' | '\u0081' | '\u0082' | '\u0083' | '\u0084' | '\u0085' | '\u0086' | '\u0087' | '\u0088' | '\u0089' | '\u008a' | '\u008b' | '\u008c' | '\u008d' | '\u008e' | '\u008f' | '\u0090' | '\u0091' | '\u0092' | '\u0093' | '\u0094' | '\u0095' | '\u0096' | '\u0097' | '\u0098' | '\u0099' | '\u009a' | '\u009b' | '\u009c' | '\u009d' | '\u009e' | '\u009f' | '\u00a0' | '¡' | '¢' | '£' | '¤' | '¥' | '¦' | '§' | '¨' | '©' | 'ª' | '«' | '¬' | '\u00ad' | '®' | '¯' | '°' | '±' | '²' | '³' | '´' | 'µ' | '¶' | '·' | '¸' | '¹' | 'º' | '»' | '¼' | '½' | '¾' | '¿' | 'À' | 'Á' | 'Â' | 'Ã' | 'Ä' | 'Å' | 'Æ' | 'Ç' | 'È' | 'É' | 'Ê' | 'Ë' | 'Ì' | 'Í' | 'Î' | 'Ï' | 'Ð' | 'Ñ' | 'Ò' | 'Ó' | 'Ô' | 'Õ' | 'Ö' | '×' | 'Ø' | 'Ù' | 'Ú' | 'Û' | 'Ü' | 'Ý' | 'Þ' | 'ß' | 'à' | 'á' | 'â' | 'ã' | 'ä' | 'å' | 'æ' | 'ç' | 'è' | 'é' | 'ê' | 'ë' | 'ì' | 'í' | 'î' | 'ï' | 'ð' | 'ñ' | 'ò' | 'ó' | 'ô' | 'õ' | 'ö' | '÷' | 'ø' | 'ù' | 'ú' | 'û' | 'ü' | 'ý' | 'þ' | 'ÿ') []-\U0010ffff]))> */
+
 		nil,
-		/* 29 escape <- <'\\'> */
+
 		func() bool {
 			position258, tokenIndex258 := position, tokenIndex
 			{
@@ -2258,21 +2241,21 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position258, tokenIndex258
 			return false
 		},
-		/* 30 mlBasicString <- <('"' '"' '"' mlBasicBody ('"' '"' '"') Action18)> */
+
 		nil,
-		/* 31 mlBasicBody <- <((<(basicChar / newline)> Action19) / (escape newline wsnl))*> */
+
 		nil,
-		/* 32 literalString <- <('\'' <literalChar*> '\'' Action20)> */
+
 		nil,
-		/* 33 literalChar <- <((&('\t') '\t') | (&(' ' | '!' | '"' | '#' | '$' | '%' | '&') [ -&]) | (&('(' | ')' | '*' | '+' | ',' | '-' | '.' | '/' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | ':' | ';' | '<' | '=' | '>' | '?' | '@' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N' | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z' | '[' | '\\' | ']' | '^' | '_' | '`' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z' | '{' | '|' | '}' | '~' | '\u007f' | '\u0080' | '\u0081' | '\u0082' | '\u0083' | '\u0084' | '\u0085' | '\u0086' | '\u0087' | '\u0088' | '\u0089' | '\u008a' | '\u008b' | '\u008c' | '\u008d' | '\u008e' | '\u008f' | '\u0090' | '\u0091' | '\u0092' | '\u0093' | '\u0094' | '\u0095' | '\u0096' | '\u0097' | '\u0098' | '\u0099' | '\u009a' | '\u009b' | '\u009c' | '\u009d' | '\u009e' | '\u009f' | '\u00a0' | '¡' | '¢' | '£' | '¤' | '¥' | '¦' | '§' | '¨' | '©' | 'ª' | '«' | '¬' | '\u00ad' | '®' | '¯' | '°' | '±' | '²' | '³' | '´' | 'µ' | '¶' | '·' | '¸' | '¹' | 'º' | '»' | '¼' | '½' | '¾' | '¿' | 'À' | 'Á' | 'Â' | 'Ã' | 'Ä' | 'Å' | 'Æ' | 'Ç' | 'È' | 'É' | 'Ê' | 'Ë' | 'Ì' | 'Í' | 'Î' | 'Ï' | 'Ð' | 'Ñ' | 'Ò' | 'Ó' | 'Ô' | 'Õ' | 'Ö' | '×' | 'Ø' | 'Ù' | 'Ú' | 'Û' | 'Ü' | 'Ý' | 'Þ' | 'ß' | 'à' | 'á' | 'â' | 'ã' | 'ä' | 'å' | 'æ' | 'ç' | 'è' | 'é' | 'ê' | 'ë' | 'ì' | 'í' | 'î' | 'ï' | 'ð' | 'ñ' | 'ò' | 'ó' | 'ô' | 'õ' | 'ö' | '÷' | 'ø' | 'ù' | 'ú' | 'û' | 'ü' | 'ý' | 'þ' | 'ÿ') [(-\U0010ffff]))> */
+
 		nil,
-		/* 34 mlLiteralString <- <('\'' '\'' '\'' <mlLiteralBody> ('\'' '\'' '\'') Action21)> */
+
 		nil,
-		/* 35 mlLiteralBody <- <(!('\'' '\'' '\'') (mlLiteralChar / newline))*> */
+
 		nil,
-		/* 36 mlLiteralChar <- <('\t' / [ -\U0010ffff])> */
+
 		nil,
-		/* 37 hexdigit <- <((&('a' | 'b' | 'c' | 'd' | 'e' | 'f') [a-f]) | (&('A' | 'B' | 'C' | 'D' | 'E' | 'F') [A-F]) | (&('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') [0-9]))> */
+
 		func() bool {
 			position267, tokenIndex267 := position, tokenIndex
 			{
@@ -2307,7 +2290,7 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position267, tokenIndex267
 			return false
 		},
-		/* 38 hexQuad <- <(hexdigit hexdigit hexdigit hexdigit)> */
+
 		func() bool {
 			position270, tokenIndex270 := position, tokenIndex
 			{
@@ -2331,15 +2314,15 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position270, tokenIndex270
 			return false
 		},
-		/* 39 boolean <- <(('t' 'r' 'u' 'e') / ('f' 'a' 'l' 's' 'e'))> */
+
 		nil,
-		/* 40 dateFullYear <- <digitQuad> */
+
 		nil,
-		/* 41 dateMonth <- <digitDual> */
+
 		nil,
-		/* 42 dateMDay <- <digitDual> */
+
 		nil,
-		/* 43 timeHour <- <digitDual> */
+
 		func() bool {
 			position276, tokenIndex276 := position, tokenIndex
 			{
@@ -2354,7 +2337,7 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position276, tokenIndex276
 			return false
 		},
-		/* 44 timeMinute <- <digitDual> */
+
 		func() bool {
 			position278, tokenIndex278 := position, tokenIndex
 			{
@@ -2369,15 +2352,15 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position278, tokenIndex278
 			return false
 		},
-		/* 45 timeSecond <- <digitDual> */
+
 		nil,
-		/* 46 timeSecfrac <- <('.' digit+)> */
+
 		nil,
-		/* 47 timeNumoffset <- <(('-' / '+') timeHour ':' timeMinute)> */
+
 		nil,
-		/* 48 timeOffset <- <('Z' / timeNumoffset)> */
+
 		nil,
-		/* 49 partialTime <- <(timeHour ':' timeMinute ':' timeSecond timeSecfrac?)> */
+
 		func() bool {
 			position284, tokenIndex284 := position, tokenIndex
 			{
@@ -2438,13 +2421,13 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position284, tokenIndex284
 			return false
 		},
-		/* 50 fullDate <- <(dateFullYear '-' dateMonth '-' dateMDay)> */
+
 		nil,
-		/* 51 fullTime <- <(partialTime timeOffset)> */
+
 		nil,
-		/* 52 datetime <- <((fullDate ('T' fullTime)?) / partialTime)> */
+
 		nil,
-		/* 53 digit <- <[0-9]> */
+
 		func() bool {
 			position295, tokenIndex295 := position, tokenIndex
 			{
@@ -2460,7 +2443,7 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position295, tokenIndex295
 			return false
 		},
-		/* 54 digitDual <- <(digit digit)> */
+
 		func() bool {
 			position297, tokenIndex297 := position, tokenIndex
 			{
@@ -2478,13 +2461,13 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position297, tokenIndex297
 			return false
 		},
-		/* 55 digitQuad <- <(digitDual digitDual)> */
+
 		nil,
-		/* 56 array <- <('[' Action22 wsnl arrayValues? wsnl ']')> */
+
 		nil,
-		/* 57 arrayValues <- <(val Action23 (wsnl comment? wsnl arraySep wsnl comment? wsnl val Action24)* wsnl arraySep? wsnl comment?)> */
+
 		nil,
-		/* 58 arraySep <- <','> */
+
 		func() bool {
 			position302, tokenIndex302 := position, tokenIndex
 			{
@@ -2500,56 +2483,56 @@ func (p *tomlParser) Init() {
 			position, tokenIndex = position302, tokenIndex302
 			return false
 		},
-		/* 60 Action0 <- <{ _ = buffer }> */
+
 		nil,
 		nil,
-		/* 62 Action1 <- <{ p.SetTableString(begin, end) }> */
+
 		nil,
-		/* 63 Action2 <- <{ p.AddLineCount(end - begin) }> */
+
 		nil,
-		/* 64 Action3 <- <{ p.AddLineCount(end - begin) }> */
+
 		nil,
-		/* 65 Action4 <- <{ p.AddKeyValue() }> */
+
 		nil,
-		/* 66 Action5 <- <{ p.SetKey(p.buffer, begin, end) }> */
+
 		nil,
-		/* 67 Action6 <- <{ p.SetKey(p.buffer, begin-1, end+1) }> */
+
 		nil,
-		/* 68 Action7 <- <{ p.SetTime(begin, end) }> */
+
 		nil,
-		/* 69 Action8 <- <{ p.SetFloat64(begin, end) }> */
+
 		nil,
-		/* 70 Action9 <- <{ p.SetInt64(begin, end) }> */
+
 		nil,
-		/* 71 Action10 <- <{ p.SetString(begin, end) }> */
+
 		nil,
-		/* 72 Action11 <- <{ p.SetBool(begin, end) }> */
+
 		nil,
-		/* 73 Action12 <- <{ p.SetArray(begin, end) }> */
+
 		nil,
-		/* 74 Action13 <- <{ p.SetTable(p.buffer, begin, end) }> */
+
 		nil,
-		/* 75 Action14 <- <{ p.SetArrayTable(p.buffer, begin, end) }> */
+
 		nil,
-		/* 76 Action15 <- <{ p.StartInlineTable() }> */
+
 		nil,
-		/* 77 Action16 <- <{ p.EndInlineTable() }> */
+
 		nil,
-		/* 78 Action17 <- <{ p.SetBasicString(p.buffer, begin, end) }> */
+
 		nil,
-		/* 79 Action18 <- <{ p.SetMultilineString() }> */
+
 		nil,
-		/* 80 Action19 <- <{ p.AddMultilineBasicBody(p.buffer, begin, end) }> */
+
 		nil,
-		/* 81 Action20 <- <{ p.SetLiteralString(p.buffer, begin, end) }> */
+
 		nil,
-		/* 82 Action21 <- <{ p.SetMultilineLiteralString(p.buffer, begin, end) }> */
+
 		nil,
-		/* 83 Action22 <- <{ p.StartArray() }> */
+
 		nil,
-		/* 84 Action23 <- <{ p.AddArrayVal() }> */
+
 		nil,
-		/* 85 Action24 <- <{ p.AddArrayVal() }> */
+
 		nil,
 	}
 	p.rules = _rules

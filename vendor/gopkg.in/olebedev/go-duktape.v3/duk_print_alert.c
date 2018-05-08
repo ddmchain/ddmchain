@@ -1,27 +1,17 @@
-/*
- *  Duktape 1.x compatible print() and alert() bindings.
- */
 
 #include <stdio.h>
 #include <string.h>
 #include "duktape.h"
 #include "duk_print_alert.h"
 
-#define DUK_PRINT_ALERT_FLUSH   /* Flush after stdout/stderr write (Duktape 1.x: yes) */
-#undef DUK_PRINT_ALERT_SMALL    /* Prefer smaller footprint (but slower and more memory churn) */
+#define DUK_PRINT_ALERT_FLUSH   
+#undef DUK_PRINT_ALERT_SMALL    
 
 #if defined(DUK_PRINT_ALERT_SMALL)
 static duk_ret_t duk__print_alert_helper(duk_context *ctx, FILE *fh) {
 	duk_idx_t nargs;
 
 	nargs = duk_get_top(ctx);
-
-	/* If argument count is 1 and first argument is a buffer, write the buffer
-	 * as raw data into the file without a newline; this allows exact control
-	 * over stdout/stderr without an additional entrypoint (useful for now).
-	 * Otherwise current print/alert semantics are to ToString() coerce
-	 * arguments, join them with a single space, and append a newline.
-	 */
 
 	if (nargs == 1 && duk_is_buffer(ctx, 0)) {
 		buf = (const duk_uint8_t *) duk_get_buffer(ctx, 0, &sz_buf);
@@ -40,7 +30,7 @@ static duk_ret_t duk__print_alert_helper(duk_context *ctx, FILE *fh) {
 	return 0;
 }
 #else
-/* Faster, less churn, higher footprint option. */
+
 static duk_ret_t duk__print_alert_helper(duk_context *ctx, FILE *fh) {
 	duk_idx_t nargs;
 	const duk_uint8_t *buf;
@@ -50,13 +40,6 @@ static duk_ret_t duk__print_alert_helper(duk_context *ctx, FILE *fh) {
 
 	nargs = duk_get_top(ctx);
 
-	/* If argument count is 1 and first argument is a buffer, write the buffer
-	 * as raw data into the file without a newline; this allows exact control
-	 * over stdout/stderr without an additional entrypoint (useful for now).
-	 * Otherwise current print/alert semantics are to ToString() coerce
-	 * arguments, join them with a single space, and append a newline.
-	 */
-
 	if (nargs == 1 && duk_is_buffer(ctx, 0)) {
 		buf = (const duk_uint8_t *) duk_get_buffer(ctx, 0, &sz_buf);
 	} else if (nargs > 0) {
@@ -65,7 +48,7 @@ static duk_ret_t duk__print_alert_helper(duk_context *ctx, FILE *fh) {
 		const duk_uint8_t *p_str;
 		duk_uint8_t *p;
 
-		sz_buf = (duk_size_t) nargs;  /* spaces (nargs - 1) + newline */
+		sz_buf = (duk_size_t) nargs;  
 		for (i = 0; i < nargs; i++) {
 			(void) duk_to_lstring(ctx, i, &sz_str);
 			sz_buf += sz_str;
@@ -89,10 +72,6 @@ static duk_ret_t duk__print_alert_helper(duk_context *ctx, FILE *fh) {
 		sz_buf = 1;
 	}
 
-	/* 'buf' contains the string to write, 'sz_buf' contains the length
-	 * (which may be zero).
-	 */
-
 	if (sz_buf > 0) {
 		fwrite((const void *) buf, 1, (size_t) sz_buf, fh);
 #if defined(DUK_PRINT_ALERT_FLUSH)
@@ -113,9 +92,8 @@ static duk_ret_t duk__alert(duk_context *ctx) {
 }
 
 void duk_print_alert_init(duk_context *ctx, duk_uint_t flags) {
-	(void) flags;  /* unused at the moment */
+	(void) flags;  
 
-	/* XXX: use duk_def_prop_list(). */
 	duk_push_global_object(ctx);
 	duk_push_string(ctx, "print");
 	duk_push_c_function(ctx, duk__print, DUK_VARARGS);

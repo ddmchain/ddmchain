@@ -1,5 +1,3 @@
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
 
 package uuid
 
@@ -9,28 +7,24 @@ import (
 	"time"
 )
 
-// A Time represents a time as the number of 100's of nanoseconds since 15 Oct
-// 1582.
 type Time int64
 
 const (
-	lillian    = 2299160          // Julian day of 15 Oct 1582
-	unix       = 2440587          // Julian day of 1 Jan 1970
-	epoch      = unix - lillian   // Days between epochs
-	g1582      = epoch * 86400    // seconds between epochs
-	g1582ns100 = g1582 * 10000000 // 100s of a nanoseconds between epochs
+	lillian    = 2299160          
+	unix       = 2440587          
+	epoch      = unix - lillian   
+	g1582      = epoch * 86400    
+	g1582ns100 = g1582 * 10000000 
 )
 
 var (
 	timeMu    sync.Mutex
-	lasttime  uint64 // last time we returned
-	clock_seq uint16 // clock sequence for this run
+	lasttime  uint64 
+	clock_seq uint16 
 
-	timeNow = time.Now // for testing
+	timeNow = time.Now 
 )
 
-// UnixTime converts t the number of seconds and nanoseconds using the Unix
-// epoch of 1 Jan 1970.
 func (t Time) UnixTime() (sec, nsec int64) {
 	sec = int64(t - g1582ns100)
 	nsec = (sec % 10000000) * 100
@@ -38,9 +32,6 @@ func (t Time) UnixTime() (sec, nsec int64) {
 	return sec, nsec
 }
 
-// GetTime returns the current Time (100s of nanoseconds since 15 Oct 1582) and
-// clock sequence as well as adjusting the clock sequence as needed.  An error
-// is returned if the current time cannot be determined.
 func GetTime() (Time, uint16, error) {
 	defer timeMu.Unlock()
 	timeMu.Lock()
@@ -50,14 +41,11 @@ func GetTime() (Time, uint16, error) {
 func getTime() (Time, uint16, error) {
 	t := timeNow()
 
-	// If we don't have a clock sequence already, set one.
 	if clock_seq == 0 {
 		setClockSequence(-1)
 	}
 	now := uint64(t.UnixNano()/100) + g1582ns100
 
-	// If time has gone backwards with this clock sequence then we
-	// increment the clock sequence
 	if now <= lasttime {
 		clock_seq = ((clock_seq + 1) & 0x3fff) | 0x8000
 	}
@@ -65,14 +53,6 @@ func getTime() (Time, uint16, error) {
 	return Time(now), clock_seq, nil
 }
 
-// ClockSequence returns the current clock sequence, generating one if not
-// already set.  The clock sequence is only used for Version 1 UUIDs.
-//
-// The uuid package does not use global static storage for the clock sequence or
-// the last time a UUID was generated.  Unless SetClockSequence a new random
-// clock sequence is generated the first time a clock sequence is requested by
-// ClockSequence, GetTime, or NewUUID.  (section 4.2.1.1) sequence is generated
-// for
 func ClockSequence() int {
 	defer timeMu.Unlock()
 	timeMu.Lock()
@@ -86,8 +66,6 @@ func clockSequence() int {
 	return int(clock_seq & 0x3fff)
 }
 
-// SetClockSeq sets the clock sequence to the lower 14 bits of seq.  Setting to
-// -1 causes a new sequence to be generated.
 func SetClockSequence(seq int) {
 	defer timeMu.Unlock()
 	timeMu.Lock()
@@ -97,19 +75,16 @@ func SetClockSequence(seq int) {
 func setClockSequence(seq int) {
 	if seq == -1 {
 		var b [2]byte
-		randomBits(b[:]) // clock sequence
+		randomBits(b[:]) 
 		seq = int(b[0])<<8 | int(b[1])
 	}
 	old_seq := clock_seq
-	clock_seq = uint16(seq&0x3fff) | 0x8000 // Set our variant
+	clock_seq = uint16(seq&0x3fff) | 0x8000 
 	if old_seq != clock_seq {
 		lasttime = 0
 	}
 }
 
-// Time returns the time in 100s of nanoseconds since 15 Oct 1582 encoded in
-// uuid.  It returns false if uuid is not valid.  The time is only well defined
-// for version 1 and 2 UUIDs.
 func (uuid UUID) Time() (Time, bool) {
 	if len(uuid) != 16 {
 		return 0, false
@@ -120,9 +95,6 @@ func (uuid UUID) Time() (Time, bool) {
 	return Time(time), true
 }
 
-// ClockSequence returns the clock sequence encoded in uuid.  It returns false
-// if uuid is not valid.  The clock sequence is only well defined for version 1
-// and 2 UUIDs.
 func (uuid UUID) ClockSequence() (int, bool) {
 	if len(uuid) != 16 {
 		return 0, false

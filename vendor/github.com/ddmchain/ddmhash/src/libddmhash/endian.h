@@ -39,12 +39,11 @@
 #include <endian.h>
 #define ddmhash_swap_u32(input_) swap32(input_)
 #define ddmhash_swap_u64(input_) swap64(input_)
-#else // posix
+#else 
 #include <byteswap.h>
 #define ddmhash_swap_u32(input_) bswap_32(input_)
 #define ddmhash_swap_u64(input_) bswap_64(input_)
 #endif
-
 
 #if LITTLE_ENDIAN == BYTE_ORDER
 
@@ -75,4 +74,4 @@
   } while (0)
 #else
 # error "endian not supported"
-#endif // BYTE_ORDER
+#endif 

@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by the MIT license that can be
-// found in the LICENSE file.
-
 // +build windows
 
 package notify
@@ -12,26 +9,19 @@ import (
 	"syscall"
 )
 
-// Platform independent event values.
 const (
 	osSpecificCreate Event = 1 << (20 + iota)
 	osSpecificRemove
 	osSpecificWrite
 	osSpecificRename
-	// recursive is used to distinguish recursive eventsets from non-recursive ones
+
 	recursive
-	// omit is used for dispatching internal events; only those events are sent
-	// for which both the event and the watchpoint has omit in theirs event sets.
+
 	omit
-	// dirmarker TODO(pknap)
+
 	dirmarker
 )
 
-// ReadDirectoryChangesW filters
-// On Windows the following events can be passed to Watch. A different set of
-// events (see actions below) are received on the channel passed to Watch.
-// For more information refer to
-// https://msdn.microsoft.com/en-us/library/windows/desktop/aa365465(v=vs.85).aspx
 const (
 	FileNotifyChangeFileName   = Event(syscall.FILE_NOTIFY_CHANGE_FILE_NAME)
 	FileNotifyChangeDirName    = Event(syscall.FILE_NOTIFY_CHANGE_DIR_NAME)
@@ -44,21 +34,12 @@ const (
 )
 
 const (
-	fileNotifyChangeAll      = 0x17f // logical sum of all FileNotifyChange* events.
+	fileNotifyChangeAll      = 0x17f 
 	fileNotifyChangeModified = fileNotifyChangeAll &^ (FileNotifyChangeFileName | FileNotifyChangeDirName)
 )
 
-// according to: http://msdn.microsoft.com/en-us/library/windows/desktop/aa365465(v=vs.85).aspx
-// this flag should be declared in: http://golang.org/src/pkg/syscall/ztypes_windows.go
 const syscallFileNotifyChangeSecurity = 0x00000100
 
-// ReadDirectoryChangesW actions
-// The following events are returned on the channel passed to Watch, but cannot
-// be passed to Watch itself (see filters above). You can find a table showing
-// the relation between actions and filteres at
-// https://github.com/rjeczalik/notify/issues/10#issuecomment-66179535
-// The msdn documentation on actions is part of
-// https://msdn.microsoft.com/en-us/library/windows/desktop/aa364391(v=vs.85).aspx
 const (
 	FileActionAdded          = Event(syscall.FILE_ACTION_ADDED) << 12
 	FileActionRemoved        = Event(syscall.FILE_ACTION_REMOVED) << 12
@@ -67,7 +48,7 @@ const (
 	FileActionRenamedNewName = Event(syscall.FILE_ACTION_RENAMED_NEW_NAME) << 16
 )
 
-const fileActionAll = 0x7f000 // logical sum of all FileAction* events.
+const fileActionAll = 0x7f000 
 
 var osestr = map[Event]string{
 	FileNotifyChangeFileName:   "notify.FileNotifyChangeFileName",
@@ -92,7 +73,6 @@ const (
 	fTypeDirectory
 )
 
-// TODO(ppknap) : doc.
 type event struct {
 	pathw  []uint16
 	name   string

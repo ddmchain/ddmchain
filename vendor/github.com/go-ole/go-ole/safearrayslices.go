@@ -25,7 +25,7 @@ func safeArrayFromStringSlice(slice []string) *SafeArray {
 	if array == nil {
 		panic("Could not convert []string to SAFEARRAY")
 	}
-	// SysAllocStringLen(s)
+
 	for i, v := range slice {
 		safeArrayPutElement(array, int64(i), uintptr(unsafe.Pointer(SysAllocStringLen(v))))
 	}

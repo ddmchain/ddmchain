@@ -16,10 +16,6 @@ func (mode *termios) ApplyMode() error {
 	return nil
 }
 
-// TerminalMode returns the current terminal input mode as an InputModeSetter.
-//
-// This function is provided for convenience, and should
-// not be necessary for most users of liner.
 func TerminalMode() (ModeApplier, error) {
 	mode, errno := getMode(syscall.Stdin)
 

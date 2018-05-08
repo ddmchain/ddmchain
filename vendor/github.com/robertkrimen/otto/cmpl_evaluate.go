@@ -20,11 +20,6 @@ func (self *_runtime) cmpl_evaluate_nodeProgram(node *_nodeProgram, eval bool) V
 func (self *_runtime) cmpl_call_nodeFunction(function *_object, stash *_fnStash, node *_nodeFunctionLiteral, this Value, argumentList []Value) Value {
 
 	indexOfParameterName := make([]string, len(argumentList))
-	// function(abc, def, ghi)
-	// indexOfParameterName[0] = "abc"
-	// indexOfParameterName[1] = "def"
-	// indexOfParameterName[2] = "ghi"
-	// ...
 
 	argumentsFound := false
 	for index, name := range node.parameterList {
@@ -36,7 +31,7 @@ func (self *_runtime) cmpl_call_nodeFunction(function *_object, stash *_fnStash,
 			value = argumentList[index]
 			indexOfParameterName[index] = name
 		}
-		// strict = false
+
 		self.scope.lexical.setValue(name, value, false)
 	}
 
@@ -44,7 +39,7 @@ func (self *_runtime) cmpl_call_nodeFunction(function *_object, stash *_fnStash,
 		arguments := self.newArgumentsObject(indexOfParameterName, stash, len(argumentList))
 		arguments.defineProperty("callee", toValue_object(function), 0101, false)
 		stash.arguments = arguments
-		// strict = false
+
 		self.scope.lexical.setValue("arguments", toValue_object(arguments), false)
 		for index, _ := range argumentList {
 			if index < len(node.parameterList) {
@@ -77,8 +72,8 @@ func (self *_runtime) cmpl_functionDeclaration(list []*_nodeFunctionLiteral) {
 		if !stash.hasBinding(name) {
 			stash.createBinding(name, eval == true, value)
 		} else {
-			// TODO 10.5.5.e
-			stash.setBinding(name, value, false) // TODO strict
+
+			stash.setBinding(name, value, false) 
 		}
 	}
 }
@@ -90,7 +85,7 @@ func (self *_runtime) cmpl_variableDeclaration(list []string) {
 
 	for _, name := range list {
 		if !stash.hasBinding(name) {
-			stash.createBinding(name, eval == true, Value{}) // TODO strict?
+			stash.createBinding(name, eval == true, Value{}) 
 		}
 	}
 }

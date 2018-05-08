@@ -5,8 +5,6 @@ import (
 	"math/rand"
 )
 
-// Math
-
 func builtinMath_abs(call FunctionCall) Value {
 	number := call.Argument(0).float64()
 	return toValue_float64(math.Abs(number))
@@ -107,7 +105,7 @@ func builtinMath_min(call FunctionCall) Value {
 }
 
 func builtinMath_pow(call FunctionCall) Value {
-	// TODO Make sure this works according to the specification (15.8.2.13)
+
 	x := call.Argument(0).float64()
 	y := call.Argument(1).float64()
 	if math.Abs(x) == 1 && math.IsInf(y, 0) {

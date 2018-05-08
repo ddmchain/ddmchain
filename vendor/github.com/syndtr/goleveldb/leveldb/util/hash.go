@@ -1,18 +1,12 @@
 
-// All rights reserved.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package util
 
 import (
 	"encoding/binary"
 )
 
-// Hash return hash of the given data.
 func Hash(data []byte, seed uint32) uint32 {
-	// Similar to murmur hash
+
 	const (
 		m = uint32(0xc6a4a793)
 		r = uint32(24)

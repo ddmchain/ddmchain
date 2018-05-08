@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package simplifiedchinese
 
 import (
@@ -14,7 +11,6 @@ import (
 	"golang.org/x/text/transform"
 )
 
-// HZGB2312 is the HZ-GB2312 encoding.
 var HZGB2312 encoding.Encoding = &hzGB2312
 
 var hzGB2312 = internal.Encoding{
@@ -128,7 +124,6 @@ func (e *hzGB2312Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int
 	for ; nSrc < len(src); nSrc += size {
 		r = rune(src[nSrc])
 
-		// Decode a 1-byte rune.
 		if r < utf8.RuneSelf {
 			size = 1
 			if r == '~' {
@@ -159,19 +154,15 @@ func (e *hzGB2312Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int
 
 		}
 
-		// Decode a multi-byte rune.
 		r, size = utf8.DecodeRune(src[nSrc:])
 		if size == 1 {
-			// All valid runes of size 1 (those below utf8.RuneSelf) were
-			// handled above. We have invalid UTF-8 or we haven't seen the
-			// full character yet.
+
 			if !atEOF && !utf8.FullRune(src[nSrc:]) {
 				err = transform.ErrShortSrc
 				break
 			}
 		}
 
-		// func init checks that the switch covers all tables.
 		switch {
 		case encode0Low <= r && r < encode0High:
 			if r = rune(encode0[r-encode0Low]); r != 0 {
@@ -196,8 +187,7 @@ func (e *hzGB2312Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int
 		}
 
 	terminateInASCIIState:
-		// Switch back to ASCII state in case of error so that an ASCII
-		// replacement character can be written in the correct state.
+
 		if *e != asciiState {
 			if nDst+2 > len(dst) {
 				err = transform.ErrShortDst
@@ -234,7 +224,6 @@ func (e *hzGB2312Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int
 		nDst += 2
 		continue
 	}
-	// TODO: should one always terminate in ASCII state to make it safe to
-	// concatenate two HZ-GB2312-encoded strings?
+
 	return nDst, nSrc, err
 }

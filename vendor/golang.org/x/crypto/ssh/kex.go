@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package ssh
 
 import (
@@ -26,32 +23,21 @@ const (
 	kexAlgoCurve25519SHA256 = "curve25519-sha256@libssh.org"
 )
 
-// kexResult captures the outcome of a key exchange.
 type kexResult struct {
-	// Session hash. See also RFC 4253, section 8.
+
 	H []byte
 
-	// Shared secret. See also RFC 4253, section 8.
 	K []byte
 
-	// Host key as hashed into H.
 	HostKey []byte
 
-	// Signature of H.
 	Signature []byte
 
-	// A cryptographic hash function that matches the security
-	// level of the key exchange algorithm. It is used for
-	// calculating H, and for deriving keys from H and K.
 	Hash crypto.Hash
 
-	// The session ID, which is the first H computed. This is used
-	// to derive key material inside the transport.
 	SessionID []byte
 }
 
-// handshakeMagics contains data that is always included in the
-// session hash.
 type handshakeMagics struct {
 	clientVersion, serverVersion []byte
 	clientKexInit, serverKexInit []byte
@@ -64,18 +50,13 @@ func (m *handshakeMagics) write(w io.Writer) {
 	writeString(w, m.serverKexInit)
 }
 
-// kexAlgorithm abstracts different key exchange algorithms.
 type kexAlgorithm interface {
-	// Server runs server-side key agreement, signing the result
-	// with a hostkey.
+
 	Server(p packetConn, rand io.Reader, magics *handshakeMagics, s Signer) (*kexResult, error)
 
-	// Client runs the client-side key agreement. Caller is
-	// responsible for verifying the host key signature.
 	Client(p packetConn, rand io.Reader, magics *handshakeMagics) (*kexResult, error)
 }
 
-// dhGroup is a multiplicative group suitable for implementing Diffie-Hellman key agreement.
 type dhGroup struct {
 	g, p, pMinus1 *big.Int
 }
@@ -183,8 +164,6 @@ func (group *dhGroup) Server(c packetConn, randSource io.Reader, magics *handsha
 
 	H := h.Sum(nil)
 
-	// H is already a hash, but the hostkey signing will apply its
-	// own key-specific hash algorithm.
 	sig, err := signAndMarshal(priv, randSource, H)
 	if err != nil {
 		return nil, err
@@ -207,8 +186,6 @@ func (group *dhGroup) Server(c packetConn, randSource io.Reader, magics *handsha
 	}, nil
 }
 
-// ecdh performs Elliptic Curve Diffie-Hellman key exchange as
-// described in RFC 5656, section 4.
 type ecdh struct {
 	curve elliptic.Curve
 }
@@ -243,7 +220,6 @@ func (kex *ecdh) Client(c packetConn, rand io.Reader, magics *handshakeMagics) (
 		return nil, err
 	}
 
-	// generate shared secret
 	secret, _ := kex.curve.ScalarMult(x, y, ephKey.D.Bytes())
 
 	h := ecHash(kex.curve).New()
@@ -264,7 +240,6 @@ func (kex *ecdh) Client(c packetConn, rand io.Reader, magics *handshakeMagics) (
 	}, nil
 }
 
-// unmarshalECKey parses and checks an EC key.
 func unmarshalECKey(curve elliptic.Curve, pubkey []byte) (x, y *big.Int, err error) {
 	x, y = elliptic.Unmarshal(curve, pubkey)
 	if x == nil {
@@ -276,8 +251,6 @@ func unmarshalECKey(curve elliptic.Curve, pubkey []byte) (x, y *big.Int, err err
 	return x, y, nil
 }
 
-// validateECPublicKey checks that the point is a valid public key for
-// the given curve. See [SEC1], 3.2.2
 func validateECPublicKey(curve elliptic.Curve, x, y *big.Int) bool {
 	if x.Sign() == 0 && y.Sign() == 0 {
 		return false
@@ -295,14 +268,6 @@ func validateECPublicKey(curve elliptic.Curve, x, y *big.Int) bool {
 		return false
 	}
 
-	// We don't check if N * PubKey == 0, since
-	//
-	// - the NIST curves have cofactor = 1, so this is implicit.
-	// (We don't foresee an implementation that supports non NIST
-	// curves)
-	//
-	// - for ephemeral keys, we don't need to worry about small
-	// subgroup attacks.
 	return true
 }
 
@@ -322,9 +287,6 @@ func (kex *ecdh) Server(c packetConn, rand io.Reader, magics *handshakeMagics, p
 		return nil, err
 	}
 
-	// We could cache this key across multiple users/multiple
-	// connection attempts, but the benefit is small. OpenSSH
-	// generates a new key for each incoming connection.
 	ephKey, err := ecdsa.GenerateKey(kex.curve, rand)
 	if err != nil {
 		return nil, err
@@ -334,7 +296,6 @@ func (kex *ecdh) Server(c packetConn, rand io.Reader, magics *handshakeMagics, p
 
 	serializedEphKey := elliptic.Marshal(kex.curve, ephKey.PublicKey.X, ephKey.PublicKey.Y)
 
-	// generate shared secret
 	secret, _ := kex.curve.ScalarMult(clientX, clientY, ephKey.D.Bytes())
 
 	h := ecHash(kex.curve).New()
@@ -349,8 +310,6 @@ func (kex *ecdh) Server(c packetConn, rand io.Reader, magics *handshakeMagics, p
 
 	H := h.Sum(nil)
 
-	// H is already a hash, but the hostkey signing will apply its
-	// own key-specific hash algorithm.
 	sig, err := signAndMarshal(priv, rand, H)
 	if err != nil {
 		return nil, err
@@ -379,8 +338,7 @@ func (kex *ecdh) Server(c packetConn, rand io.Reader, magics *handshakeMagics, p
 var kexAlgoMap = map[string]kexAlgorithm{}
 
 func init() {
-	// This is the group called diffie-hellman-group1-sha1 in RFC
-	// 4253 and Oakley Group 2 in RFC 2409.
+
 	p, _ := new(big.Int).SetString("FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE65381FFFFFFFFFFFFFFFF", 16)
 	kexAlgoMap[kexAlgoDH1SHA1] = &dhGroup{
 		g:       new(big.Int).SetInt64(2),
@@ -388,8 +346,6 @@ func init() {
 		pMinus1: new(big.Int).Sub(p, bigOne),
 	}
 
-	// This is the group called diffie-hellman-group14-sha1 in RFC
-	// 4253 and Oakley Group 14 in RFC 3526.
 	p, _ = new(big.Int).SetString("FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF", 16)
 
 	kexAlgoMap[kexAlgoDH14SHA1] = &dhGroup{
@@ -404,9 +360,6 @@ func init() {
 	kexAlgoMap[kexAlgoCurve25519SHA256] = &curve25519sha256{}
 }
 
-// curve25519sha256 implements the curve25519-sha256@libssh.org key
-// agreement protocol, as described in
-// https://git.libssh.org/projects/libssh.git/tree/doc/curve25519-sha256@libssh.org.txt
 type curve25519sha256 struct{}
 
 type curve25519KeyPair struct {
@@ -422,9 +375,6 @@ func (kp *curve25519KeyPair) generate(rand io.Reader) error {
 	return nil
 }
 
-// curve25519Zeros is just an array of 32 zero bytes so that we have something
-// convenient to compare against in order to reject curve25519 points with the
-// wrong order.
 var curve25519Zeros [32]byte
 
 func (kex *curve25519sha256) Client(c packetConn, rand io.Reader, magics *handshakeMagics) (*kexResult, error) {

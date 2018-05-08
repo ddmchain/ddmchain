@@ -9,8 +9,6 @@ import (
 	"github.com/robertkrimen/otto/parser"
 )
 
-// Function
-
 func builtinFunction(call FunctionCall) Value {
 	return toValue_object(builtinNewFunctionNative(call.runtime, call.ArgumentList))
 }
@@ -44,9 +42,8 @@ func builtinNewFunctionNative(runtime *_runtime, argumentList []Value) *_object 
 		body = argumentList[count-1].string()
 	}
 
-	// FIXME
 	function, err := parser.ParseFunction(parameterList, body)
-	runtime.parseThrow(err) // Will panic/throw appropriately
+	runtime.parseThrow(err) 
 	cmpl := _compiler{}
 	cmpl_function := cmpl.parseExpression(function)
 
@@ -54,7 +51,7 @@ func builtinNewFunctionNative(runtime *_runtime, argumentList []Value) *_object 
 }
 
 func builtinFunction_toString(call FunctionCall) Value {
-	object := call.thisClassObject("Function") // Should throw a TypeError unless Function
+	object := call.thisClassObject("Function") 
 	switch fn := object.value.(type) {
 	case _nativeFunctionObject:
 		return toValue_string(fmt.Sprintf("function %s() { [native code] }", fn.name))
@@ -73,7 +70,7 @@ func builtinFunction_apply(call FunctionCall) Value {
 	}
 	this := call.Argument(0)
 	if this.IsUndefined() {
-		// FIXME Not ECMA5
+
 		this = toValue_object(call.runtime.globalObject)
 	}
 	argumentList := call.Argument(1)
@@ -102,7 +99,7 @@ func builtinFunction_call(call FunctionCall) Value {
 	thisObject := call.thisObject()
 	this := call.Argument(0)
 	if this.IsUndefined() {
-		// FIXME Not ECMA5
+
 		this = toValue_object(call.runtime.globalObject)
 	}
 	if len(call.ArgumentList) >= 1 {
@@ -121,7 +118,7 @@ func builtinFunction_bind(call FunctionCall) Value {
 	this := call.Argument(0)
 	argumentList := call.slice(1)
 	if this.IsUndefined() {
-		// FIXME Do this elsewhere?
+
 		this = toValue_object(call.runtime.globalObject)
 	}
 

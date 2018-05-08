@@ -1,12 +1,9 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build darwin dragonfly freebsd linux netbsd openbsd solaris
 
 package unix
 
-func itoa(val int) string { // do it here rather than with fmt to avoid dependency
+func itoa(val int) string { 
 	if val < 0 {
 		return "-" + uitoa(uint(-val))
 	}
@@ -14,7 +11,7 @@ func itoa(val int) string { // do it here rather than with fmt to avoid dependen
 }
 
 func uitoa(val uint) string {
-	var buf [32]byte // big enough for int64
+	var buf [32]byte 
 	i := len(buf) - 1
 	for val >= 10 {
 		buf[i] = byte(val%10 + '0')

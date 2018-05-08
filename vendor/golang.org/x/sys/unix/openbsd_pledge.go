@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build openbsd
 // +build 386 amd64 arm
 
@@ -16,7 +13,6 @@ const (
 	SYS_PLEDGE = 108
 )
 
-// Pledge implements the pledge syscall. For more information see pledge(2).
 func Pledge(promises string, paths []string) error {
 	promisesPtr, err := syscall.BytePtrFromString(promises)
 	if err != nil {

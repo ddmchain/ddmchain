@@ -2,12 +2,10 @@ package ole
 
 import "unsafe"
 
-// NewVariant returns new variant based on type and value.
 func NewVariant(vt VT, val int64) VARIANT {
 	return VARIANT{VT: vt, Val: val}
 }
 
-// ToIUnknown converts Variant to Unknown object.
 func (v *VARIANT) ToIUnknown() *IUnknown {
 	if v.VT != VT_UNKNOWN {
 		return nil
@@ -15,7 +13,6 @@ func (v *VARIANT) ToIUnknown() *IUnknown {
 	return (*IUnknown)(unsafe.Pointer(uintptr(v.Val)))
 }
 
-// ToIDispatch converts variant to dispatch object.
 func (v *VARIANT) ToIDispatch() *IDispatch {
 	if v.VT != VT_DISPATCH {
 		return nil
@@ -23,7 +20,6 @@ func (v *VARIANT) ToIDispatch() *IDispatch {
 	return (*IDispatch)(unsafe.Pointer(uintptr(v.Val)))
 }
 
-// ToArray converts variant to SafeArray helper.
 func (v *VARIANT) ToArray() *SafeArrayConversion {
 	if v.VT != VT_SAFEARRAY {
 		if v.VT&VT_ARRAY == 0 {
@@ -34,7 +30,6 @@ func (v *VARIANT) ToArray() *SafeArrayConversion {
 	return &SafeArrayConversion{safeArray}
 }
 
-// ToString converts variant to Go string.
 func (v *VARIANT) ToString() string {
 	if v.VT != VT_BSTR {
 		return ""
@@ -42,18 +37,10 @@ func (v *VARIANT) ToString() string {
 	return BstrToString(*(**uint16)(unsafe.Pointer(&v.Val)))
 }
 
-// Clear the memory of variant object.
 func (v *VARIANT) Clear() error {
 	return VariantClear(v)
 }
 
-// Value returns variant value based on its type.
-//
-// Currently supported types: 2- and 4-byte integers, strings, bools.
-// Note that 64-bit integers, datetimes, and other types are stored as strings
-// and will be returned as strings.
-//
-// Needs to be further converted, because this returns an interface{}.
 func (v *VARIANT) Value() interface{} {
 	switch v.VT {
 	case VT_I1:
@@ -77,7 +64,7 @@ func (v *VARIANT) Value() interface{} {
 	case VT_UINT:
 		return uint(v.Val)
 	case VT_INT_PTR:
-		return uintptr(v.Val) // TODO
+		return uintptr(v.Val) 
 	case VT_UINT_PTR:
 		return uintptr(v.Val)
 	case VT_R4:
@@ -87,7 +74,7 @@ func (v *VARIANT) Value() interface{} {
 	case VT_BSTR:
 		return v.ToString()
 	case VT_DATE:
-		// VT_DATE type will either return float64 or time.Time.
+
 		d := float64(v.Val)
 		date, err := GetVariantDate(d)
 		if err != nil {

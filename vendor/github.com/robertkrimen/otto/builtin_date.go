@@ -5,10 +5,8 @@ import (
 	Time "time"
 )
 
-// Date
-
 const (
-	// TODO Be like V8?
+
 	builtinDate_goDateTimeLayout = Time.RFC1123
 	builtinDate_goDateLayout     = "Mon, 02 Jan 2006"
 	builtinDate_goTimeLayout     = "15:04:05 MST"
@@ -66,8 +64,8 @@ func builtinDate_toISOString(call FunctionCall) Value {
 
 func builtinDate_toJSON(call FunctionCall) Value {
 	object := call.thisObject()
-	value := object.DefaultValue(defaultValueHintNumber) // FIXME object.primitiveNumberValue
-	{                                                    // FIXME value.isFinite
+	value := object.DefaultValue(defaultValueHintNumber) 
+	{                                                    
 		value := value.float64()
 		if math.IsNaN(value) || math.IsInf(value, 0) {
 			return nullValue
@@ -75,7 +73,7 @@ func builtinDate_toJSON(call FunctionCall) Value {
 	}
 	toISOString := object.get("toISOString")
 	if !toISOString.isCallable() {
-		// FIXME
+
 		panic(call.runtime.panicTypeError())
 	}
 	return toISOString.call(call.runtime, toValue_object(object), []Value{})
@@ -94,8 +92,7 @@ func builtinDate_getTime(call FunctionCall) Value {
 	if date.isNaN {
 		return NaNValue()
 	}
-	// We do this (convert away from a float) so the user
-	// does not get something back in exponential notation
+
 	return toValue_int64(int64(date.Epoch()))
 }
 
@@ -157,7 +154,6 @@ func builtinDate_now(call FunctionCall) Value {
 	return builtinDate_UTC(call)
 }
 
-// This is a placeholder
 func builtinDate_toLocaleString(call FunctionCall) Value {
 	date := dateObjectOf(call.runtime, call.thisObject())
 	if date.isNaN {
@@ -166,7 +162,6 @@ func builtinDate_toLocaleString(call FunctionCall) Value {
 	return toValue_string(date.Time().Local().Format("2006-01-02 15:04:05"))
 }
 
-// This is a placeholder
 func builtinDate_toLocaleDateString(call FunctionCall) Value {
 	date := dateObjectOf(call.runtime, call.thisObject())
 	if date.isNaN {
@@ -175,7 +170,6 @@ func builtinDate_toLocaleDateString(call FunctionCall) Value {
 	return toValue_string(date.Time().Local().Format("2006-01-02"))
 }
 
-// This is a placeholder
 func builtinDate_toLocaleTimeString(call FunctionCall) Value {
 	date := dateObjectOf(call.runtime, call.thisObject())
 	if date.isNaN {
@@ -193,8 +187,7 @@ func builtinDate_valueOf(call FunctionCall) Value {
 }
 
 func builtinDate_getYear(call FunctionCall) Value {
-	// Will throw a TypeError is ThisObject is nil or
-	// does not have Class of "Date"
+
 	date := dateObjectOf(call.runtime, call.thisObject())
 	if date.isNaN {
 		return NaNValue()
@@ -203,8 +196,7 @@ func builtinDate_getYear(call FunctionCall) Value {
 }
 
 func builtinDate_getFullYear(call FunctionCall) Value {
-	// Will throw a TypeError is ThisObject is nil or
-	// does not have Class of "Date"
+
 	date := dateObjectOf(call.runtime, call.thisObject())
 	if date.isNaN {
 		return NaNValue()
@@ -253,7 +245,7 @@ func builtinDate_getUTCDate(call FunctionCall) Value {
 }
 
 func builtinDate_getDay(call FunctionCall) Value {
-	// Actually day of the week
+
 	date := dateObjectOf(call.runtime, call.thisObject())
 	if date.isNaN {
 		return NaNValue()
@@ -339,7 +331,7 @@ func builtinDate_getTimezoneOffset(call FunctionCall) Value {
 		return NaNValue()
 	}
 	timeLocal := date.Time().Local()
-	// Is this kosher?
+
 	timeLocalAsUTC := Time.Date(
 		timeLocal.Year(),
 		timeLocal.Month(),
@@ -608,7 +600,3 @@ func builtinDate_setUTCFullYear(call FunctionCall) Value {
 	return date.Value()
 }
 
-// toUTCString
-// toISOString
-// toJSONString
-// toJSON

@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
 import (
@@ -222,7 +219,6 @@ func findMatch(mux map[string]func(Event), path string) string {
 
 }
 
-// Remove all existing defined Handlers from the map
 func (es *EvtStream) ResetHandlers() {
 	for Path, _ := range es.Handlers {
 		delete(es.Handlers, Path)

@@ -1,17 +1,7 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build ignore
 
 package main
-
-// This program generates tables.go:
-//	go run maketables.go | gofmt > tables.go
-
-// TODO: Emoji extensions?
-// http://www.unicode.org/faq/emoji_dingbats.html
-// http://www.unicode.org/Public/UNIDATA/EmojiSources.txt
 
 import (
 	"bufio"
@@ -85,8 +75,6 @@ func main() {
 		fmt.Printf("}\n\n")
 	}
 
-	// Any run of at least separation continuous zero entries in the reverse map will
-	// be a separate encode table.
 	const separation = 1024
 
 	intervals := []interval(nil)
@@ -146,14 +134,12 @@ func main() {
 	}
 }
 
-// interval is a half-open interval [low, high).
 type interval struct {
 	low, high int
 }
 
 func (i interval) len() int { return i.high - i.low }
 
-// byDecreasingLength sorts intervals by decreasing length.
 type byDecreasingLength []interval
 
 func (b byDecreasingLength) Len() int           { return len(b) }

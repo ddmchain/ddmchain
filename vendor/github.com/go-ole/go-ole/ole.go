@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-// DISPPARAMS are the arguments that passed to methods or property.
 type DISPPARAMS struct {
 	rgvarg            uintptr
 	rgdispidNamedArgs uintptr
@@ -13,7 +12,6 @@ type DISPPARAMS struct {
 	cNamedArgs        uint32
 }
 
-// EXCEPINFO defines exception info.
 type EXCEPINFO struct {
 	wCode             uint16
 	wReserved         uint16
@@ -26,17 +24,14 @@ type EXCEPINFO struct {
 	scode             uint32
 }
 
-// WCode return wCode in EXCEPINFO.
 func (e EXCEPINFO) WCode() uint16 {
 	return e.wCode
 }
 
-// SCODE return scode in EXCEPINFO.
 func (e EXCEPINFO) SCODE() uint32 {
 	return e.scode
 }
 
-// String convert EXCEPINFO to string.
 func (e EXCEPINFO) String() string {
 	var src, desc, hlp string
 	if e.bstrSource == nil {
@@ -63,7 +58,6 @@ func (e EXCEPINFO) String() string {
 	)
 }
 
-// Error implements error interface and returns error string.
 func (e EXCEPINFO) Error() string {
 	if e.bstrDescription != nil {
 		return strings.TrimSpace(BstrToString(e.bstrDescription))
@@ -82,13 +76,11 @@ func (e EXCEPINFO) Error() string {
 	return fmt.Sprintf("%v: %#x", src, code)
 }
 
-// PARAMDATA defines parameter data type.
 type PARAMDATA struct {
 	Name *int16
 	Vt   uint16
 }
 
-// METHODDATA defines method info.
 type METHODDATA struct {
 	Name     *uint16
 	Data     *PARAMDATA
@@ -100,19 +92,16 @@ type METHODDATA struct {
 	VtReturn uint32
 }
 
-// INTERFACEDATA defines interface info.
 type INTERFACEDATA struct {
 	MethodData *METHODDATA
 	CMembers   uint32
 }
 
-// Point is 2D vector type.
 type Point struct {
 	X int32
 	Y int32
 }
 
-// Msg is message between processes.
 type Msg struct {
 	Hwnd    uint32
 	Message uint32
@@ -122,19 +111,16 @@ type Msg struct {
 	Pt      Point
 }
 
-// TYPEDESC defines data type.
 type TYPEDESC struct {
 	Hreftype uint32
 	VT       uint16
 }
 
-// IDLDESC defines IDL info.
 type IDLDESC struct {
 	DwReserved uint32
 	WIDLFlags  uint16
 }
 
-// TYPEATTR defines type info.
 type TYPEATTR struct {
 	Guid             GUID
 	Lcid             uint32

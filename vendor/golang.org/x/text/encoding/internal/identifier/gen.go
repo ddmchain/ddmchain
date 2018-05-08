@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build ignore
 
 package main
@@ -30,10 +27,7 @@ type registry struct {
 			} `xml:"xref"`
 			Desc struct {
 				Data string `xml:",innerxml"`
-				// Any []struct {
-				// 	Data string `xml:",chardata"`
-				// } `xml:",any"`
-				// Data string `xml:",chardata"`
+
 			} `xml:"description,"`
 			MIB   string   `xml:"value"`
 			Alias []string `xml:"alias"`
@@ -58,14 +52,14 @@ func main() {
 		constName := ""
 		for _, a := range rec.Alias {
 			if strings.HasPrefix(a, "cs") && strings.IndexByte(a, '-') == -1 {
-				// Some of the constant definitions have comments in them. Strip those.
+
 				constName = strings.Title(strings.SplitN(a[2:], "\n", 2)[0])
 			}
 		}
 		if constName == "" {
 			switch rec.MIB {
 			case "2085":
-				constName = "HZGB2312" // Not listed as alias for some reason.
+				constName = "HZGB2312" 
 			default:
 				log.Fatalf("No cs alias defined for %s.", rec.MIB)
 			}
@@ -89,7 +83,7 @@ func main() {
 				}
 				switch x := t.(type) {
 				case xml.CharData:
-					attr = "" // Don't need attribute info.
+					attr = "" 
 					a := bytes.Split([]byte(x), []byte("\n"))
 					for i, b := range a {
 						if b = bytes.TrimSpace(b); len(b) != 0 {

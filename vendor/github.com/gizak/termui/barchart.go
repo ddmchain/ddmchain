@@ -1,25 +1,8 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
 import "fmt"
 
-// BarChart creates multiple bars in a widget:
-/*
-   bc := termui.NewBarChart()
-   data := []int{3, 2, 5, 3, 9, 5}
-   bclabels := []string{"S0", "S1", "S2", "S3", "S4", "S5"}
-   bc.BorderLabel = "Bar Chart"
-   bc.Data = data
-   bc.Width = 26
-   bc.Height = 10
-   bc.DataLabels = bclabels
-   bc.TextColor = termui.ColorGreen
-   bc.BarColor = termui.ColorRed
-   bc.NumColor = termui.ColorYellow
-*/
 type BarChart struct {
 	Block
 	BarColor   Attribute
@@ -37,7 +20,6 @@ type BarChart struct {
 	max        int
 }
 
-// NewBarChart returns a new *BarChart with current theme.
 func NewBarChart() *BarChart {
 	bc := &BarChart{Block: *NewBlock()}
 	bc.BarColor = ThemeAttr("barchart.bar.bg")
@@ -61,8 +43,6 @@ func (bc *BarChart) layout() {
 		bc.dataNum[i] = trimStr2Runes(s, bc.BarWidth)
 	}
 
-	//bc.max = bc.Data[0] //  what if Data is nil? Sometimes when bar graph is nill it produces panic with panic: runtime error: index out of range
-	// Asign a negative value to get maxvalue auto-populates
 	if bc.max == 0 {
 		bc.max = -1
 	}
@@ -81,7 +61,6 @@ func (bc *BarChart) SetMax(max int) {
 	}
 }
 
-// Buffer implements Bufferer interface.
 func (bc *BarChart) Buffer() Buffer {
 	buf := bc.Block.Buffer()
 	bc.layout()
@@ -96,12 +75,11 @@ func (bc *BarChart) Buffer() Buffer {
 		if bc.CellChar == ' ' {
 			barBg = bc.BarColor
 			barFg = ColorDefault
-			if bc.BarColor == ColorDefault { // the same as above
+			if bc.BarColor == ColorDefault { 
 				barBg |= AttrReverse
 			}
 		}
 
-		// plot bar
 		for j := 0; j < bc.BarWidth; j++ {
 			for k := 0; k < h; k++ {
 				c := Cell{
@@ -115,7 +93,7 @@ func (bc *BarChart) Buffer() Buffer {
 				buf.Set(x, y, c)
 			}
 		}
-		// plot text
+
 		for j, k := 0, 0; j < len(bc.labels[i]); j++ {
 			w := charWidth(bc.labels[i][j])
 			c := Cell{
@@ -128,7 +106,7 @@ func (bc *BarChart) Buffer() Buffer {
 			buf.Set(x, y, c)
 			k += w
 		}
-		// plot num
+
 		for j := 0; j < len(bc.dataNum[i]); j++ {
 			c := Cell{
 				Ch: bc.dataNum[i][j],

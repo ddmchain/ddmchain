@@ -55,7 +55,6 @@ func (t *TimeRFC1123) UnmarshalBinary(data []byte) error {
 	return t.UnmarshalText(data)
 }
 
-// ToTime returns a Time as a time.Time
 func (t TimeRFC1123) ToTime() time.Time {
 	return t.Time
 }

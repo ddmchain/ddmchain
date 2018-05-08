@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package packet
 
 import (
@@ -23,15 +20,13 @@ import (
 	"golang.org/x/crypto/openpgp/s2k"
 )
 
-// PrivateKey represents a possibly encrypted private key. See RFC 4880,
-// section 5.5.3.
 type PrivateKey struct {
 	PublicKey
-	Encrypted     bool // if true then the private key is unavailable until Decrypt has been called.
+	Encrypted     bool 
 	encryptedData []byte
 	cipher        CipherFunction
 	s2k           func(out, in []byte)
-	PrivateKey    interface{} // An *{rsa|dsa|ecdsa}.PrivateKey or a crypto.Signer.
+	PrivateKey    interface{} 
 	sha1Checksum  bool
 	iv            []byte
 }
@@ -64,8 +59,6 @@ func NewECDSAPrivateKey(currentTime time.Time, priv *ecdsa.PrivateKey) *PrivateK
 	return pk
 }
 
-// NewSignerPrivateKey creates a sign-only PrivateKey from a crypto.Signer that
-// implements RSA or ECDSA.
 func NewSignerPrivateKey(currentTime time.Time, signer crypto.Signer) *PrivateKey {
 	pk := new(PrivateKey)
 	switch pubkey := signer.Public().(type) {
@@ -149,13 +142,13 @@ func mod64kHash(d []byte) uint16 {
 }
 
 func (pk *PrivateKey) Serialize(w io.Writer) (err error) {
-	// TODO(agl): support encrypted private keys
+
 	buf := bytes.NewBuffer(nil)
 	err = pk.PublicKey.serializeWithoutHeaders(buf)
 	if err != nil {
 		return
 	}
-	buf.WriteByte(0 /* no encryption */)
+	buf.WriteByte(0 )
 
 	privateKeyBuf := bytes.NewBuffer(nil)
 
@@ -231,7 +224,6 @@ func serializeECDSAPrivateKey(w io.Writer, priv *ecdsa.PrivateKey) error {
 	return writeBig(w, priv.D)
 }
 
-// Decrypt decrypts an encrypted private key using a passphrase.
 func (pk *PrivateKey) Decrypt(passphrase []byte) error {
 	if !pk.Encrypted {
 		return nil

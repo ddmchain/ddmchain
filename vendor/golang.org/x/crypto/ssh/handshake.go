@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package ssh
 
 import (
@@ -14,30 +11,16 @@ import (
 	"sync"
 )
 
-// debugHandshake, if set, prints messages sent and received.  Key
-// exchange messages are printed as if DH were used, so the debug
-// messages are wrong when using ECDH.
 const debugHandshake = false
 
-// chanSize sets the amount of buffering SSH connections. This is
-// primarily for testing: setting chanSize=0 uncovers deadlocks more
-// quickly.
 const chanSize = 16
 
-// keyingTransport is a packet based transport that supports key
-// changes. It need not be thread-safe. It should pass through
-// msgNewKeys in both directions.
 type keyingTransport interface {
 	packetConn
 
-	// prepareKeyChange sets up a key change. The key change for a
-	// direction will be effected if a msgNewKeys message is sent
-	// or received.
 	prepareKeyChange(*algorithms, *kexResult) error
 }
 
-// handshakeTransport implements rekeying on top of a keyingTransport
-// and offers a thread-safe writePacket() interface.
 type handshakeTransport struct {
 	conn   keyingTransport
 	config *Config
@@ -45,16 +28,10 @@ type handshakeTransport struct {
 	serverVersion []byte
 	clientVersion []byte
 
-	// hostKeys is non-empty if we are the server. In that case,
-	// it contains all host keys that can be used to sign the
-	// connection.
 	hostKeys []Signer
 
-	// hostKeyAlgorithms is non-empty if we are the client. In that case,
-	// we accept these key types from the server as host key.
 	hostKeyAlgorithms []string
 
-	// On read error, incoming is closed, and readError is set.
 	incoming  chan []byte
 	readError error
 
@@ -62,23 +39,16 @@ type handshakeTransport struct {
 	writeError     error
 	sentInitPacket []byte
 	sentInitMsg    *kexInitMsg
-	pendingPackets [][]byte // Used when a key exchange is in progress.
+	pendingPackets [][]byte 
 
-	// If the read loop wants to schedule a kex, it pings this
-	// channel, and the write loop will send out a kex
-	// message.
 	requestKex chan struct{}
 
-	// If the other side requests or confirms a kex, its kexInit
-	// packet is sent here for the write loop to find it.
 	startKex chan *pendingKex
 
-	// data for host key checking
 	hostKeyCallback HostKeyCallback
 	dialAddress     string
 	remoteAddr      net.Addr
 
-	// Algorithms agreed in the last key exchange.
 	algorithms *algorithms
 
 	readPacketsLeft uint32
@@ -87,7 +57,6 @@ type handshakeTransport struct {
 	writePacketsLeft uint32
 	writeBytesLeft   int64
 
-	// The session ID or nil if first kex did not complete yet.
 	sessionID []byte
 }
 
@@ -110,7 +79,6 @@ func newHandshakeTransport(conn keyingTransport, config *Config, clientVersion, 
 	t.resetReadThresholds()
 	t.resetWriteThresholds()
 
-	// We always start with a mandatory key exchange.
 	t.requestKex <- struct{}{}
 	return t
 }
@@ -142,8 +110,6 @@ func (t *handshakeTransport) getSessionID() []byte {
 	return t.sessionID
 }
 
-// waitSession waits for the session to be established. This should be
-// the first thing to call after instantiating handshakeTransport.
 func (t *handshakeTransport) waitSession() error {
 	p, err := t.readPacket()
 	if err != nil {
@@ -201,13 +167,10 @@ func (t *handshakeTransport) readLoop() {
 		t.incoming <- p
 	}
 
-	// Stop writers too.
 	t.recordWriteError(t.readError)
 
-	// Unblock the writer should it wait for this.
 	close(t.startKex)
 
-	// Don't close t.requestKex; it's also written to from writePacket.
 }
 
 func (t *handshakeTransport) pushPacket(p []byte) error {
@@ -235,7 +198,7 @@ func (t *handshakeTransport) requestKeyExchange() {
 	select {
 	case t.requestKex <- struct{}{}:
 	default:
-		// something already requested a kex, so do nothing.
+
 	}
 }
 
@@ -284,14 +247,6 @@ write:
 			break
 		}
 
-		// We're not servicing t.requestKex, but that is OK:
-		// we never block on sending to t.requestKex.
-
-		// We're not servicing t.startKex, but the remote end
-		// has just sent us a kexInitMsg, so it can't send
-		// another key change request, until we close the done
-		// channel on the pendingKex request.
-
 		err := t.enterKeyExchange(request.otherInit)
 
 		t.mu.Lock()
@@ -301,17 +256,11 @@ write:
 
 		t.resetWriteThresholds()
 
-		// we have completed the key exchange. Since the
-		// reader is still blocked, it is safe to clear out
-		// the requestKex channel. This avoids the situation
-		// where: 1) we consumed our own request for the
-		// initial kex, and 2) the kex from the remote side
-		// caused another send on the requestKex channel,
 	clear:
 		for {
 			select {
 			case <-t.requestKex:
-				//
+
 			default:
 				break clear
 			}
@@ -319,11 +268,6 @@ write:
 
 		request.done <- t.writeError
 
-		// kex finished. Push packets that we received while
-		// the kex was in progress. Don't look at t.startKex
-		// and don't increment writtenSinceKex: if we trigger
-		// another kex while we are still busy with the last
-		// one, things will become very confusing.
 		for _, p := range t.pendingPackets {
 			t.writeError = t.pushPacket(p)
 			if t.writeError != nil {
@@ -334,23 +278,15 @@ write:
 		t.mu.Unlock()
 	}
 
-	// drain startKex channel. We don't service t.requestKex
-	// because nobody does blocking sends there.
 	go func() {
 		for init := range t.startKex {
 			init.done <- t.writeError
 		}
 	}()
 
-	// Unblock reader.
 	t.conn.Close()
 }
 
-// The protocol uses uint32 for packet counters, so we can't let them
-// reach 1<<32.  We will actually read and write more packets than
-// this, though: the other side may send more packets, and after we
-// hit this limit on writing we will send a few more packets for the
-// key exchange itself.
 const packetRekeyThreshold = (1 << 31)
 
 func (t *handshakeTransport) resetReadThresholds() {
@@ -413,28 +349,20 @@ func (t *handshakeTransport) readOnePacket(first bool) ([]byte, error) {
 
 	t.resetReadThresholds()
 
-	// By default, a key exchange is hidden from higher layers by
-	// translating it into msgIgnore.
 	successPacket := []byte{msgIgnore}
 	if firstKex {
-		// sendKexInit() for the first kex waits for
-		// msgNewKeys so the authentication process is
-		// guaranteed to happen over an encrypted transport.
+
 		successPacket = []byte{msgNewKeys}
 	}
 
 	return successPacket, nil
 }
 
-// sendKexInit sends a key change message.
 func (t *handshakeTransport) sendKexInit() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.sentInitMsg != nil {
-		// kexInits may be sent either in response to the other side,
-		// or because our side wants to initiate a key change, so we
-		// may have already sent a kexInit. In that case, don't send a
-		// second kexInit.
+
 		return nil
 	}
 
@@ -459,7 +387,6 @@ func (t *handshakeTransport) sendKexInit() error {
 	}
 	packet := Marshal(msg)
 
-	// writePacket destroys the contents, so save a copy.
 	packetCopy := make([]byte, len(packet))
 	copy(packetCopy, packet)
 
@@ -488,7 +415,7 @@ func (t *handshakeTransport) writePacket(p []byte) error {
 	}
 
 	if t.sentInitMsg != nil {
-		// Copy the packet so the writer can reuse the buffer.
+
 		cp := make([]byte, len(p))
 		copy(cp, p)
 		t.pendingPackets = append(t.pendingPackets, cp)
@@ -550,19 +477,8 @@ func (t *handshakeTransport) enterKeyExchange(otherInitPacket []byte) error {
 		return err
 	}
 
-	// We don't send FirstKexFollows, but we handle receiving it.
-	//
-	// RFC 4253 section 7 defines the kex and the agreement method for
-	// first_kex_packet_follows. It states that the guessed packet
-	// should be ignored if the "kex algorithm and/or the host
-	// key algorithm is guessed wrong (server and client have
-	// different preferred algorithm), or if any of the other
-	// algorithms cannot be agreed upon". The other algorithms have
-	// already been checked above so the kex algorithm and host key
-	// algorithm are checked here.
 	if otherInit.FirstKexFollows && (clientInit.KexAlgos[0] != serverInit.KexAlgos[0] || clientInit.ServerHostKeyAlgos[0] != serverInit.ServerHostKeyAlgos[0]) {
-		// other side sent a kex message for the wrong algorithm,
-		// which we have to ignore.
+
 		if _, err := t.conn.readPacket(); err != nil {
 			return err
 		}

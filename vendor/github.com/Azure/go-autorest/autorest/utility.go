@@ -12,25 +12,19 @@ import (
 	"strings"
 )
 
-// EncodedAs is a series of constants specifying various data encodings
 type EncodedAs string
 
 const (
-	// EncodedAsJSON states that data is encoded as JSON
+
 	EncodedAsJSON EncodedAs = "JSON"
 
-	// EncodedAsXML states that data is encoded as Xml
 	EncodedAsXML EncodedAs = "XML"
 )
 
-// Decoder defines the decoding method json.Decoder and xml.Decoder share
 type Decoder interface {
 	Decode(v interface{}) error
 }
 
-// NewDecoder creates a new decoder appropriate to the passed encoding.
-// encodedAs specifies the type of encoding and r supplies the io.Reader containing the
-// encoded data.
 func NewDecoder(encodedAs EncodedAs, r io.Reader) Decoder {
 	if encodedAs == EncodedAsJSON {
 		return json.NewDecoder(r)
@@ -40,18 +34,11 @@ func NewDecoder(encodedAs EncodedAs, r io.Reader) Decoder {
 	return nil
 }
 
-// CopyAndDecode decodes the data from the passed io.Reader while making a copy. Having a copy
-// is especially useful if there is a chance the data will fail to decode.
-// encodedAs specifies the expected encoding, r provides the io.Reader to the data, and v
-// is the decoding destination.
 func CopyAndDecode(encodedAs EncodedAs, r io.Reader, v interface{}) (bytes.Buffer, error) {
 	b := bytes.Buffer{}
 	return b, NewDecoder(encodedAs, io.TeeReader(r, &b)).Decode(v)
 }
 
-// TeeReadCloser returns a ReadCloser that writes to w what it reads from rc.
-// It utilizes io.TeeReader to copy the data read and has the same behavior when reading.
-// Further, when it is closed, it ensures that rc is closed as well.
 func TeeReadCloser(rc io.ReadCloser, w io.Writer) io.ReadCloser {
 	return &teeReadCloser{rc, io.TeeReader(rc, w)}
 }
@@ -107,7 +94,6 @@ func ensureValueString(value interface{}) string {
 	}
 }
 
-// MapToValues method converts map[string]interface{} to url.Values.
 func MapToValues(m map[string]interface{}) url.Values {
 	v := url.Values{}
 	for key, value := range m {
@@ -123,8 +109,6 @@ func MapToValues(m map[string]interface{}) url.Values {
 	return v
 }
 
-// String method converts interface v to string. If interface is a list, it
-// joins list elements using separator.
 func String(v interface{}, sep ...string) string {
 	if len(sep) > 0 {
 		return ensureValueString(strings.Join(v.([]string), sep[0]))
@@ -132,7 +116,6 @@ func String(v interface{}, sep ...string) string {
 	return ensureValueString(v)
 }
 
-// Encode method encodes url path and query parameters.
 func Encode(location string, v interface{}, sep ...string) string {
 	s := String(v, sep...)
 	switch strings.ToLower(location) {
@@ -153,9 +136,6 @@ func queryEscape(s string) string {
 	return url.QueryEscape(s)
 }
 
-// This method is same as Encode() method of "net/url" go package,
-// except it does not encode the query parameters because they
-// already come encoded. It formats values map in query format (bar=foo&a=b).
 func createQuery(v url.Values) string {
 	var buf bytes.Buffer
 	keys := make([]string, 0, len(v))

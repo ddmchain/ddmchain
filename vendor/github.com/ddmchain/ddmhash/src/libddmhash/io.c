@@ -1,21 +1,4 @@
-/*
-  This file is part of ddmhash.
 
-  ddmhash is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  ddmhash is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with ddmhash.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/** @file io.c
- */
 #include "io.h"
 #include <string.h>
 #include <stdio.h>
@@ -31,10 +14,9 @@ enum ddmhash_io_rc ddmhash_io_prepare(
 {
 	char mutable_name[DAG_MUTABLE_NAME_MAX_SIZE];
 	enum ddmhash_io_rc ret = DDMHASH_IO_FAIL;
-	// reset errno before io calls
+
 	errno = 0;
 
-	// assert directory exists
 	if (!ddmhash_mkdir(dirname)) {
 		DDMHASH_CRITICAL("Could not create the ddmhash directory");
 		goto end;
@@ -49,7 +31,7 @@ enum ddmhash_io_rc ddmhash_io_prepare(
 
 	FILE *f;
 	if (!force_create) {
-		// try to open the file
+
 		f = ddmhash_fopen(tmpfile, "rb+");
 		if (f) {
 			size_t found_size;
@@ -63,10 +45,10 @@ enum ddmhash_io_rc ddmhash_io_prepare(
 				ret = DDMHASH_IO_MEMO_SIZE_MISMATCH;
 				goto free_memo;
 			}
-			// compare the magic number, no need to care about endianess since it's local
+
 			uint64_t magic_num;
 			if (fread(&magic_num, DDMHASH_DAG_MAGIC_NUM_SIZE, 1, f) != 1) {
-				// I/O error
+
 				fclose(f);
 				DDMHASH_CRITICAL("Could not read from DAG file: \"%s\"", tmpfile);
 				ret = DDMHASH_IO_MEMO_SIZE_MISMATCH;
@@ -82,13 +64,12 @@ enum ddmhash_io_rc ddmhash_io_prepare(
 		}
 	}
 
-	// file does not exist, will need to be created
 	f = ddmhash_fopen(tmpfile, "wb+");
 	if (!f) {
 		DDMHASH_CRITICAL("Could not create DAG file: \"%s\"", tmpfile);
 		goto free_memo;
 	}
-	// make sure it's of the proper size
+
 	if (fseek(f, (long int)(file_size + DDMHASH_DAG_MAGIC_NUM_SIZE - 1), SEEK_SET) != 0) {
 		fclose(f);
 		DDMHASH_CRITICAL("Could not seek to the end of DAG file: \"%s\". Insufficient space?", tmpfile);

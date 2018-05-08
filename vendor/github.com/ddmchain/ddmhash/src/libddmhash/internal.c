@@ -1,23 +1,3 @@
-/*
-  This file is part of ddmhash.
-
-  ddmhash is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  ddmhash is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with cpp-ddmchain.	If not, see <http://www.gnu.org/licenses/>.
-*/
-/** @file internal.c
-* @author Tim Hughes <tim@twistedfury.com>
-* @author Matthew Wampler-Doty
-*/
 
 #include <assert.h>
 #include <inttypes.h>
@@ -38,7 +18,7 @@
 
 #else
 #include "sha3.h"
-#endif // WITH_CRYPTOPP
+#endif 
 
 uint64_t ddmhash_get_datasize(uint64_t const block_number)
 {
@@ -81,7 +61,6 @@ bool static ddmhash_compute_cache_nodes(
 		}
 	}
 
-	// now perform endian conversion
 	fix_endian_arr32(nodes->words, num_nodes * NODE_WORDS);
 	return true;
 }
@@ -121,7 +100,6 @@ void ddmhash_calculate_dag_item(
 			xmm2 = _mm_xor_si128(xmm2, parent->xmm[2]);
 			xmm3 = _mm_xor_si128(xmm3, parent->xmm[3]);
 
-			// have to write to ret as values are used to compute index
 			ret->xmm[0] = xmm0;
 			ret->xmm[1] = xmm1;
 			ret->xmm[2] = xmm2;
@@ -153,7 +131,7 @@ bool ddmhash_compute_full_data(
 	node* full_nodes = mem;
 	double const progress_change = 1.0f / max_n;
 	double progress = 0.0f;
-	// now compute full nodes
+
 	for (uint32_t n = 0; n != max_n; ++n) {
 		if (callback &&
 			n % (max_n / 100) == 0 &&
@@ -180,13 +158,11 @@ static bool ddmhash_hash(
 		return false;
 	}
 
-	// pack hash and nonce together into first 40 bytes of s_mix
 	assert(sizeof(node) * 8 == 512);
 	node s_mix[MIX_NODES + 1];
 	memcpy(s_mix[0].bytes, &header_hash, 32);
 	fix_endian64(s_mix[0].double_words[4], nonce);
 
-	// compute sha3-512 hash and replicate across mix
 	SHA3_512(s_mix->bytes, s_mix->bytes, 40);
 	fix_endian_arr32(s_mix[0].words, 16);
 
@@ -234,7 +210,6 @@ static bool ddmhash_hash(
 
 	}
 
-	// compress mix
 	for (uint32_t w = 0; w != MIX_WORDS; w += 4) {
 		uint32_t reduction = mix->words[w + 0];
 		reduction = reduction * FNV_PRIME ^ mix->words[w + 1];
@@ -245,8 +220,8 @@ static bool ddmhash_hash(
 
 	fix_endian_arr32(mix->words, MIX_WORDS / 4);
 	memcpy(&ret->mix_hash, mix->bytes, 32);
-	// final Keccak hash
-	SHA3_256(&ret->result, s_mix->bytes, 64 + 32); // Keccak-256(s + compressed_mix)
+
+	SHA3_256(&ret->result, s_mix->bytes, 64 + 32); 
 	return true;
 }
 
@@ -397,7 +372,7 @@ ddmhash_full_t ddmhash_full_new_internal(
 	ret->file_size = (size_t)full_size;
 	switch (ddmhash_io_prepare(dirname, seed_hash, &f, (size_t)full_size, false)) {
 	case DDMHASH_IO_FAIL:
-		// ddmhash_io_prepare will do all DDMHASH_CRITICAL() logging in fail case
+
 		goto fail_free_full;
 	case DDMHASH_IO_MEMO_MATCH:
 		if (!ddmhash_mmap(ret, f)) {
@@ -406,12 +381,12 @@ ddmhash_full_t ddmhash_full_new_internal(
 		}
 		return ret;
 	case DDMHASH_IO_MEMO_SIZE_MISMATCH:
-		// if a DAG of same filename but unexpected size is found, silently force new file creation
+
 		if (ddmhash_io_prepare(dirname, seed_hash, &f, (size_t)full_size, true) != DDMHASH_IO_MEMO_MISMATCH) {
 			DDMHASH_CRITICAL("Could not recreate DAG file after finding existing DAG with unexpected size.");
 			goto fail_free_full;
 		}
-		// fallthrough to the mismatch case here, DO NOT go through match
+
 	case DDMHASH_IO_MEMO_MISMATCH:
 		if (!ddmhash_mmap(ret, f)) {
 			DDMHASH_CRITICAL("mmap failure()");
@@ -425,7 +400,6 @@ ddmhash_full_t ddmhash_full_new_internal(
 		goto fail_free_full_data;
 	}
 
-	// after the DAG has been filled then we finalize it by writting the magic number at the beginning
 	if (fseek(f, 0, SEEK_SET) != 0) {
 		DDMHASH_CRITICAL("Could not seek to DAG file start to write magic number.");
 		goto fail_free_full_data;
@@ -435,14 +409,14 @@ ddmhash_full_t ddmhash_full_new_internal(
 		DDMHASH_CRITICAL("Could not write magic number to DAG's beginning.");
 		goto fail_free_full_data;
 	}
-	if (fflush(f) != 0) {// make sure the magic number IS there
+	if (fflush(f) != 0) {
 		DDMHASH_CRITICAL("Could not flush memory mapped data to DAG file. Insufficient space?");
 		goto fail_free_full_data;
 	}
 	return ret;
 
 fail_free_full_data:
-	// could check that munmap(..) == 0 but even if it did not can't really do anything here
+
 	munmap(ret->data, (size_t)full_size);
 fail_close_file:
 	fclose(ret->file);
@@ -464,7 +438,7 @@ ddmhash_full_t ddmhash_full_new(ddmhash_light_t light, ddmhash_callback_t callba
 
 void ddmhash_full_delete(ddmhash_full_t full)
 {
-	// could check that munmap(..) == 0 but even if it did not can't really do anything here
+
 	munmap(full->data, (size_t)full->file_size);
 	if (full->file) {
 		fclose(full->file);

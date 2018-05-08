@@ -1,6 +1,4 @@
 // +build sparc64,linux
-// Created by cgo -godefs - DO NOT EDIT
-// cgo -godefs types_linux.go | go run mkpost.go
 
 package unix
 
@@ -171,7 +169,7 @@ const (
 type RawSockaddrInet4 struct {
 	Family uint16
 	Port   uint16
-	Addr   [4]byte /* in_addr */
+	Addr   [4]byte 
 	Zero   [8]uint8
 }
 
@@ -179,7 +177,7 @@ type RawSockaddrInet6 struct {
 	Family   uint16
 	Port     uint16
 	Flowinfo uint32
-	Addr     [16]byte /* in6_addr */
+	Addr     [16]byte 
 	Scope_id uint32
 }
 
@@ -257,18 +255,18 @@ type Iovec struct {
 }
 
 type IPMreq struct {
-	Multiaddr [4]byte /* in_addr */
-	Interface [4]byte /* in_addr */
+	Multiaddr [4]byte 
+	Interface [4]byte 
 }
 
 type IPMreqn struct {
-	Multiaddr [4]byte /* in_addr */
-	Address   [4]byte /* in_addr */
+	Multiaddr [4]byte 
+	Address   [4]byte 
 	Ifindex   int32
 }
 
 type IPv6Mreq struct {
-	Multiaddr [16]byte /* in6_addr */
+	Multiaddr [16]byte 
 	Interface uint32
 }
 
@@ -292,12 +290,12 @@ type Cmsghdr struct {
 
 type Inet4Pktinfo struct {
 	Ifindex  int32
-	Spec_dst [4]byte /* in_addr */
-	Addr     [4]byte /* in_addr */
+	Spec_dst [4]byte 
+	Addr     [4]byte 
 }
 
 type Inet6Pktinfo struct {
-	Addr    [16]byte /* in6_addr */
+	Addr    [16]byte 
 	Ifindex uint32
 }
 

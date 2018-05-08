@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package packet
 
 import (
@@ -13,8 +10,6 @@ import (
 	"strconv"
 )
 
-// Compressed represents a compressed OpenPGP packet. The decompressed contents
-// will contain more OpenPGP packets. See RFC 4880, section 5.6.
 type Compressed struct {
 	Body io.Reader
 }
@@ -26,16 +21,8 @@ const (
 	DefaultCompression = flate.DefaultCompression
 )
 
-// CompressionConfig contains compressor configuration settings.
 type CompressionConfig struct {
-	// Level is the compression level to use. It must be set to
-	// between -1 and 9, with -1 causing the compressor to use the
-	// default compression level, 0 causing the compressor to use
-	// no compression and 1 to 9 representing increasing (better,
-	// slower) compression levels. If Level is less than -1 or
-	// more then 9, a non-nil error will be returned during
-	// encryption. See the constants above for convenient common
-	// settings for Level.
+
 	Level int
 }
 
@@ -60,13 +47,9 @@ func (c *Compressed) parse(r io.Reader) error {
 	return err
 }
 
-// compressedWriterCloser represents the serialized compression stream
-// header and the compressor. Its Close() method ensures that both the
-// compressor and serialized stream header are closed. Its Write()
-// method writes to the compressor.
 type compressedWriteCloser struct {
-	sh io.Closer      // Stream Header
-	c  io.WriteCloser // Compressor
+	sh io.Closer      
+	c  io.WriteCloser 
 }
 
 func (cwc compressedWriteCloser) Write(p []byte) (int, error) {
@@ -82,11 +65,6 @@ func (cwc compressedWriteCloser) Close() (err error) {
 	return cwc.sh.Close()
 }
 
-// SerializeCompressed serializes a compressed data packet to w and
-// returns a WriteCloser to which the literal data packets themselves
-// can be written and which MUST be closed on completion. If cc is
-// nil, sensible defaults will be used to configure the compression
-// algorithm.
 func SerializeCompressed(w io.WriteCloser, algo CompressionAlgo, cc *CompressionConfig) (literaldata io.WriteCloser, err error) {
 	compressed, err := serializeStreamHeader(w, packetTypeCompressed)
 	if err != nil {

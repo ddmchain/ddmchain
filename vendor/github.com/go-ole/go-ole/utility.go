@@ -5,11 +5,6 @@ import (
 	"unsafe"
 )
 
-// ClassIDFrom retrieves class ID whether given is program ID or application string.
-//
-// Helper that provides check against both Class ID from Program ID and Class ID from string. It is
-// faster, if you know which you are using, to use the individual functions, but this will check
-// against available functions for you.
 func ClassIDFrom(programID string) (classID *GUID, err error) {
 	classID, err = CLSIDFromProgID(programID)
 	if err != nil {
@@ -21,7 +16,6 @@ func ClassIDFrom(programID string) (classID *GUID, err error) {
 	return
 }
 
-// BytePtrToString converts byte pointer to a Go string.
 func BytePtrToString(p *byte) string {
 	a := (*[10000]uint8)(unsafe.Pointer(p))
 	i := 0
@@ -31,14 +25,10 @@ func BytePtrToString(p *byte) string {
 	return string(a[:i])
 }
 
-// UTF16PtrToString is alias for LpOleStrToString.
-//
-// Kept for compatibility reasons.
 func UTF16PtrToString(p *uint16) string {
 	return LpOleStrToString(p)
 }
 
-// LpOleStrToString converts COM Unicode to Go string.
 func LpOleStrToString(p *uint16) string {
 	if p == nil {
 		return ""
@@ -57,7 +47,6 @@ func LpOleStrToString(p *uint16) string {
 	return string(utf16.Decode(a))
 }
 
-// BstrToString converts COM binary string to Go string.
 func BstrToString(p *uint16) string {
 	if p == nil {
 		return ""
@@ -74,7 +63,6 @@ func BstrToString(p *uint16) string {
 	return string(utf16.Decode(a))
 }
 
-// lpOleStrLen returns the length of Unicode string.
 func lpOleStrLen(p *uint16) (length int64) {
 	if p == nil {
 		return 0
@@ -92,7 +80,6 @@ func lpOleStrLen(p *uint16) (length int64) {
 	return
 }
 
-// convertHresultToError converts syscall to error, if call is unsuccessful.
 func convertHresultToError(hr uintptr, r2 uintptr, ignore error) (err error) {
 	if hr != 0 {
 		err = NewError(hr)

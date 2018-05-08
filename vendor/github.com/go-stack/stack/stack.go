@@ -1,12 +1,4 @@
-// Package stack implements utilities to capture, manipulate, and format call
-// stacks. It provides a simpler API than package runtime.
-//
-// The implementation takes care of the minutia and special cases of
-// interpreting the program counter (pc) values returned by runtime.Callers.
-//
-// Package stack's types implement fmt.Formatter, which provides a simple and
-// flexible way to declaratively configure formatting when used with logging
-// or error tracking packages.
+
 package stack
 
 import (
@@ -19,15 +11,11 @@ import (
 	"strings"
 )
 
-// Call records a single function invocation from a goroutine stack.
 type Call struct {
 	fn *runtime.Func
 	pc uintptr
 }
 
-// Caller returns a Call from the stack of the current goroutine. The argument
-// skip is the number of stack frames to ascend, with 0 identifying the
-// calling function.
 func Caller(skip int) Call {
 	var pcs [2]uintptr
 	n := runtime.Callers(skip+1, pcs[:])
@@ -46,13 +34,10 @@ func Caller(skip int) Call {
 	return c
 }
 
-// String implements fmt.Stinger. It is equivalent to fmt.Sprintf("%v", c).
 func (c Call) String() string {
 	return fmt.Sprint(c)
 }
 
-// MarshalText implements encoding.TextMarshaler. It formats the Call the same
-// as fmt.Sprintf("%v", c).
 func (c Call) MarshalText() ([]byte, error) {
 	if c.fn == nil {
 		return nil, ErrNoFunc
@@ -62,24 +47,8 @@ func (c Call) MarshalText() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// ErrNoFunc means that the Call has a nil *runtime.Func. The most likely
-// cause is a Call with the zero value.
 var ErrNoFunc = errors.New("no call stack information")
 
-// Format implements fmt.Formatter with support for the following verbs.
-//
-//    %s    source file
-//    %d    line number
-//    %n    function name
-//    %v    equivalent to %s:%d
-//
-// It accepts the '+' and '#' flags for most of the verbs as follows.
-//
-//    %+s   path of source file relative to the compile time GOPATH
-//    %#s   full path of source file
-//    %+n   import path qualified function name
-//    %+v   equivalent to %+s:%d
-//    %#v   equivalent to %#s:%d
 func (c Call) Format(s fmt.State, verb rune) {
 	if c.fn == nil {
 		fmt.Fprintf(s, "%%!%c(NOFUNC)", verb)
@@ -91,7 +60,7 @@ func (c Call) Format(s fmt.State, verb rune) {
 		file, line := c.fn.FileLine(c.pc)
 		switch {
 		case s.Flag('#'):
-			// done
+
 		case s.Flag('+'):
 			file = file[pkgIndex(file, c.fn.Name()):]
 		default:
@@ -127,14 +96,10 @@ func (c Call) Format(s fmt.State, verb rune) {
 	}
 }
 
-// PC returns the program counter for this call frame; multiple frames may
-// have the same PC value.
 func (c Call) PC() uintptr {
 	return c.pc
 }
 
-// name returns the import path qualified name of the function containing the
-// call.
 func (c Call) name() string {
 	if c.fn == nil {
 		return "???"
@@ -158,11 +123,8 @@ func (c Call) line() int {
 	return line
 }
 
-// CallStack records a sequence of function invocations from a goroutine
-// stack.
 type CallStack []Call
 
-// String implements fmt.Stinger. It is equivalent to fmt.Sprintf("%v", cs).
 func (cs CallStack) String() string {
 	return fmt.Sprint(cs)
 }
@@ -173,8 +135,6 @@ var (
 	spaceBytes        = []byte(" ")
 )
 
-// MarshalText implements encoding.TextMarshaler. It formats the CallStack the
-// same as fmt.Sprintf("%v", cs).
 func (cs CallStack) MarshalText() ([]byte, error) {
 	buf := bytes.Buffer{}
 	buf.Write(openBracketBytes)
@@ -191,9 +151,6 @@ func (cs CallStack) MarshalText() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Format implements fmt.Formatter by printing the CallStack as square brackets
-// ([, ]) surrounding a space separated list of Calls each formatted with the
-// supplied verb and options.
 func (cs CallStack) Format(s fmt.State, verb rune) {
 	s.Write(openBracketBytes)
 	for i, pc := range cs {
@@ -205,8 +162,6 @@ func (cs CallStack) Format(s fmt.State, verb rune) {
 	s.Write(closeBracketBytes)
 }
 
-// Trace returns a CallStack for the current goroutine with element 0
-// identifying the calling function.
 func Trace() CallStack {
 	var pcs [512]uintptr
 	n := runtime.Callers(2, pcs[:])
@@ -226,8 +181,6 @@ func Trace() CallStack {
 	return cs
 }
 
-// TrimBelow returns a slice of the CallStack with all entries below c
-// removed.
 func (cs CallStack) TrimBelow(c Call) CallStack {
 	for len(cs) > 0 && cs[0].pc != c.pc {
 		cs = cs[1:]
@@ -235,8 +188,6 @@ func (cs CallStack) TrimBelow(c Call) CallStack {
 	return cs
 }
 
-// TrimAbove returns a slice of the CallStack with all entries above c
-// removed.
 func (cs CallStack) TrimAbove(c Call) CallStack {
 	for len(cs) > 0 && cs[len(cs)-1].pc != c.pc {
 		cs = cs[:len(cs)-1]
@@ -244,33 +195,8 @@ func (cs CallStack) TrimAbove(c Call) CallStack {
 	return cs
 }
 
-// pkgIndex returns the index that results in file[index:] being the path of
-// file relative to the compile time GOPATH, and file[:index] being the
-// $GOPATH/src/ portion of file. funcName must be the name of a function in
-// file as returned by runtime.Func.Name.
 func pkgIndex(file, funcName string) int {
-	// As of Go 1.6.2 there is no direct way to know the compile time GOPATH
-	// at runtime, but we can infer the number of path segments in the GOPATH.
-	// We note that runtime.Func.Name() returns the function name qualified by
-	// the import path, which does not include the GOPATH. Thus we can trim
-	// segments from the beginning of the file path until the number of path
-	// separators remaining is one more than the number of path separators in
-	// the function name. For example, given:
-	//
-	//    GOPATH     /home/user
-	//    file       /home/user/src/pkg/sub/file.go
-	//    fn.Name()  pkg/sub.Type.Method
-	//
-	// We want to produce:
-	//
-	//    file[:idx] == /home/user/src/
-	//    file[idx:] == pkg/sub/file.go
-	//
-	// From this we can easily see that fn.Name() has one less path separator
-	// than our desired result for file[idx:]. We count separators from the
-	// end of the file path until it finds two more than in the function name
-	// and then move one character forward to preserve the initial path
-	// segment without a leading separator.
+
 	const sep = "/"
 	i := len(file)
 	for n := strings.Count(funcName, sep) + 2; n > 0; n-- {
@@ -280,7 +206,7 @@ func pkgIndex(file, funcName string) int {
 			break
 		}
 	}
-	// get back to 0 or trim the leading separator
+
 	return i + len(sep)
 }
 
@@ -311,9 +237,6 @@ func inGoroot(c Call) bool {
 	return strings.HasPrefix(file, runtimePath) || strings.HasSuffix(file, "/_testmain.go")
 }
 
-// TrimRuntime returns a slice of the CallStack with the topmost entries from
-// the go runtime removed. It considers any calls originating from unknown
-// files, files under GOROOT, or _testmain.go as part of the runtime.
 func (cs CallStack) TrimRuntime() CallStack {
 	for len(cs) > 0 && inGoroot(cs[len(cs)-1]) {
 		cs = cs[:len(cs)-1]

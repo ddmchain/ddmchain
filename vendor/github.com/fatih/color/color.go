@@ -13,34 +13,24 @@ import (
 )
 
 var (
-	// NoColor defines if the output is colorized or not. It's dynamically set to
-	// false or true based on the stdout's file descriptor referring to a terminal
-	// or not. This is a global option and affects all colors. For more control
-	// over each color block use the methods DisableColor() individually.
+
 	NoColor = !isatty.IsTerminal(os.Stdout.Fd()) || os.Getenv("TERM") == "dumb"
 
-	// Output defines the standard output of the print functions. By default
-	// os.Stdout is used.
 	Output = colorable.NewColorableStdout()
 
-	// colorsCache is used to reduce the count of created Color objects and
-	// allows to reuse already created objects with required Attribute.
 	colorsCache   = make(map[Attribute]*Color)
-	colorsCacheMu sync.Mutex // protects colorsCache
+	colorsCacheMu sync.Mutex 
 )
 
-// Color defines a custom color object which is defined by SGR parameters.
 type Color struct {
 	params  []Attribute
 	noColor *bool
 }
 
-// Attribute defines a single SGR Code
 type Attribute int
 
 const escape = "\x1b"
 
-// Base attributes
 const (
 	Reset Attribute = iota
 	Bold
@@ -54,7 +44,6 @@ const (
 	CrossedOut
 )
 
-// Foreground text colors
 const (
 	FgBlack Attribute = iota + 30
 	FgRed
@@ -66,7 +55,6 @@ const (
 	FgWhite
 )
 
-// Foreground Hi-Intensity text colors
 const (
 	FgHiBlack Attribute = iota + 90
 	FgHiRed
@@ -78,7 +66,6 @@ const (
 	FgHiWhite
 )
 
-// Background text colors
 const (
 	BgBlack Attribute = iota + 40
 	BgRed
@@ -90,7 +77,6 @@ const (
 	BgWhite
 )
 
-// Background Hi-Intensity text colors
 const (
 	BgHiBlack Attribute = iota + 100
 	BgHiRed
@@ -102,23 +88,18 @@ const (
 	BgHiWhite
 )
 
-// New returns a newly created color object.
 func New(value ...Attribute) *Color {
 	c := &Color{params: make([]Attribute, 0)}
 	c.Add(value...)
 	return c
 }
 
-// Set sets the given parameters immediately. It will change the color of
-// output with the given SGR parameters until color.Unset() is called.
 func Set(p ...Attribute) *Color {
 	c := New(p...)
 	c.Set()
 	return c
 }
 
-// Unset resets all escape attributes and clears the output. Usually should
-// be called after Set().
 func Unset() {
 	if NoColor {
 		return
@@ -127,7 +108,6 @@ func Unset() {
 	fmt.Fprintf(Output, "%s[%dm", escape, Reset)
 }
 
-// Set sets the SGR sequence.
 func (c *Color) Set() *Color {
 	if c.isNoColorSet() {
 		return c
@@ -166,8 +146,6 @@ func (c *Color) unsetWriter(w io.Writer) {
 	fmt.Fprintf(w, "%s[%dm", escape, Reset)
 }
 
-// Add is used to chain SGR parameters. Use as many as parameters to combine
-// and create custom color objects. Example: Add(color.FgRed, color.Underline).
 func (c *Color) Add(value ...Attribute) *Color {
 	c.params = append(c.params, value...)
 	return c
@@ -179,11 +157,6 @@ func (c *Color) prepend(value Attribute) {
 	c.params[0] = value
 }
 
-// Fprint formats using the default formats for its operands and writes to w.
-// Spaces are added between operands when neither is a string.
-// It returns the number of bytes written and any write error encountered.
-// On Windows, users should wrap w with colorable.NewColorable() if w is of
-// type *os.File.
 func (c *Color) Fprint(w io.Writer, a ...interface{}) (n int, err error) {
 	c.setWriter(w)
 	defer c.unsetWriter(w)
@@ -191,11 +164,6 @@ func (c *Color) Fprint(w io.Writer, a ...interface{}) (n int, err error) {
 	return fmt.Fprint(w, a...)
 }
 
-// Print formats using the default formats for its operands and writes to
-// standard output. Spaces are added between operands when neither is a
-// string. It returns the number of bytes written and any write error
-// encountered. This is the standard fmt.Print() method wrapped with the given
-// color.
 func (c *Color) Print(a ...interface{}) (n int, err error) {
 	c.Set()
 	defer c.unset()
@@ -203,10 +171,6 @@ func (c *Color) Print(a ...interface{}) (n int, err error) {
 	return fmt.Fprint(Output, a...)
 }
 
-// Fprintf formats according to a format specifier and writes to w.
-// It returns the number of bytes written and any write error encountered.
-// On Windows, users should wrap w with colorable.NewColorable() if w is of
-// type *os.File.
 func (c *Color) Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error) {
 	c.setWriter(w)
 	defer c.unsetWriter(w)
@@ -214,9 +178,6 @@ func (c *Color) Fprintf(w io.Writer, format string, a ...interface{}) (n int, er
 	return fmt.Fprintf(w, format, a...)
 }
 
-// Printf formats according to a format specifier and writes to standard output.
-// It returns the number of bytes written and any write error encountered.
-// This is the standard fmt.Printf() method wrapped with the given color.
 func (c *Color) Printf(format string, a ...interface{}) (n int, err error) {
 	c.Set()
 	defer c.unset()
@@ -224,10 +185,6 @@ func (c *Color) Printf(format string, a ...interface{}) (n int, err error) {
 	return fmt.Fprintf(Output, format, a...)
 }
 
-// Fprintln formats using the default formats for its operands and writes to w.
-// Spaces are always added between operands and a newline is appended.
-// On Windows, users should wrap w with colorable.NewColorable() if w is of
-// type *os.File.
 func (c *Color) Fprintln(w io.Writer, a ...interface{}) (n int, err error) {
 	c.setWriter(w)
 	defer c.unsetWriter(w)
@@ -235,11 +192,6 @@ func (c *Color) Fprintln(w io.Writer, a ...interface{}) (n int, err error) {
 	return fmt.Fprintln(w, a...)
 }
 
-// Println formats using the default formats for its operands and writes to
-// standard output. Spaces are always added between operands and a newline is
-// appended. It returns the number of bytes written and any write error
-// encountered. This is the standard fmt.Print() method wrapped with the given
-// color.
 func (c *Color) Println(a ...interface{}) (n int, err error) {
 	c.Set()
 	defer c.unset()
@@ -247,101 +199,72 @@ func (c *Color) Println(a ...interface{}) (n int, err error) {
 	return fmt.Fprintln(Output, a...)
 }
 
-// Sprint is just like Print, but returns a string instead of printing it.
 func (c *Color) Sprint(a ...interface{}) string {
 	return c.wrap(fmt.Sprint(a...))
 }
 
-// Sprintln is just like Println, but returns a string instead of printing it.
 func (c *Color) Sprintln(a ...interface{}) string {
 	return c.wrap(fmt.Sprintln(a...))
 }
 
-// Sprintf is just like Printf, but returns a string instead of printing it.
 func (c *Color) Sprintf(format string, a ...interface{}) string {
 	return c.wrap(fmt.Sprintf(format, a...))
 }
 
-// FprintFunc returns a new function that prints the passed arguments as
-// colorized with color.Fprint().
 func (c *Color) FprintFunc() func(w io.Writer, a ...interface{}) {
 	return func(w io.Writer, a ...interface{}) {
 		c.Fprint(w, a...)
 	}
 }
 
-// PrintFunc returns a new function that prints the passed arguments as
-// colorized with color.Print().
 func (c *Color) PrintFunc() func(a ...interface{}) {
 	return func(a ...interface{}) {
 		c.Print(a...)
 	}
 }
 
-// FprintfFunc returns a new function that prints the passed arguments as
-// colorized with color.Fprintf().
 func (c *Color) FprintfFunc() func(w io.Writer, format string, a ...interface{}) {
 	return func(w io.Writer, format string, a ...interface{}) {
 		c.Fprintf(w, format, a...)
 	}
 }
 
-// PrintfFunc returns a new function that prints the passed arguments as
-// colorized with color.Printf().
 func (c *Color) PrintfFunc() func(format string, a ...interface{}) {
 	return func(format string, a ...interface{}) {
 		c.Printf(format, a...)
 	}
 }
 
-// FprintlnFunc returns a new function that prints the passed arguments as
-// colorized with color.Fprintln().
 func (c *Color) FprintlnFunc() func(w io.Writer, a ...interface{}) {
 	return func(w io.Writer, a ...interface{}) {
 		c.Fprintln(w, a...)
 	}
 }
 
-// PrintlnFunc returns a new function that prints the passed arguments as
-// colorized with color.Println().
 func (c *Color) PrintlnFunc() func(a ...interface{}) {
 	return func(a ...interface{}) {
 		c.Println(a...)
 	}
 }
 
-// SprintFunc returns a new function that returns colorized strings for the
-// given arguments with fmt.Sprint(). Useful to put into or mix into other
-// string. Windows users should use this in conjunction with color.Output, example:
-//
-//	put := New(FgYellow).SprintFunc()
-//	fmt.Fprintf(color.Output, "This is a %s", put("warning"))
 func (c *Color) SprintFunc() func(a ...interface{}) string {
 	return func(a ...interface{}) string {
 		return c.wrap(fmt.Sprint(a...))
 	}
 }
 
-// SprintfFunc returns a new function that returns colorized strings for the
-// given arguments with fmt.Sprintf(). Useful to put into or mix into other
-// string. Windows users should use this in conjunction with color.Output.
 func (c *Color) SprintfFunc() func(format string, a ...interface{}) string {
 	return func(format string, a ...interface{}) string {
 		return c.wrap(fmt.Sprintf(format, a...))
 	}
 }
 
-// SprintlnFunc returns a new function that returns colorized strings for the
-// given arguments with fmt.Sprintln(). Useful to put into or mix into other
-// string. Windows users should use this in conjunction with color.Output.
 func (c *Color) SprintlnFunc() func(a ...interface{}) string {
 	return func(a ...interface{}) string {
 		return c.wrap(fmt.Sprintln(a...))
 	}
 }
 
-// sequence returns a formated SGR sequence to be plugged into a "\x1b[...m"
-// an example output might be: "1;36" -> bold cyan
 func (c *Color) sequence() string {
 	format := make([]string, len(c.params))
 	for i, v := range c.params {
@@ -351,8 +274,6 @@ func (c *Color) sequence() string {
 	return strings.Join(format, ";")
 }
 
-// wrap wraps the s string with the colors attributes. The string is ready to
-// be printed.
 func (c *Color) wrap(s string) string {
 	if c.isNoColorSet() {
 		return s
@@ -369,30 +290,23 @@ func (c *Color) unformat() string {
 	return fmt.Sprintf("%s[%dm", escape, Reset)
 }
 
-// DisableColor disables the color output. Useful to not change any existing
-// code and still being able to output. Can be used for flags like
-// "--no-color". To enable back use EnableColor() method.
 func (c *Color) DisableColor() {
 	c.noColor = boolPtr(true)
 }
 
-// EnableColor enables the color output. Use it in conjunction with
-// DisableColor(). Otherwise this method has no side effects.
 func (c *Color) EnableColor() {
 	c.noColor = boolPtr(false)
 }
 
 func (c *Color) isNoColorSet() bool {
-	// check first if we have user setted action
+
 	if c.noColor != nil {
 		return *c.noColor
 	}
 
-	// if not return the global option, which is disabled by default
 	return NoColor
 }
 
-// Equals returns a boolean value indicating whether two colors are equal.
 func (c *Color) Equals(c2 *Color) bool {
 	if len(c.params) != len(c2.params) {
 		return false
@@ -458,68 +372,36 @@ func colorString(format string, p Attribute, a ...interface{}) string {
 	return c.SprintfFunc()(format, a...)
 }
 
-// Black is an convenient helper function to print with black foreground. A
-// newline is appended to format by default.
 func Black(format string, a ...interface{}) { colorPrint(format, FgBlack, a...) }
 
-// Red is an convenient helper function to print with red foreground. A
-// newline is appended to format by default.
 func Red(format string, a ...interface{}) { colorPrint(format, FgRed, a...) }
 
-// Green is an convenient helper function to print with green foreground. A
-// newline is appended to format by default.
 func Green(format string, a ...interface{}) { colorPrint(format, FgGreen, a...) }
 
-// Yellow is an convenient helper function to print with yellow foreground.
-// A newline is appended to format by default.
 func Yellow(format string, a ...interface{}) { colorPrint(format, FgYellow, a...) }
 
-// Blue is an convenient helper function to print with blue foreground. A
-// newline is appended to format by default.
 func Blue(format string, a ...interface{}) { colorPrint(format, FgBlue, a...) }
 
-// Magenta is an convenient helper function to print with magenta foreground.
-// A newline is appended to format by default.
 func Magenta(format string, a ...interface{}) { colorPrint(format, FgMagenta, a...) }
 
-// Cyan is an convenient helper function to print with cyan foreground. A
-// newline is appended to format by default.
 func Cyan(format string, a ...interface{}) { colorPrint(format, FgCyan, a...) }
 
-// White is an convenient helper function to print with white foreground. A
-// newline is appended to format by default.
 func White(format string, a ...interface{}) { colorPrint(format, FgWhite, a...) }
 
-// BlackString is an convenient helper function to return a string with black
-// foreground.
 func BlackString(format string, a ...interface{}) string { return colorString(format, FgBlack, a...) }
 
-// RedString is an convenient helper function to return a string with red
-// foreground.
 func RedString(format string, a ...interface{}) string { return colorString(format, FgRed, a...) }
 
-// GreenString is an convenient helper function to return a string with green
-// foreground.
 func GreenString(format string, a ...interface{}) string { return colorString(format, FgGreen, a...) }
 
-// YellowString is an convenient helper function to return a string with yellow
-// foreground.
 func YellowString(format string, a ...interface{}) string { return colorString(format, FgYellow, a...) }
 
-// BlueString is an convenient helper function to return a string with blue
-// foreground.
 func BlueString(format string, a ...interface{}) string { return colorString(format, FgBlue, a...) }
 
-// MagentaString is an convenient helper function to return a string with magenta
-// foreground.
 func MagentaString(format string, a ...interface{}) string {
 	return colorString(format, FgMagenta, a...)
 }
 
-// CyanString is an convenient helper function to return a string with cyan
-// foreground.
 func CyanString(format string, a ...interface{}) string { return colorString(format, FgCyan, a...) }
 
-// WhiteString is an convenient helper function to return a string with white
-// foreground.
 func WhiteString(format string, a ...interface{}) string { return colorString(format, FgWhite, a...) }

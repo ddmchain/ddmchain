@@ -1,12 +1,8 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
 import "image"
 
-// Hline is a horizontal line.
 type Hline struct {
 	X   int
 	Y   int
@@ -15,7 +11,6 @@ type Hline struct {
 	Bg  Attribute
 }
 
-// Vline is a vertical line.
 type Vline struct {
 	X   int
 	Y   int
@@ -24,7 +19,6 @@ type Vline struct {
 	Bg  Attribute
 }
 
-// Buffer draws a horizontal line.
 func (l Hline) Buffer() Buffer {
 	if l.Len <= 0 {
 		return NewBuffer()
@@ -32,7 +26,6 @@ func (l Hline) Buffer() Buffer {
 	return NewFilledBuffer(l.X, l.Y, l.X+l.Len, l.Y+1, HORIZONTAL_LINE, l.Fg, l.Bg)
 }
 
-// Buffer draws a vertical line.
 func (l Vline) Buffer() Buffer {
 	if l.Len <= 0 {
 		return NewBuffer()
@@ -40,7 +33,6 @@ func (l Vline) Buffer() Buffer {
 	return NewFilledBuffer(l.X, l.Y, l.X+1, l.Y+l.Len, VERTICAL_LINE, l.Fg, l.Bg)
 }
 
-// Buffer draws a box border.
 func (b Block) drawBorder(buf Buffer) {
 	if !b.Border {
 		return
@@ -54,7 +46,6 @@ func (b Block) drawBorder(buf Buffer) {
 	x1 := max.X - 1
 	y1 := max.Y - 1
 
-	// draw lines
 	if b.BorderTop {
 		buf.Merge(Hline{x0, y0, x1 - x0, b.BorderFg, b.BorderBg}.Buffer())
 	}
@@ -68,7 +59,6 @@ func (b Block) drawBorder(buf Buffer) {
 		buf.Merge(Vline{x1, y0, y1 - y0, b.BorderFg, b.BorderBg}.Buffer())
 	}
 
-	// draw corners
 	if b.BorderTop && b.BorderLeft && b.area.Dx() > 0 && b.area.Dy() > 0 {
 		buf.Set(x0, y0, Cell{TOP_LEFT, b.BorderFg, b.BorderBg})
 	}
@@ -93,9 +83,6 @@ func (b Block) drawBorderLabel(buf Buffer) {
 	}
 }
 
-// Block is a base struct for all other upper level widgets,
-// consider it as css: display:block.
-// Normally you do not need to create it manually.
 type Block struct {
 	area          image.Rectangle
 	innerArea     image.Rectangle
@@ -123,7 +110,6 @@ type Block struct {
 	Float         Align
 }
 
-// NewBlock returns a *Block which inherits styles from current theme.
 func NewBlock() *Block {
 	b := Block{}
 	b.Display = true
@@ -148,19 +134,16 @@ func (b Block) Id() string {
 	return b.id
 }
 
-// Align computes box model
 func (b *Block) Align() {
-	// outer
+
 	b.area.Min.X = 0
 	b.area.Min.Y = 0
 	b.area.Max.X = b.Width
 	b.area.Max.Y = b.Height
 
-	// float
 	b.area = AlignArea(TermRect(), b.area, b.Float)
 	b.area = MoveArea(b.area, b.X, b.Y)
 
-	// inner
 	b.innerArea.Min.X = b.area.Min.X + b.PaddingLeft
 	b.innerArea.Min.Y = b.area.Min.Y + b.PaddingTop
 	b.innerArea.Max.X = b.area.Max.X - b.PaddingRight
@@ -182,15 +165,11 @@ func (b *Block) Align() {
 	}
 }
 
-// InnerBounds returns the internal bounds of the block after aligning and
-// calculating the padding and border, if any.
 func (b *Block) InnerBounds() image.Rectangle {
 	b.Align()
 	return b.innerArea
 }
 
-// Buffer implements Bufferer interface.
-// Draw background and border (if any).
 func (b *Block) Buffer() Buffer {
 	b.Align()
 
@@ -204,23 +183,18 @@ func (b *Block) Buffer() Buffer {
 	return buf
 }
 
-// GetHeight implements GridBufferer.
-// It returns current height of the block.
 func (b Block) GetHeight() int {
 	return b.Height
 }
 
-// SetX implements GridBufferer interface, which sets block's x position.
 func (b *Block) SetX(x int) {
 	b.X = x
 }
 
-// SetY implements GridBufferer interface, it sets y position for block.
 func (b *Block) SetY(y int) {
 	b.Y = y
 }
 
-// SetWidth implements GridBuffer interface, it sets block's width.
 func (b *Block) SetWidth(w int) {
 	b.Width = w
 }

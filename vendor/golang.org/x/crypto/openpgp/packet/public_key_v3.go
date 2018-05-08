@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package packet
 
 import (
@@ -19,10 +16,6 @@ import (
 	"golang.org/x/crypto/openpgp/errors"
 )
 
-// PublicKeyV3 represents older, version 3 public keys. These keys are less secure and
-// should not be used for signing or encrypting. They are supported here only for
-// parsing version 3 key material and validating signatures.
-// See RFC 4880, section 5.5.2.
 type PublicKeyV3 struct {
 	CreationTime time.Time
 	DaysToExpire uint16
@@ -35,9 +28,6 @@ type PublicKeyV3 struct {
 	n, e parsedMPI
 }
 
-// newRSAPublicKeyV3 returns a PublicKey that wraps the given rsa.PublicKey.
-// Included here for testing purposes only. RFC 4880, section 5.5.2:
-// "an implementation MUST NOT generate a V3 key, but MAY accept it."
 func newRSAPublicKeyV3(creationTime time.Time, pub *rsa.PublicKey) *PublicKeyV3 {
 	pk := &PublicKeyV3{
 		CreationTime: creationTime,
@@ -51,7 +41,7 @@ func newRSAPublicKeyV3(creationTime time.Time, pub *rsa.PublicKey) *PublicKeyV3 
 }
 
 func (pk *PublicKeyV3) parse(r io.Reader) (err error) {
-	// RFC 4880, section 5.5.2
+
 	var buf [8]byte
 	if _, err = readFull(r, buf[:]); err != nil {
 		return
@@ -77,7 +67,7 @@ func (pk *PublicKeyV3) parse(r io.Reader) (err error) {
 }
 
 func (pk *PublicKeyV3) setFingerPrintAndKeyId() {
-	// RFC 4880, section 12.2
+
 	fingerPrint := md5.New()
 	fingerPrint.Write(pk.n.bytes)
 	fingerPrint.Write(pk.e.bytes)
@@ -85,8 +75,6 @@ func (pk *PublicKeyV3) setFingerPrintAndKeyId() {
 	pk.KeyId = binary.BigEndian.Uint64(pk.n.bytes[len(pk.n.bytes)-8:])
 }
 
-// parseRSA parses RSA public key material from the given Reader. See RFC 4880,
-// section 5.5.2.
 func (pk *PublicKeyV3) parseRSA(r io.Reader) (err error) {
 	if pk.n.bytes, pk.n.bitLength, err = readMPI(r); err != nil {
 		return
@@ -95,8 +83,6 @@ func (pk *PublicKeyV3) parseRSA(r io.Reader) (err error) {
 		return
 	}
 
-	// RFC 4880 Section 12.2 requires the low 8 bytes of the
-	// modulus to form the key id.
 	if len(pk.n.bytes) < 8 {
 		return errors.StructuralError("v3 public key modulus is too short")
 	}
@@ -113,9 +99,6 @@ func (pk *PublicKeyV3) parseRSA(r io.Reader) (err error) {
 	return
 }
 
-// SerializeSignaturePrefix writes the prefix for this public key to the given Writer.
-// The prefix is used when calculating a signature over this public key. See
-// RFC 4880, section 5.2.4.
 func (pk *PublicKeyV3) SerializeSignaturePrefix(w io.Writer) {
 	var pLength uint16
 	switch pk.PubKeyAlgo {
@@ -131,7 +114,7 @@ func (pk *PublicKeyV3) SerializeSignaturePrefix(w io.Writer) {
 }
 
 func (pk *PublicKeyV3) Serialize(w io.Writer) (err error) {
-	length := 8 // 8 byte header
+	length := 8 
 
 	switch pk.PubKeyAlgo {
 	case PubKeyAlgoRSA, PubKeyAlgoRSAEncryptOnly, PubKeyAlgoRSASignOnly:
@@ -151,22 +134,20 @@ func (pk *PublicKeyV3) Serialize(w io.Writer) (err error) {
 	return pk.serializeWithoutHeaders(w)
 }
 
-// serializeWithoutHeaders marshals the PublicKey to w in the form of an
-// OpenPGP public key packet, not including the packet header.
 func (pk *PublicKeyV3) serializeWithoutHeaders(w io.Writer) (err error) {
 	var buf [8]byte
-	// Version 3
+
 	buf[0] = 3
-	// Creation time
+
 	t := uint32(pk.CreationTime.Unix())
 	buf[1] = byte(t >> 24)
 	buf[2] = byte(t >> 16)
 	buf[3] = byte(t >> 8)
 	buf[4] = byte(t)
-	// Days to expire
+
 	buf[5] = byte(pk.DaysToExpire >> 8)
 	buf[6] = byte(pk.DaysToExpire)
-	// Public key algorithm
+
 	buf[7] = byte(pk.PubKeyAlgo)
 
 	if _, err = w.Write(buf[:]); err != nil {
@@ -180,13 +161,10 @@ func (pk *PublicKeyV3) serializeWithoutHeaders(w io.Writer) (err error) {
 	return errors.InvalidArgumentError("bad public-key algorithm")
 }
 
-// CanSign returns true iff this public key can generate signatures
 func (pk *PublicKeyV3) CanSign() bool {
 	return pk.PubKeyAlgo != PubKeyAlgoRSAEncryptOnly
 }
 
-// VerifySignatureV3 returns nil iff sig is a valid signature, made by this
-// public key, of the data hashed into signed. signed is mutated by this call.
 func (pk *PublicKeyV3) VerifySignatureV3(signed hash.Hash, sig *SignatureV3) (err error) {
 	if !pk.CanSign() {
 		return errors.InvalidArgumentError("public key cannot generate signatures")
@@ -213,13 +191,11 @@ func (pk *PublicKeyV3) VerifySignatureV3(signed hash.Hash, sig *SignatureV3) (er
 		}
 		return
 	default:
-		// V3 public keys only support RSA.
+
 		panic("shouldn't happen")
 	}
 }
 
-// VerifyUserIdSignatureV3 returns nil iff sig is a valid signature, made by this
-// public key, that id is the identity of pub.
 func (pk *PublicKeyV3) VerifyUserIdSignatureV3(id string, pub *PublicKeyV3, sig *SignatureV3) (err error) {
 	h, err := userIdSignatureV3Hash(id, pk, sig.Hash)
 	if err != nil {
@@ -228,8 +204,6 @@ func (pk *PublicKeyV3) VerifyUserIdSignatureV3(id string, pub *PublicKeyV3, sig 
 	return pk.VerifySignatureV3(h, sig)
 }
 
-// VerifyKeySignatureV3 returns nil iff sig is a valid signature, made by this
-// public key, of signed.
 func (pk *PublicKeyV3) VerifyKeySignatureV3(signed *PublicKeyV3, sig *SignatureV3) (err error) {
 	h, err := keySignatureHash(pk, signed, sig.Hash)
 	if err != nil {
@@ -238,15 +212,12 @@ func (pk *PublicKeyV3) VerifyKeySignatureV3(signed *PublicKeyV3, sig *SignatureV
 	return pk.VerifySignatureV3(h, sig)
 }
 
-// userIdSignatureV3Hash returns a Hash of the message that needs to be signed
-// to assert that pk is a valid key for id.
 func userIdSignatureV3Hash(id string, pk signingKey, hfn crypto.Hash) (h hash.Hash, err error) {
 	if !hfn.Available() {
 		return nil, errors.UnsupportedError("hash function")
 	}
 	h = hfn.New()
 
-	// RFC 4880, section 5.2.4
 	pk.SerializeSignaturePrefix(h)
 	pk.serializeWithoutHeaders(h)
 
@@ -255,19 +226,14 @@ func userIdSignatureV3Hash(id string, pk signingKey, hfn crypto.Hash) (h hash.Ha
 	return
 }
 
-// KeyIdString returns the public key's fingerprint in capital hex
-// (e.g. "6C7EE1B8621CC013").
 func (pk *PublicKeyV3) KeyIdString() string {
 	return fmt.Sprintf("%X", pk.KeyId)
 }
 
-// KeyIdShortString returns the short form of public key's fingerprint
-// in capital hex, as shown by gpg --list-keys (e.g. "621CC013").
 func (pk *PublicKeyV3) KeyIdShortString() string {
 	return fmt.Sprintf("%X", pk.KeyId&0xFFFFFFFF)
 }
 
-// BitLength returns the bit length for the given public key.
 func (pk *PublicKeyV3) BitLength() (bitLength uint16, err error) {
 	switch pk.PubKeyAlgo {
 	case PubKeyAlgoRSA, PubKeyAlgoRSAEncryptOnly, PubKeyAlgoRSASignOnly:

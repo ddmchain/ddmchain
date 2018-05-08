@@ -24,7 +24,6 @@ func builtinConsole_error(call FunctionCall) Value {
 	return Value{}
 }
 
-// Nothing happens.
 func builtinConsole_dir(call FunctionCall) Value {
 	return Value{}
 }

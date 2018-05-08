@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// Azure reports time in UTC but it doesn't include the 'Z' time zone suffix in some cases.
 const (
 	azureUtcFormatJSON = `"2006-01-02T15:04:05.999999999"`
 	azureUtcFormat     = "2006-01-02T15:04:05.999999999"
@@ -66,7 +65,6 @@ func (t Time) String() string {
 	return string(b)
 }
 
-// ToTime returns a Time as a time.Time
 func (t Time) ToTime() time.Time {
 	return t.Time
 }

@@ -12,10 +12,9 @@ import (
 	"github.com/go-ole/go-ole/oleutil"
 )
 
-// SWbemServices is used to access wmi. See https://msdn.microsoft.com/en-us/library/aa393719(v=vs.85).aspx
 type SWbemServices struct {
-	//TODO: track namespace. Not sure if we can re connect to a different namespace using the same instance
-	cWMIClient            *Client //This could also be an embedded struct, but then we would need to branch on Client vs SWbemServices in the Query method
+
+	cWMIClient            *Client 
 	sWbemLocatorIUnknown  *ole.IUnknown
 	sWbemLocatorIDispatch *ole.IDispatch
 	queries               chan *queryRequest
@@ -30,10 +29,8 @@ type queryRequest struct {
 	finished chan error
 }
 
-// InitializeSWbemServices will return a new SWbemServices object that can be used to query WMI
 func InitializeSWbemServices(c *Client, connectServerArgs ...interface{}) (*SWbemServices, error) {
-	//fmt.Println("InitializeSWbemServices: Starting")
-	//TODO: implement connectServerArgs as optional argument for init with connectServer call
+
 	s := new(SWbemServices)
 	s.cWMIClient = c
 	s.queries = make(chan *queryRequest)
@@ -42,13 +39,12 @@ func InitializeSWbemServices(c *Client, connectServerArgs ...interface{}) (*SWbe
 
 	err, ok := <-initError
 	if ok {
-		return nil, err //Send error to caller
+		return nil, err 
 	}
-	//fmt.Println("InitializeSWbemServices: Finished")
+
 	return s, nil
 }
 
-// Close will clear and release all of the SWbemServices resources
 func (s *SWbemServices) Close() error {
 	s.lQueryorClose.Lock()
 	if s == nil || s.sWbemLocatorIDispatch == nil {
@@ -59,23 +55,22 @@ func (s *SWbemServices) Close() error {
 		s.lQueryorClose.Unlock()
 		return fmt.Errorf("SWbemServices has been closed")
 	}
-	//fmt.Println("Close: sending close request")
+
 	var result error
 	ce := make(chan error)
-	s.closeError = ce //Race condition if multiple callers to close. May need to lock here
-	close(s.queries)  //Tell background to shut things down
+	s.closeError = ce 
+	close(s.queries)  
 	s.lQueryorClose.Unlock()
 	err, ok := <-ce
 	if ok {
 		result = err
 	}
-	//fmt.Println("Close: finished")
+
 	return result
 }
 
 func (s *SWbemServices) process(initError chan error) {
-	//fmt.Println("process: starting background thread initialization")
-	//All OLE/WMI calls must happen on the same initialized thead, so lock this goroutine
+
 	runtime.LockOSThread()
 	defer runtime.LockOSThread()
 
@@ -108,36 +103,23 @@ func (s *SWbemServices) process(initError chan error) {
 	defer dispatch.Release()
 	s.sWbemLocatorIDispatch = dispatch
 
-	// we can't do the ConnectServer call outside the loop unless we find a way to track and re-init the connectServerArgs
-	//fmt.Println("process: initialized. closing initError")
 	close(initError)
-	//fmt.Println("process: waiting for queries")
+
 	for q := range s.queries {
-		//fmt.Printf("process: new query: len(query)=%d\n", len(q.query))
+
 		errQuery := s.queryBackground(q)
-		//fmt.Println("process: s.queryBackground finished")
+
 		if errQuery != nil {
 			q.finished <- errQuery
 		}
 		close(q.finished)
 	}
-	//fmt.Println("process: queries channel closed")
-	s.queries = nil //set channel to nil so we know it is closed
-	//TODO: I think the Release/Clear calls can panic if things are in a bad state.
-	//TODO: May need to recover from panics and send error to method caller instead.
+
+	s.queries = nil 
+
 	close(s.closeError)
 }
 
-// Query runs the WQL query using a SWbemServices instance and appends the values to dst.
-//
-// dst must have type *[]S or *[]*S, for some struct type S. Fields selected in
-// the query must have the same name in dst. Supported types are all signed and
-// unsigned integers, time.Time, string, bool, or a pointer to one of those.
-// Array types are not supported.
-//
-// By default, the local machine and default namespace are used. These can be
-// changed using connectServerArgs. See
-// http://msdn.microsoft.com/en-us/library/aa393720.aspx for details.
 func (s *SWbemServices) Query(query string, dst interface{}, connectServerArgs ...interface{}) error {
 	s.lQueryorClose.Lock()
 	if s == nil || s.sWbemLocatorIDispatch == nil {
@@ -149,7 +131,6 @@ func (s *SWbemServices) Query(query string, dst interface{}, connectServerArgs .
 		return fmt.Errorf("SWbemServices has been closed")
 	}
 
-	//fmt.Println("Query: Sending query request")
 	qr := queryRequest{
 		query:    query,
 		dst:      dst,
@@ -160,10 +141,10 @@ func (s *SWbemServices) Query(query string, dst interface{}, connectServerArgs .
 	s.lQueryorClose.Unlock()
 	err, ok := <-qr.finished
 	if ok {
-		//fmt.Println("Query: Finished with error")
-		return err //Send error to caller
+
+		return err 
 	}
-	//fmt.Println("Query: Finished")
+
 	return nil
 }
 
@@ -171,8 +152,7 @@ func (s *SWbemServices) queryBackground(q *queryRequest) error {
 	if s == nil || s.sWbemLocatorIDispatch == nil {
 		return fmt.Errorf("SWbemServices is not Initialized")
 	}
-	wmi := s.sWbemLocatorIDispatch //Should just rename in the code, but this will help as we break things apart
-	//fmt.Println("queryBackground: Starting")
+	wmi := s.sWbemLocatorIDispatch 
 
 	dv := reflect.ValueOf(q.dst)
 	if dv.Kind() != reflect.Ptr || dv.IsNil() {
@@ -184,7 +164,6 @@ func (s *SWbemServices) queryBackground(q *queryRequest) error {
 		return ErrInvalidEntityType
 	}
 
-	// service is a SWbemServices
 	serviceRaw, err := oleutil.CallMethod(wmi, "ConnectServer", q.args...)
 	if err != nil {
 		return err
@@ -192,7 +171,6 @@ func (s *SWbemServices) queryBackground(q *queryRequest) error {
 	service := serviceRaw.ToIDispatch()
 	defer serviceRaw.Clear()
 
-	// result is a SWBemObjectSet
 	resultRaw, err := oleutil.CallMethod(service, "ExecQuery", q.query)
 	if err != nil {
 		return err
@@ -220,7 +198,6 @@ func (s *SWbemServices) queryBackground(q *queryRequest) error {
 	}
 	defer enum.Release()
 
-	// Initialize a slice with Count capacity
 	dv.Set(reflect.MakeSlice(dv.Type(), 0, int(count)))
 
 	var errFieldMismatch error
@@ -230,16 +207,14 @@ func (s *SWbemServices) queryBackground(q *queryRequest) error {
 		}
 
 		err := func() error {
-			// item is a SWbemObject, but really a Win32_Process
+
 			item := itemRaw.ToIDispatch()
 			defer item.Release()
 
 			ev := reflect.New(elemType)
 			if err = s.cWMIClient.loadEntity(ev.Interface(), item); err != nil {
 				if _, ok := err.(*ErrFieldMismatch); ok {
-					// We continue loading entities even in the face of field mismatch errors.
-					// If we encounter any other error, that other error is returned. Otherwise,
-					// an ErrFieldMismatch is returned.
+
 					errFieldMismatch = err
 				} else {
 					return err
@@ -255,6 +230,6 @@ func (s *SWbemServices) queryBackground(q *queryRequest) error {
 			return err
 		}
 	}
-	//fmt.Println("queryBackground: Finished")
+
 	return errFieldMismatch
 }

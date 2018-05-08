@@ -1,27 +1,5 @@
 // +build windows
 
-/*
-Package wmi provides a WQL interface for WMI on Windows.
-
-Example code to print names of running processes:
-
-	type Win32_Process struct {
-		Name string
-	}
-
-	func main() {
-		var dst []Win32_Process
-		q := wmi.CreateQuery(&dst, "")
-		err := wmi.Query(q, &dst)
-		if err != nil {
-			log.Fatal(err)
-		}
-		for i, v := range dst {
-			println(i, v.Name)
-		}
-	}
-
-*/
 package wmi
 
 import (
@@ -45,32 +23,17 @@ var l = log.New(os.Stdout, "", log.LstdFlags)
 
 var (
 	ErrInvalidEntityType = errors.New("wmi: invalid entity type")
-	// ErrNilCreateObject is the error returned if CreateObject returns nil even
-	// if the error was nil.
+
 	ErrNilCreateObject = errors.New("wmi: create object returned nil")
 	lock               sync.Mutex
 )
 
-// S_FALSE is returned by CoInitializeEx if it was already called on this thread.
 const S_FALSE = 0x00000001
 
-// QueryNamespace invokes Query with the given namespace on the local machine.
 func QueryNamespace(query string, dst interface{}, namespace string) error {
 	return Query(query, dst, nil, namespace)
 }
 
-// Query runs the WQL query and appends the values to dst.
-//
-// dst must have type *[]S or *[]*S, for some struct type S. Fields selected in
-// the query must have the same name in dst. Supported types are all signed and
-// unsigned integers, time.Time, string, bool, or a pointer to one of those.
-// Array types are not supported.
-//
-// By default, the local machine and default namespace are used. These can be
-// changed using connectServerArgs. See
-// http://msdn.microsoft.com/en-us/library/aa393720.aspx for details.
-//
-// Query is a wrapper around DefaultClient.Query.
 func Query(query string, dst interface{}, connectServerArgs ...interface{}) error {
 	if DefaultClient.SWbemServicesClient == nil {
 		return DefaultClient.Query(query, dst, connectServerArgs...)
@@ -78,50 +41,19 @@ func Query(query string, dst interface{}, connectServerArgs ...interface{}) erro
 	return DefaultClient.SWbemServicesClient.Query(query, dst, connectServerArgs...)
 }
 
-// A Client is an WMI query client.
-//
-// Its zero value (DefaultClient) is a usable client.
 type Client struct {
-	// NonePtrZero specifies if nil values for fields which aren't pointers
-	// should be returned as the field types zero value.
-	//
-	// Setting this to true allows stucts without pointer fields to be used
-	// without the risk failure should a nil value returned from WMI.
+
 	NonePtrZero bool
 
-	// PtrNil specifies if nil values for pointer fields should be returned
-	// as nil.
-	//
-	// Setting this to true will set pointer fields to nil where WMI
-	// returned nil, otherwise the types zero value will be returned.
 	PtrNil bool
 
-	// AllowMissingFields specifies that struct fields not present in the
-	// query result should not result in an error.
-	//
-	// Setting this to true allows custom queries to be used with full
-	// struct definitions instead of having to define multiple structs.
 	AllowMissingFields bool
 
-	// SWbemServiceClient is an optional SWbemServices object that can be
-	// initialized and then reused across multiple queries. If it is null
-	// then the method will initialize a new temporary client each time.
 	SWbemServicesClient *SWbemServices
 }
 
-// DefaultClient is the default Client and is used by Query, QueryNamespace
 var DefaultClient = &Client{}
 
-// Query runs the WQL query and appends the values to dst.
-//
-// dst must have type *[]S or *[]*S, for some struct type S. Fields selected in
-// the query must have the same name in dst. Supported types are all signed and
-// unsigned integers, time.Time, string, bool, or a pointer to one of those.
-// Array types are not supported.
-//
-// By default, the local machine and default namespace are used. These can be
-// changed using connectServerArgs. See
-// http://msdn.microsoft.com/en-us/library/aa393720.aspx for details.
 func (c *Client) Query(query string, dst interface{}, connectServerArgs ...interface{}) error {
 	dv := reflect.ValueOf(dst)
 	if dv.Kind() != reflect.Ptr || dv.IsNil() {
@@ -161,7 +93,6 @@ func (c *Client) Query(query string, dst interface{}, connectServerArgs ...inter
 	}
 	defer wmi.Release()
 
-	// service is a SWbemServices
 	serviceRaw, err := oleutil.CallMethod(wmi, "ConnectServer", connectServerArgs...)
 	if err != nil {
 		return err
@@ -169,7 +100,6 @@ func (c *Client) Query(query string, dst interface{}, connectServerArgs ...inter
 	service := serviceRaw.ToIDispatch()
 	defer serviceRaw.Clear()
 
-	// result is a SWBemObjectSet
 	resultRaw, err := oleutil.CallMethod(service, "ExecQuery", query)
 	if err != nil {
 		return err
@@ -197,7 +127,6 @@ func (c *Client) Query(query string, dst interface{}, connectServerArgs ...inter
 	}
 	defer enum.Release()
 
-	// Initialize a slice with Count capacity
 	dv.Set(reflect.MakeSlice(dv.Type(), 0, int(count)))
 
 	var errFieldMismatch error
@@ -207,16 +136,14 @@ func (c *Client) Query(query string, dst interface{}, connectServerArgs ...inter
 		}
 
 		err := func() error {
-			// item is a SWbemObject, but really a Win32_Process
+
 			item := itemRaw.ToIDispatch()
 			defer item.Release()
 
 			ev := reflect.New(elemType)
 			if err = c.loadEntity(ev.Interface(), item); err != nil {
 				if _, ok := err.(*ErrFieldMismatch); ok {
-					// We continue loading entities even in the face of field mismatch errors.
-					// If we encounter any other error, that other error is returned. Otherwise,
-					// an ErrFieldMismatch is returned.
+
 					errFieldMismatch = err
 				} else {
 					return err
@@ -235,10 +162,6 @@ func (c *Client) Query(query string, dst interface{}, connectServerArgs ...inter
 	return errFieldMismatch
 }
 
-// ErrFieldMismatch is returned when a field is to be loaded into a different
-// type than the one it was stored from, or when a field is missing or
-// unexported in the destination struct.
-// StructType is the type of the struct pointed to by the destination argument.
 type ErrFieldMismatch struct {
 	StructType reflect.Type
 	FieldName  string
@@ -252,7 +175,6 @@ func (e *ErrFieldMismatch) Error() string {
 
 var timeType = reflect.TypeOf(time.Time{})
 
-// loadEntity loads a SWbemObject into a struct pointer.
 func (c *Client) loadEntity(dst interface{}, src *ole.IDispatch) (errFieldMismatch error) {
 	v := reflect.ValueOf(dst).Elem()
 	for i := 0; i < v.NumField(); i++ {
@@ -428,10 +350,6 @@ const (
 	multiArgTypeStructPtr
 )
 
-// checkMultiArg checks that v has type []S, []*S for some struct type S.
-//
-// It returns what category the slice's elements are, and the reflect.Type
-// that represents S.
 func checkMultiArg(v reflect.Value) (m multiArgType, elemType reflect.Type) {
 	if v.Kind() != reflect.Slice {
 		return multiArgTypeInvalid, nil
@@ -460,9 +378,6 @@ func oleInt64(item *ole.IDispatch, prop string) (int64, error) {
 	return i, nil
 }
 
-// CreateQuery returns a WQL query string that queries all columns of src. where
-// is an optional string that is appended to the query, to be used with WHERE
-// clauses. In such a case, the "WHERE" string should appear at the beginning.
 func CreateQuery(src interface{}, where string) string {
 	var b bytes.Buffer
 	b.WriteString("SELECT ")

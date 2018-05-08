@@ -1,9 +1,4 @@
 
-// All rights reserved.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package storage
 
 import (
@@ -28,7 +23,6 @@ func (lock *memStorageLock) Unlock() {
 	return
 }
 
-// memStorage is a memory-backed storage.
 type memStorage struct {
 	mu    sync.Mutex
 	slock *memStorageLock
@@ -36,7 +30,6 @@ type memStorage struct {
 	meta  FileDesc
 }
 
-// NewMemStorage returns a new memory-backed storage implementation.
 func NewMemStorage() Storage {
 	return &memStorage{
 		files: make(map[uint64]*memFile),

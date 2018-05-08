@@ -62,7 +62,7 @@ func (s *State) moveDown(lines int) {
 }
 
 func (s *State) emitNewLine() {
-	// windows doesn't need to omit a new line
+
 }
 
 func (s *State) getColumns() {
@@ -70,7 +70,7 @@ func (s *State) getColumns() {
 	procGetConsoleScreenBufferInfo.Call(uintptr(s.hOut), uintptr(unsafe.Pointer(&sbi)))
 	s.columns = int(sbi.dwSize.x)
 	if s.columns > 1 {
-		// Windows 10 needs a spare column for the cursor
+
 		s.columns--
 	}
 }

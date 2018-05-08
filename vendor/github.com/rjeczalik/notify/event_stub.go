@@ -1,23 +1,17 @@
 
-// Use of this source code is governed by the MIT license that can be
-// found in the LICENSE file.
-
 // +build !darwin,!linux,!freebsd,!dragonfly,!netbsd,!openbsd,!windows
 // +build !kqueue,!solaris
 
 package notify
 
-// Platform independent event values.
 const (
 	osSpecificCreate Event = 1 << iota
 	osSpecificRemove
 	osSpecificWrite
 	osSpecificRename
-	// internal
-	// recursive is used to distinguish recursive eventsets from non-recursive ones
+
 	recursive
-	// omit is used for dispatching internal events; only those events are sent
-	// for which both the event and the watchpoint has omit in theirs event sets.
+
 	omit
 )
 

@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build gccgo
 
 #include <errno.h>
@@ -11,9 +8,6 @@
 #define _STRINGIFY2_(x) #x
 #define _STRINGIFY_(x) _STRINGIFY2_(x)
 #define GOSYM_PREFIX _STRINGIFY_(__USER_LABEL_PREFIX__)
-
-// Call syscall from C code because the gccgo support for calling from
-// Go to C does not support varargs functions.
 
 struct ret {
 	uintptr_t r;
@@ -30,8 +24,6 @@ gccgoRealSyscall(uintptr_t trap, uintptr_t a1, uintptr_t a2, uintptr_t a3, uintp
 	r.err = errno;
 	return r;
 }
-
-// Define the use function in C so that it is not inlined.
 
 extern void use(void *) __asm__ (GOSYM_PREFIX GOPKGPATH ".use") __attribute__((noinline));
 

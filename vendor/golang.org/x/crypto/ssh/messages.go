@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package ssh
 
 import (
@@ -16,31 +13,18 @@ import (
 	"strings"
 )
 
-// These are SSH message type numbers. They are scattered around several
-// documents but many were taken from [SSH-PARAMETERS].
 const (
 	msgIgnore        = 2
 	msgUnimplemented = 3
 	msgDebug         = 4
 	msgNewKeys       = 21
 
-	// Standard authentication messages
 	msgUserAuthSuccess = 52
 	msgUserAuthBanner  = 53
 )
 
-// SSH messages:
-//
-// These structures mirror the wire format of the corresponding SSH messages.
-// They are marshaled using reflection with the marshal and unmarshal functions
-// in this file. The only wrinkle is that a final member of type []byte with a
-// ssh tag of "rest" receives the remainder of a packet when unmarshaling.
-
-// See RFC 4253, section 11.1.
 const msgDisconnect = 1
 
-// disconnectMsg is the message that signals a disconnect. It is also
-// the error type returned from mux.Wait()
 type disconnectMsg struct {
 	Reason   uint32 `sshtype:"1"`
 	Message  string
@@ -51,7 +35,6 @@ func (d *disconnectMsg) Error() string {
 	return fmt.Sprintf("ssh: disconnect, reason %d: %s", d.Reason, d.Message)
 }
 
-// See RFC 4253, section 7.1.
 const msgKexInit = 20
 
 type kexInitMsg struct {
@@ -70,9 +53,6 @@ type kexInitMsg struct {
 	Reserved                uint32
 }
 
-// See RFC 4253, section 8.
-
-// Diffie-Helman
 const msgKexDHInit = 30
 
 type kexDHInitMsg struct {
@@ -101,21 +81,18 @@ type kexDHReplyMsg struct {
 	Signature []byte
 }
 
-// See RFC 4253, section 10.
 const msgServiceRequest = 5
 
 type serviceRequestMsg struct {
 	Service string `sshtype:"5"`
 }
 
-// See RFC 4253, section 10.
 const msgServiceAccept = 6
 
 type serviceAcceptMsg struct {
 	Service string `sshtype:"6"`
 }
 
-// See RFC 4252, section 5.
 const msgUserAuthRequest = 50
 
 type userAuthRequestMsg struct {
@@ -125,11 +102,9 @@ type userAuthRequestMsg struct {
 	Payload []byte `ssh:"rest"`
 }
 
-// Used for debug printouts of packets.
 type userAuthSuccessMsg struct {
 }
 
-// See RFC 4252, section 5.1
 const msgUserAuthFailure = 51
 
 type userAuthFailureMsg struct {
@@ -137,7 +112,6 @@ type userAuthFailureMsg struct {
 	PartialSuccess bool
 }
 
-// See RFC 4256, section 3.2
 const msgUserAuthInfoRequest = 60
 const msgUserAuthInfoResponse = 61
 
@@ -149,7 +123,6 @@ type userAuthInfoRequestMsg struct {
 	Prompts            []byte `ssh:"rest"`
 }
 
-// See RFC 4254, section 5.1.
 const msgChannelOpen = 90
 
 type channelOpenMsg struct {
@@ -163,14 +136,12 @@ type channelOpenMsg struct {
 const msgChannelExtendedData = 95
 const msgChannelData = 94
 
-// Used for debug print outs of packets.
 type channelDataMsg struct {
 	PeersId uint32 `sshtype:"94"`
 	Length  uint32
 	Rest    []byte `ssh:"rest"`
 }
 
-// See RFC 4254, section 5.1.
 const msgChannelOpenConfirm = 91
 
 type channelOpenConfirmMsg struct {
@@ -181,7 +152,6 @@ type channelOpenConfirmMsg struct {
 	TypeSpecificData []byte `ssh:"rest"`
 }
 
-// See RFC 4254, section 5.1.
 const msgChannelOpenFailure = 92
 
 type channelOpenFailureMsg struct {
@@ -200,35 +170,30 @@ type channelRequestMsg struct {
 	RequestSpecificData []byte `ssh:"rest"`
 }
 
-// See RFC 4254, section 5.4.
 const msgChannelSuccess = 99
 
 type channelRequestSuccessMsg struct {
 	PeersId uint32 `sshtype:"99"`
 }
 
-// See RFC 4254, section 5.4.
 const msgChannelFailure = 100
 
 type channelRequestFailureMsg struct {
 	PeersId uint32 `sshtype:"100"`
 }
 
-// See RFC 4254, section 5.3
 const msgChannelClose = 97
 
 type channelCloseMsg struct {
 	PeersId uint32 `sshtype:"97"`
 }
 
-// See RFC 4254, section 5.3
 const msgChannelEOF = 96
 
 type channelEOFMsg struct {
 	PeersId uint32 `sshtype:"96"`
 }
 
-// See RFC 4254, section 4
 const msgGlobalRequest = 80
 
 type globalRequestMsg struct {
@@ -237,21 +202,18 @@ type globalRequestMsg struct {
 	Data      []byte `ssh:"rest"`
 }
 
-// See RFC 4254, section 4
 const msgRequestSuccess = 81
 
 type globalRequestSuccessMsg struct {
 	Data []byte `ssh:"rest" sshtype:"81"`
 }
 
-// See RFC 4254, section 4
 const msgRequestFailure = 82
 
 type globalRequestFailureMsg struct {
 	Data []byte `ssh:"rest" sshtype:"82"`
 }
 
-// See RFC 4254, section 5.2
 const msgChannelWindowAdjust = 93
 
 type windowAdjustMsg struct {
@@ -259,7 +221,6 @@ type windowAdjustMsg struct {
 	AdditionalBytes uint32
 }
 
-// See RFC 4252, section 7
 const msgUserAuthPubKeyOk = 60
 
 type userAuthPubKeyOkMsg struct {
@@ -267,8 +228,6 @@ type userAuthPubKeyOkMsg struct {
 	PubKey []byte
 }
 
-// typeTags returns the possible type bytes for the given reflect.Type, which
-// should be a struct. The possible values are separated by a '|' character.
 func typeTags(structType reflect.Type) (tags []byte) {
 	tagStr := structType.Field(0).Tag.Get("sshtype")
 
@@ -291,12 +250,6 @@ func fieldError(t reflect.Type, field int, problem string) error {
 
 var errShortRead = errors.New("ssh: short read")
 
-// Unmarshal parses data in SSH wire format into a structure. The out
-// argument should be a pointer to struct. If the first member of the
-// struct has the "sshtype" tag set to a '|'-separated set of numbers
-// in decimal, the packet must start with one of those numbers. In
-// case of error, Unmarshal returns a ParseError or
-// UnexpectedMessageError.
 func Unmarshal(data []byte, out interface{}) error {
 	v := reflect.ValueOf(out).Elem()
 	structType := v.Type()
@@ -415,11 +368,6 @@ func Unmarshal(data []byte, out interface{}) error {
 	return nil
 }
 
-// Marshal serializes the message in msg to SSH wire format.  The msg
-// argument should be a struct or pointer to struct. If the first
-// member has the "sshtype" tag set to a number in decimal, that
-// number is prepended to the result. If the last of member has the
-// "ssh" tag set to "rest", its contents are appended to the output.
 func Marshal(msg interface{}) []byte {
 	out := make([]byte, 0, 64)
 	return marshalStruct(out, msg)
@@ -476,7 +424,7 @@ func marshalStruct(out []byte, msg interface{}) []byte {
 						}
 						out = append(out, f.String()...)
 					}
-					// overwrite length value
+
 					binary.BigEndian.PutUint32(out[offset:], uint32(len(out)-offset-4))
 				}
 			default:
@@ -553,7 +501,7 @@ func parseInt(in []byte) (out *big.Int, rest []byte, ok bool) {
 	out = new(big.Int)
 
 	if len(contents) > 0 && contents[0]&0x80 == 0x80 {
-		// This is a negative number
+
 		notBytes := make([]byte, len(contents))
 		for i := range notBytes {
 			notBytes[i] = ^contents[i]
@@ -562,7 +510,7 @@ func parseInt(in []byte) (out *big.Int, rest []byte, ok bool) {
 		out.Add(out, bigOne)
 		out.Neg(out)
 	} else {
-		// Positive number
+
 		out.SetBytes(contents)
 	}
 	ok = true
@@ -584,22 +532,22 @@ func parseUint64(in []byte) (uint64, []byte, bool) {
 }
 
 func intLength(n *big.Int) int {
-	length := 4 /* length bytes */
+	length := 4 
 	if n.Sign() < 0 {
 		nMinus1 := new(big.Int).Neg(n)
 		nMinus1.Sub(nMinus1, bigOne)
 		bitLen := nMinus1.BitLen()
 		if bitLen%8 == 0 {
-			// The number will need 0xff padding
+
 			length++
 		}
 		length += (bitLen + 7) / 8
 	} else if n.Sign() == 0 {
-		// A zero is the zero length string
+
 	} else {
 		bitLen := n.BitLen()
 		if bitLen%8 == 0 {
-			// The number will need 0x00 padding
+
 			length++
 		}
 		length += (bitLen + 7) / 8
@@ -624,10 +572,7 @@ func marshalInt(to []byte, n *big.Int) []byte {
 	length := 0
 
 	if n.Sign() < 0 {
-		// A negative number has to be converted to two's-complement
-		// form. So we'll subtract 1 and invert. If the
-		// most-significant-bit isn't set then we'll need to pad the
-		// beginning with 0xff in order to keep the number negative.
+
 		nMinus1 := new(big.Int).Neg(n)
 		nMinus1.Sub(nMinus1, bigOne)
 		bytes := nMinus1.Bytes()
@@ -643,12 +588,11 @@ func marshalInt(to []byte, n *big.Int) []byte {
 		to = to[nBytes:]
 		length += nBytes
 	} else if n.Sign() == 0 {
-		// A zero is the zero length string
+
 	} else {
 		bytes := n.Bytes()
 		if len(bytes) > 0 && bytes[0]&0x80 != 0 {
-			// We'll have to pad this with a 0x00 in order to
-			// stop it looking like a negative number.
+
 			to[0] = 0
 			to = to[1:]
 			length++
@@ -698,7 +642,6 @@ func marshalString(to []byte, s []byte) []byte {
 
 var bigIntType = reflect.TypeOf((*big.Int)(nil))
 
-// Decode a packet into its corresponding message.
 func decode(packet []byte) (interface{}, error) {
 	var msg interface{}
 	switch packet[0] {

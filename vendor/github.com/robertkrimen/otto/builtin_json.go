@@ -200,7 +200,7 @@ func builtinJSON_stringifyWalk(ctx _builtinJSON_stringifyContext, key string, ho
 		if toJSON := object.get("toJSON"); toJSON.IsFunction() {
 			value = toJSON.call(ctx.call.runtime, value, key)
 		} else {
-			// If the object is a GoStruct or something that implements json.Marshaler
+
 			if object.objectClass.marshalJSON != nil {
 				marshaler := object.objectClass.marshalJSON(object)
 				if marshaler != nil {
@@ -282,8 +282,7 @@ func builtinJSON_stringifyWalk(ctx _builtinJSON_stringifyContext, key string, ho
 					}
 				}
 			} else {
-				// Go maps are without order, so this doesn't conform to the ECMA ordering
-				// standard, but oh well...
+
 				holder.enumerate(false, func(name string) bool {
 					value, exists := builtinJSON_stringifyWalk(ctx, name, holder)
 					if exists {

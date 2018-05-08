@@ -1,4 +1,3 @@
-// Helper for converting SafeArray to array of objects.
 
 package ole
 
@@ -92,7 +91,7 @@ func (sac *SafeArrayConversion) ToValueArray() (values []interface{}) {
 			safeArrayGetElement(sac.Array, int64(i), unsafe.Pointer(&v))
 			values[i] = v.Value()
 		default:
-			// TODO
+
 		}
 	}
 
@@ -116,7 +115,6 @@ func (sac *SafeArrayConversion) TotalElements(index uint32) (totalElements int64
 		index = 1
 	}
 
-	// Get array bounds
 	var LowerBounds int64
 	var UpperBounds int64
 
@@ -134,7 +132,6 @@ func (sac *SafeArrayConversion) TotalElements(index uint32) (totalElements int64
 	return
 }
 
-// Release Safe Array memory
 func (sac *SafeArrayConversion) Release() {
 	safeArrayDestroy(sac.Array)
 }

@@ -2,10 +2,6 @@ package liner
 
 import "unicode"
 
-// These character classes are mostly zero width (when combined).
-// A few might not be, depending on the user's font. Fixing this
-// is non-trivial, given that some terminals don't support
-// ANSI DSR/CPR
 var zeroWidth = []*unicode.RangeTable{
 	unicode.Mn,
 	unicode.Me,
@@ -20,12 +16,10 @@ var doubleWidth = []*unicode.RangeTable{
 	unicode.Katakana,
 }
 
-// countGlyphs considers zero-width characters to be zero glyphs wide,
-// and members of Chinese, Japanese, and Korean scripts to be 2 glyphs wide.
 func countGlyphs(s []rune) int {
 	n := 0
 	for _, r := range s {
-		// speed up the common case
+
 		if r < 127 {
 			n++
 			continue
@@ -53,8 +47,7 @@ func countMultiLineGlyphs(s []rune, columns int, start int) int {
 		case unicode.IsOneOf(zeroWidth, r):
 		case unicode.IsOneOf(doubleWidth, r):
 			n += 2
-			// no room for a 2-glyphs-wide char in the ending
-			// so skip a column and display it at the beginning
+
 			if n%columns == 1 {
 				n++
 			}
@@ -68,7 +61,7 @@ func countMultiLineGlyphs(s []rune, columns int, start int) int {
 func getPrefixGlyphs(s []rune, num int) []rune {
 	p := 0
 	for n := 0; n < num && p < len(s); p++ {
-		// speed up the common case
+
 		if s[p] < 127 {
 			n++
 			continue
@@ -86,7 +79,7 @@ func getPrefixGlyphs(s []rune, num int) []rune {
 func getSuffixGlyphs(s []rune, num int) []rune {
 	p := len(s)
 	for n := 0; n < num && p > 0; p-- {
-		// speed up the common case
+
 		if s[p-1] < 127 {
 			n++
 			continue

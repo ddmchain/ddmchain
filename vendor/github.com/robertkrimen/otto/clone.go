@@ -74,7 +74,6 @@ func (in *_runtime) clone() *_runtime {
 	out.eval = out.globalObject.property["eval"].value.(Value).value.(*_object)
 	out.globalObject.prototype = out.global.ObjectPrototype
 
-	// Not sure if this is necessary, but give some help to the GC
 	clone.runtime = nil
 	clone._object = nil
 	clone._objectStash = nil

@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by the MIT license that can be
-// found in the LICENSE file.
-
 // +build darwin,!kqueue
 
 package notify
@@ -11,15 +8,12 @@ const (
 	osSpecificRemove = Event(FSEventsRemoved)
 	osSpecificWrite  = Event(FSEventsModified)
 	osSpecificRename = Event(FSEventsRenamed)
-	// internal = Event(0x100000)
-	// recursive is used to distinguish recursive eventsets from non-recursive ones
+
 	recursive = Event(0x200000)
-	// omit is used for dispatching internal events; only those events are sent
-	// for which both the event and the watchpoint has omit in theirs event sets.
+
 	omit = Event(0x400000)
 )
 
-// FSEvents specific event values.
 const (
 	FSEventsMustScanSubDirs Event = 0x00001
 	FSEventsUserDropped           = 0x00002

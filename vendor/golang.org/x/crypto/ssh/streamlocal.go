@@ -6,36 +6,26 @@ import (
 	"net"
 )
 
-// streamLocalChannelOpenDirectMsg is a struct used for SSH_MSG_CHANNEL_OPEN message
-// with "direct-streamlocal@openssh.com" string.
-//
-// See openssh-portable/PROTOCOL, section 2.4. connection: Unix domain socket forwarding
-// https://github.com/openssh/openssh-portable/blob/master/PROTOCOL#L235
 type streamLocalChannelOpenDirectMsg struct {
 	socketPath string
 	reserved0  string
 	reserved1  uint32
 }
 
-// forwardedStreamLocalPayload is a struct used for SSH_MSG_CHANNEL_OPEN message
-// with "forwarded-streamlocal@openssh.com" string.
 type forwardedStreamLocalPayload struct {
 	SocketPath string
 	Reserved0  string
 }
 
-// streamLocalChannelForwardMsg is a struct used for SSH2_MSG_GLOBAL_REQUEST message
-// with "streamlocal-forward@openssh.com"/"cancel-streamlocal-forward@openssh.com" string.
 type streamLocalChannelForwardMsg struct {
 	socketPath string
 }
 
-// ListenUnix is similar to ListenTCP but uses a Unix domain socket.
 func (c *Client) ListenUnix(socketPath string) (net.Listener, error) {
 	m := streamLocalChannelForwardMsg{
 		socketPath,
 	}
-	// send message
+
 	ok, _, err := c.SendRequest("streamlocal-forward@openssh.com", true, Marshal(&m))
 	if err != nil {
 		return nil, err
@@ -67,7 +57,6 @@ type unixListener struct {
 	in   <-chan forward
 }
 
-// Accept waits for and returns the next connection to the listener.
 func (l *unixListener) Accept() (net.Conn, error) {
 	s, ok := <-l.in
 	if !ok {
@@ -92,9 +81,8 @@ func (l *unixListener) Accept() (net.Conn, error) {
 	}, nil
 }
 
-// Close closes the listener.
 func (l *unixListener) Close() error {
-	// this also closes the listener.
+
 	l.conn.forwards.remove(&net.UnixAddr{Name: l.socketPath, Net: "unix"})
 	m := streamLocalChannelForwardMsg{
 		l.socketPath,
@@ -106,7 +94,6 @@ func (l *unixListener) Close() error {
 	return err
 }
 
-// Addr returns the listener's network address.
 func (l *unixListener) Addr() net.Addr {
 	return &net.UnixAddr{
 		Name: l.socketPath,

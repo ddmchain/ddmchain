@@ -38,10 +38,6 @@ func (v *IDispatch) GetTypeInfo() (tinfo *ITypeInfo, err error) {
 	return
 }
 
-// GetSingleIDOfName is a helper that returns single display ID for IDispatch name.
-//
-// This replaces the common pattern of attempting to get a single name from the list of available
-// IDs. It gives the first ID, if it is available.
 func (v *IDispatch) GetSingleIDOfName(name string) (displayID int32, err error) {
 	var displayIDs []int32
 	displayIDs, err = v.GetIDsOfName([]string{name})
@@ -52,13 +48,6 @@ func (v *IDispatch) GetSingleIDOfName(name string) (displayID int32, err error) 
 	return
 }
 
-// InvokeWithOptionalArgs accepts arguments as an array, works like Invoke.
-//
-// Accepts name and will attempt to retrieve Display ID to pass to Invoke.
-//
-// Passing params as an array is a workaround that could be fixed in later versions of Go that
-// prevent passing empty params. During testing it was discovered that this is an acceptable way of
-// getting around not being able to pass params normally.
 func (v *IDispatch) InvokeWithOptionalArgs(name string, dispatch int16, params []interface{}) (result *VARIANT, err error) {
 	displayID, err := v.GetSingleIDOfName(name)
 	if err != nil {
@@ -74,21 +63,14 @@ func (v *IDispatch) InvokeWithOptionalArgs(name string, dispatch int16, params [
 	return
 }
 
-// CallMethod invokes named function with arguments on object.
 func (v *IDispatch) CallMethod(name string, params ...interface{}) (*VARIANT, error) {
 	return v.InvokeWithOptionalArgs(name, DISPATCH_METHOD, params)
 }
 
-// GetProperty retrieves the property with the name with the ability to pass arguments.
-//
-// Most of the time you will not need to pass arguments as most objects do not allow for this
-// feature. Or at least, should not allow for this feature. Some servers don't follow best practices
-// and this is provided for those edge cases.
 func (v *IDispatch) GetProperty(name string, params ...interface{}) (*VARIANT, error) {
 	return v.InvokeWithOptionalArgs(name, DISPATCH_PROPERTYGET, params)
 }
 
-// PutProperty attempts to mutate a property in the object.
 func (v *IDispatch) PutProperty(name string, params ...interface{}) (*VARIANT, error) {
 	return v.InvokeWithOptionalArgs(name, DISPATCH_PROPERTYPUT, params)
 }

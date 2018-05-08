@@ -8,7 +8,7 @@ import (
 )
 
 func (v *IConnectionPoint) GetConnectionInterface(piid **GUID) int32 {
-	// XXX: This doesn't look like it does what it's supposed to
+
 	return release((*IUnknown)(unsafe.Pointer(v)))
 }
 

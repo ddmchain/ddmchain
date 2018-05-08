@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package packet
 
 import (
@@ -12,16 +9,12 @@ import (
 	"golang.org/x/crypto/openpgp/errors"
 )
 
-// OpaquePacket represents an OpenPGP packet as raw, unparsed data. This is
-// useful for splitting and storing the original packet contents separately,
-// handling unsupported packet types or accessing parts of the packet not yet
-// implemented by this package.
 type OpaquePacket struct {
-	// Packet type
+
 	Tag uint8
-	// Reason why the packet was parsed opaquely
+
 	Reason error
-	// Binary contents of the packet data
+
 	Contents []byte
 }
 
@@ -30,8 +23,6 @@ func (op *OpaquePacket) parse(r io.Reader) (err error) {
 	return
 }
 
-// Serialize marshals the packet to a writer in its original form, including
-// the packet header.
 func (op *OpaquePacket) Serialize(w io.Writer) (err error) {
 	err = serializeHeader(w, packetType(op.Tag), len(op.Contents))
 	if err == nil {
@@ -40,9 +31,6 @@ func (op *OpaquePacket) Serialize(w io.Writer) (err error) {
 	return
 }
 
-// Parse attempts to parse the opaque contents into a structure supported by
-// this package. If the packet is not known then the result will be another
-// OpaquePacket.
 func (op *OpaquePacket) Parse() (p Packet, err error) {
 	hdr := bytes.NewBuffer(nil)
 	err = serializeHeader(hdr, packetType(op.Tag), len(op.Contents))
@@ -58,7 +46,6 @@ func (op *OpaquePacket) Parse() (p Packet, err error) {
 	return
 }
 
-// OpaqueReader reads OpaquePackets from an io.Reader.
 type OpaqueReader struct {
 	r io.Reader
 }
@@ -67,7 +54,6 @@ func NewOpaqueReader(r io.Reader) *OpaqueReader {
 	return &OpaqueReader{r: r}
 }
 
-// Read the next OpaquePacket.
 func (or *OpaqueReader) Next() (op *OpaquePacket, err error) {
 	tag, _, contents, err := readHeader(or.r)
 	if err != nil {
@@ -81,15 +67,11 @@ func (or *OpaqueReader) Next() (op *OpaquePacket, err error) {
 	return
 }
 
-// OpaqueSubpacket represents an unparsed OpenPGP subpacket,
-// as found in signature and user attribute packets.
 type OpaqueSubpacket struct {
 	SubType  uint8
 	Contents []byte
 }
 
-// OpaqueSubpackets extracts opaque, unparsed OpenPGP subpackets from
-// their byte representation.
 func OpaqueSubpackets(contents []byte) (result []*OpaqueSubpacket, err error) {
 	var (
 		subHeaderLen int
@@ -107,7 +89,7 @@ func OpaqueSubpackets(contents []byte) (result []*OpaqueSubpacket, err error) {
 }
 
 func nextSubpacket(contents []byte) (subHeaderLen int, subPacket *OpaqueSubpacket, err error) {
-	// RFC 4880, section 5.2.3.1
+
 	var subLen uint32
 	if len(contents) < 1 {
 		goto Truncated
@@ -115,21 +97,21 @@ func nextSubpacket(contents []byte) (subHeaderLen int, subPacket *OpaqueSubpacke
 	subPacket = &OpaqueSubpacket{}
 	switch {
 	case contents[0] < 192:
-		subHeaderLen = 2 // 1 length byte, 1 subtype byte
+		subHeaderLen = 2 
 		if len(contents) < subHeaderLen {
 			goto Truncated
 		}
 		subLen = uint32(contents[0])
 		contents = contents[1:]
 	case contents[0] < 255:
-		subHeaderLen = 3 // 2 length bytes, 1 subtype
+		subHeaderLen = 3 
 		if len(contents) < subHeaderLen {
 			goto Truncated
 		}
 		subLen = uint32(contents[0]-192)<<8 + uint32(contents[1]) + 192
 		contents = contents[2:]
 	default:
-		subHeaderLen = 6 // 5 length bytes, 1 subtype
+		subHeaderLen = 6 
 		if len(contents) < subHeaderLen {
 			goto Truncated
 		}

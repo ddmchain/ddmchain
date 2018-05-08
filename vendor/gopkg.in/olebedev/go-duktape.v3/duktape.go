@@ -34,12 +34,10 @@ type Context struct {
 	*context
 }
 
-// transmute replaces the value from Context with the value of pointer
 func (c *Context) transmute(p unsafe.Pointer) {
 	*c = *(*Context)(p)
 }
 
-// this is a pojo containing only the values of the Context
 type context struct {
 	sync.Mutex
 	duk_context *C.duk_context
@@ -47,8 +45,6 @@ type context struct {
 	timerIndex  *timerIndex
 }
 
-// New returns plain initialized duktape context object
-// See: http://duktape.org/api.html#duk_create_heap_default
 func New() *Context {
 	d := &Context{
 		&context{
@@ -67,24 +63,16 @@ func New() *Context {
 	return d
 }
 
-// Flags is a set of flags for controlling the behaviour of duktape.
 type Flags struct {
 	Logging    uint
 	PrintAlert uint
 	Console    uint
 }
 
-// FlagConsoleProxyWrapper is a Console flag.
-// Use a proxy wrapper to make undefined methods (console.foo()) no-ops.
 const FlagConsoleProxyWrapper = 1 << 0
 
-// FlagConsoleFlush is a Console flag.
-// Flush output after every call.
 const FlagConsoleFlush = 1 << 1
 
-// NewWithFlags returns plain initialized duktape context object
-// You can control the behaviour of duktape by setting flags.
-// See: http://duktape.org/api.html#duk_create_heap_default
 func NewWithFlags(flags *Flags) *Context {
 	d := &Context{
 		&context{
@@ -107,9 +95,6 @@ func contextFromPointer(ctx *C.duk_context) *Context {
 	return &Context{&context{duk_context: ctx}}
 }
 
-// PushGlobalGoFunction push the given function into duktape global object
-// Returns non-negative index (relative to stack bottom) of the pushed function
-// also returns error if the function name is invalid
 func (d *Context) PushGlobalGoFunction(name string, fn func(*Context) int) (int, error) {
 	if !reFuncName.MatchString(name) {
 		return -1, errors.New("Malformed function name '" + name + "'")
@@ -123,8 +108,6 @@ func (d *Context) PushGlobalGoFunction(name string, fn func(*Context) int) (int,
 	return idx, nil
 }
 
-// PushGoFunction push the given function into duktape stack, returns non-negative
-// index (relative to stack bottom) of the pushed function
 func (d *Context) PushGoFunction(fn func(*Context) int) int {
 	funPtr := d.fnIndex.add(fn)
 	ctxPtr := contexts.add(d)
@@ -180,7 +163,6 @@ func (d *Context) getFunctionPtrs() (unsafe.Pointer, *Context) {
 	return funPtr, ctx
 }
 
-// Destroy destroy all the references to the functions and freed the pointers
 func (d *Context) Destroy() {
 	d.fnIndex.destroy()
 	contexts.delete(d)

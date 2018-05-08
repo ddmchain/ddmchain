@@ -1,12 +1,6 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package html
 
-// Section 12.2.3.2 of the HTML5 specification says "The following elements
-// have varying levels of special parsing rules".
-// https://html.spec.whatwg.org/multipage/syntax.html#the-stack-of-open-elements
 var isSpecialElementMap = map[string]bool{
 	"address":    true,
 	"applet":     true,

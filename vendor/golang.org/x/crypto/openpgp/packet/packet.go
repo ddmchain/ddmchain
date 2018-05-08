@@ -1,10 +1,5 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Package packet implements parsing and serialization of OpenPGP packets, as
-// specified in RFC 4880.
-package packet // import "golang.org/x/crypto/openpgp/packet"
+package packet 
 
 import (
 	"bufio"
@@ -17,8 +12,6 @@ import (
 	"math/big"
 )
 
-// readFull is the same as io.ReadFull except that reading zero bytes returns
-// ErrUnexpectedEOF rather than EOF.
 func readFull(r io.Reader, buf []byte) (n int, err error) {
 	n, err = io.ReadFull(r, buf)
 	if err == io.EOF {
@@ -27,7 +20,6 @@ func readFull(r io.Reader, buf []byte) (n int, err error) {
 	return
 }
 
-// readLength reads an OpenPGP length from r. See RFC 4880, section 4.2.2.
 func readLength(r io.Reader) (length int64, isPartial bool, err error) {
 	var buf [4]byte
 	_, err = readFull(r, buf[:1])
@@ -60,9 +52,6 @@ func readLength(r io.Reader) (length int64, isPartial bool, err error) {
 	return
 }
 
-// partialLengthReader wraps an io.Reader and handles OpenPGP partial lengths.
-// The continuation lengths are parsed and removed from the stream and EOF is
-// returned at the end of the packet. See RFC 4880, section 4.2.2.4.
 type partialLengthReader struct {
 	r         io.Reader
 	remaining int64
@@ -93,8 +82,6 @@ func (r *partialLengthReader) Read(p []byte) (n int, err error) {
 	return
 }
 
-// partialLengthWriter writes a stream of data using OpenPGP partial lengths.
-// See RFC 4880, section 4.2.2.4.
 type partialLengthWriter struct {
 	w          io.WriteCloser
 	lengthByte [1]byte
@@ -133,8 +120,6 @@ func (w *partialLengthWriter) Close() error {
 	return w.w.Close()
 }
 
-// A spanReader is an io.LimitReader, but it returns ErrUnexpectedEOF if the
-// underlying Reader returns EOF before the limit has been reached.
 type spanReader struct {
 	r io.Reader
 	n int64
@@ -155,8 +140,6 @@ func (l *spanReader) Read(p []byte) (n int, err error) {
 	return
 }
 
-// readHeader parses a packet header and returns an io.Reader which will return
-// the contents of the packet. See RFC 4880, section 4.2.
 func readHeader(r io.Reader) (tag packetType, length int64, contents io.Reader, err error) {
 	var buf [4]byte
 	_, err = io.ReadFull(r, buf[:1])
@@ -168,7 +151,7 @@ func readHeader(r io.Reader) (tag packetType, length int64, contents io.Reader, 
 		return
 	}
 	if buf[0]&0x40 == 0 {
-		// Old format packet
+
 		tag = packetType((buf[0] & 0x3f) >> 2)
 		lengthType := buf[0] & 3
 		if lengthType == 3 {
@@ -189,7 +172,6 @@ func readHeader(r io.Reader) (tag packetType, length int64, contents io.Reader, 
 		return
 	}
 
-	// New format packet
 	tag = packetType(buf[0] & 0x3f)
 	length, isPartial, err := readLength(r)
 	if err != nil {
@@ -208,8 +190,6 @@ func readHeader(r io.Reader) (tag packetType, length int64, contents io.Reader, 
 	return
 }
 
-// serializeHeader writes an OpenPGP packet header to w. See RFC 4880, section
-// 4.2.
 func serializeHeader(w io.Writer, ptype packetType, length int) (err error) {
 	var buf [6]byte
 	var n int
@@ -236,9 +216,6 @@ func serializeHeader(w io.Writer, ptype packetType, length int) (err error) {
 	return
 }
 
-// serializeStreamHeader writes an OpenPGP packet header to w where the
-// length of the packet is unknown. It returns a io.WriteCloser which can be
-// used to write the contents of the packet. See RFC 4880, section 4.2.
 func serializeStreamHeader(w io.WriteCloser, ptype packetType) (out io.WriteCloser, err error) {
 	var buf [1]byte
 	buf[0] = 0x80 | 0x40 | byte(ptype)
@@ -250,14 +227,10 @@ func serializeStreamHeader(w io.WriteCloser, ptype packetType) (out io.WriteClos
 	return
 }
 
-// Packet represents an OpenPGP packet. Users are expected to try casting
-// instances of this interface to specific packet types.
 type Packet interface {
 	parse(io.Reader) error
 }
 
-// consumeAll reads from the given Reader until error, returning the number of
-// bytes read.
 func consumeAll(r io.Reader) (n int64, err error) {
 	var m int
 	var buf [1024]byte
@@ -275,8 +248,6 @@ func consumeAll(r io.Reader) (n int64, err error) {
 	}
 }
 
-// packetType represents the numeric ids of the different OpenPGP packet types. See
-// http://www.iana.org/assignments/pgp-parameters/pgp-parameters.xhtml#pgp-parameters-2
 type packetType uint8
 
 const (
@@ -296,9 +267,6 @@ const (
 	packetTypeSymmetricallyEncryptedMDC packetType = 18
 )
 
-// peekVersion detects the version of a public key packet about to
-// be read. A bufio.Reader at the original position of the io.Reader
-// is returned.
 func peekVersion(r io.Reader) (bufr *bufio.Reader, ver byte, err error) {
 	bufr = bufio.NewReader(r)
 	var verBuf []byte
@@ -309,8 +277,6 @@ func peekVersion(r io.Reader) (bufr *bufio.Reader, ver byte, err error) {
 	return
 }
 
-// Read reads a single OpenPGP packet from the given io.Reader. If there is an
-// error parsing a packet, the whole packet is consumed from the input.
 func Read(r io.Reader) (p Packet, err error) {
 	tag, _, contents, err := readHeader(r)
 	if err != nil {
@@ -322,7 +288,7 @@ func Read(r io.Reader) (p Packet, err error) {
 		p = new(EncryptedKey)
 	case packetTypeSignature:
 		var version byte
-		// Detect signature version
+
 		if contents, version, err = peekVersion(contents); err != nil {
 			return
 		}
@@ -378,8 +344,6 @@ func Read(r io.Reader) (p Packet, err error) {
 	return
 }
 
-// SignatureType represents the different semantic meanings of an OpenPGP
-// signature. See RFC 4880, section 5.2.1.
 type SignatureType uint8
 
 const (
@@ -396,9 +360,6 @@ const (
 	SigTypeSubkeyRevocation                = 0x28
 )
 
-// PublicKeyAlgorithm represents the different public key system specified for
-// OpenPGP. See
-// http://www.iana.org/assignments/pgp-parameters/pgp-parameters.xhtml#pgp-parameters-12
 type PublicKeyAlgorithm uint8
 
 const (
@@ -407,13 +368,11 @@ const (
 	PubKeyAlgoRSASignOnly    PublicKeyAlgorithm = 3
 	PubKeyAlgoElGamal        PublicKeyAlgorithm = 16
 	PubKeyAlgoDSA            PublicKeyAlgorithm = 17
-	// RFC 6637, Section 5.
+
 	PubKeyAlgoECDH  PublicKeyAlgorithm = 18
 	PubKeyAlgoECDSA PublicKeyAlgorithm = 19
 )
 
-// CanEncrypt returns true if it's possible to encrypt a message to a public
-// key of the given type.
 func (pka PublicKeyAlgorithm) CanEncrypt() bool {
 	switch pka {
 	case PubKeyAlgoRSA, PubKeyAlgoRSAEncryptOnly, PubKeyAlgoElGamal:
@@ -422,8 +381,6 @@ func (pka PublicKeyAlgorithm) CanEncrypt() bool {
 	return false
 }
 
-// CanSign returns true if it's possible for a public key of the given type to
-// sign a message.
 func (pka PublicKeyAlgorithm) CanSign() bool {
 	switch pka {
 	case PubKeyAlgoRSA, PubKeyAlgoRSASignOnly, PubKeyAlgoDSA, PubKeyAlgoECDSA:
@@ -432,8 +389,6 @@ func (pka PublicKeyAlgorithm) CanSign() bool {
 	return false
 }
 
-// CipherFunction represents the different block ciphers specified for OpenPGP. See
-// http://www.iana.org/assignments/pgp-parameters/pgp-parameters.xhtml#pgp-parameters-13
 type CipherFunction uint8
 
 const (
@@ -444,7 +399,6 @@ const (
 	CipherAES256 CipherFunction = 9
 )
 
-// KeySize returns the key size, in bytes, of cipher.
 func (cipher CipherFunction) KeySize() int {
 	switch cipher {
 	case Cipher3DES:
@@ -461,7 +415,6 @@ func (cipher CipherFunction) KeySize() int {
 	return 0
 }
 
-// blockSize returns the block size, in bytes, of cipher.
 func (cipher CipherFunction) blockSize() int {
 	switch cipher {
 	case Cipher3DES:
@@ -474,7 +427,6 @@ func (cipher CipherFunction) blockSize() int {
 	return 0
 }
 
-// new returns a fresh instance of the given cipher.
 func (cipher CipherFunction) new(key []byte) (block cipher.Block) {
 	switch cipher {
 	case Cipher3DES:
@@ -487,9 +439,6 @@ func (cipher CipherFunction) new(key []byte) (block cipher.Block) {
 	return
 }
 
-// readMPI reads a big integer from r. The bit length returned is the bit
-// length that was specified in r. This is preserved so that the integer can be
-// reserialized exactly.
 func readMPI(r io.Reader) (mpi []byte, bitLength uint16, err error) {
 	var buf [2]byte
 	_, err = readFull(r, buf[0:])
@@ -503,15 +452,12 @@ func readMPI(r io.Reader) (mpi []byte, bitLength uint16, err error) {
 	return
 }
 
-// mpiLength returns the length of the given *big.Int when serialized as an
-// MPI.
 func mpiLength(n *big.Int) (mpiLengthInBytes int) {
-	mpiLengthInBytes = 2 /* MPI length */
+	mpiLengthInBytes = 2 
 	mpiLengthInBytes += (n.BitLen() + 7) / 8
 	return
 }
 
-// writeMPI serializes a big integer to w.
 func writeMPI(w io.Writer, bitLength uint16, mpiBytes []byte) (err error) {
 	_, err = w.Write([]byte{byte(bitLength >> 8), byte(bitLength)})
 	if err == nil {
@@ -520,14 +466,10 @@ func writeMPI(w io.Writer, bitLength uint16, mpiBytes []byte) (err error) {
 	return
 }
 
-// writeBig serializes a *big.Int to w.
 func writeBig(w io.Writer, i *big.Int) error {
 	return writeMPI(w, uint16(i.BitLen()), i.Bytes())
 }
 
-// CompressionAlgo Represents the different compression algorithms
-// supported by OpenPGP (except for BZIP2, which is not currently
-// supported). See Section 9.3 of RFC 4880.
 type CompressionAlgo uint8
 
 const (

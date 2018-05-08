@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
 import (
@@ -12,12 +9,8 @@ import (
 )
 import rw "github.com/mattn/go-runewidth"
 
-/* ---------------Port from termbox-go --------------------- */
-
-// Attribute is printable cell's color and style.
 type Attribute uint16
 
-// 8 basic clolrs
 const (
 	ColorDefault Attribute = iota
 	ColorBlack
@@ -30,10 +23,8 @@ const (
 	ColorWhite
 )
 
-//Have a constant that defines number of colors
 const NumberofColors = 8
 
-// Text style
 const (
 	AttrBold Attribute = 1 << (iota + 9)
 	AttrUnderline
@@ -45,8 +36,6 @@ var (
 	dotw = rw.StringWidth(dot)
 )
 
-/* ----------------------- End ----------------------------- */
-
 func toTmAttr(x Attribute) tm.Attribute {
 	return tm.Attribute(x)
 }
@@ -55,14 +44,10 @@ func str2runes(s string) []rune {
 	return []rune(s)
 }
 
-// Here for backwards-compatibility.
 func trimStr2Runes(s string, w int) []rune {
 	return TrimStr2Runes(s, w)
 }
 
-// TrimStr2Runes trims string to w[-1 rune], appends …, and returns the runes
-// of that string if string is grather then n. If string is small then w,
-// return the runes.
 func TrimStr2Runes(s string, w int) []rune {
 	if w <= 0 {
 		return []rune{}
@@ -75,8 +60,6 @@ func TrimStr2Runes(s string, w int) []rune {
 	return str2runes(s)
 }
 
-// TrimStrIfAppropriate trim string to "s[:-1] + …"
-// if string > width otherwise return string
 func TrimStrIfAppropriate(s string, w int) string {
 	if w <= 0 {
 		return ""
@@ -100,9 +83,6 @@ func charWidth(ch rune) int {
 
 var whiteSpaceRegex = regexp.MustCompile(`\s`)
 
-// StringToAttribute converts text to a termui attribute. You may specifiy more
-// then one attribute like that: "BLACK, BOLD, ...". All whitespaces
-// are ignored.
 func StringToAttribute(text string) Attribute {
 	text = whiteSpaceRegex.ReplaceAllString(strings.ToLower(text), "")
 	attributes := strings.Split(text, ",")
@@ -154,33 +134,26 @@ func StringToAttribute(text string) Attribute {
 	return result
 }
 
-// TextCells returns a coloured text cells []Cell
 func TextCells(s string, fg, bg Attribute) []Cell {
 	cs := make([]Cell, 0, len(s))
 
-	// sequence := MarkdownTextRendererFactory{}.TextRenderer(s).Render(fg, bg)
-	// runes := []rune(sequence.NormalizedText)
 	runes := str2runes(s)
 
 	for n := range runes {
-		// point, _ := sequence.PointAt(n, 0, 0)
-		// cs = append(cs, Cell{point.Ch, point.Fg, point.Bg})
+
 		cs = append(cs, Cell{runes[n], fg, bg})
 	}
 	return cs
 }
 
-// Width returns the actual screen space the cell takes (usually 1 or 2).
 func (c Cell) Width() int {
 	return charWidth(c.Ch)
 }
 
-// Copy return a copy of c
 func (c Cell) Copy() Cell {
 	return c
 }
 
-// TrimTxCells trims the overflowed text cells sequence.
 func TrimTxCells(cs []Cell, w int) []Cell {
 	if len(cs) <= w {
 		return cs
@@ -188,7 +161,6 @@ func TrimTxCells(cs []Cell, w int) []Cell {
 	return cs[:w]
 }
 
-// DTrimTxCls trims the overflowed text cells sequence and append dots at the end.
 func DTrimTxCls(cs []Cell, w int) []Cell {
 	l := len(cs)
 	if l <= 0 {

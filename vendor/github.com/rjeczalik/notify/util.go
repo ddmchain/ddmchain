@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by the MIT license that can be
-// found in the LICENSE file.
-
 package notify
 
 import (
@@ -30,14 +27,12 @@ func max(i, j int) int {
 	return i
 }
 
-// must panics if err is non-nil.
 func must(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
-// nonil gives first non-nil error from the given arguments.
 func nonil(err ...error) error {
 	for _, err := range err {
 		if err != nil {
@@ -61,9 +56,6 @@ func cleanpath(path string) (realpath string, isrec bool, err error) {
 	return path, isrec, nil
 }
 
-// canonical resolves any symlink in the given path and returns it in a clean form.
-// It expects the path to be absolute. It fails to resolve circular symlinks by
-// maintaining a simple iteration limit.
 func canonical(p string) (string, error) {
 	p, err := filepath.Abs(p)
 	if err != nil {
@@ -92,7 +84,7 @@ func canonical(p string) (string, error) {
 			} else {
 				p = p[:j] + s + p[i:]
 			}
-			i = 1 // no guarantee s is canonical, start all over
+			i = 1 
 		}
 	}
 	return filepath.Clean(p), nil

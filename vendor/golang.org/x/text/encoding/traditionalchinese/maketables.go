@@ -1,13 +1,7 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build ignore
 
 package main
-
-// This program generates tables.go:
-//	go run maketables.go | gofmt > tables.go
 
 import (
 	"bufio"
@@ -47,15 +41,6 @@ func main() {
 		}
 		mapping[x] = y
 
-		// The WHATWG spec http://encoding.spec.whatwg.org/#indexes says that
-		// "The index pointer for code point in index is the first pointer
-		// corresponding to code point in index", which would normally mean
-		// that the code below should be guarded by "if reverse[y] == 0", but
-		// last instead of first seems to match the behavior of
-		// "iconv -f UTF-8 -t BIG5". For example, U+8005 者 occurs twice in
-		// http://encoding.spec.whatwg.org/index-big5.txt, as index 2148
-		// (encoded as "\x8e\xcd") and index 6543 (encoded as "\xaa\xcc")
-		// and "echo 者 | iconv -f UTF-8 -t BIG5 | xxd" gives "\xaa\xcc".
 		c0, c1 := x/157, x%157
 		if c1 < 0x3f {
 			c1 += 0x40
@@ -78,8 +63,6 @@ func main() {
 	}
 	fmt.Printf("}\n\n")
 
-	// Any run of at least separation continuous zero entries in the reverse map will
-	// be a separate encode table.
 	const separation = 1024
 
 	intervals := []interval(nil)
@@ -125,14 +108,12 @@ func main() {
 	}
 }
 
-// interval is a half-open interval [low, high).
 type interval struct {
 	low, high int
 }
 
 func (i interval) len() int { return i.high - i.low }
 
-// byDecreasingLength sorts intervals by decreasing length.
 type byDecreasingLength []interval
 
 func (b byDecreasingLength) Len() int           { return len(b) }

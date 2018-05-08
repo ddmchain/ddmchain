@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by the MIT license that can be
-// found in the LICENSE file.
-
 package notify
 
 import (
@@ -76,8 +73,7 @@ Traverse:
 				Err:  err,
 			}
 		}
-		// TODO(rjeczalik): tolerate open failures - add failed names to
-		// AddDirError and notify users which names are not added to the tree.
+
 		fi, err := ioutil.ReadDir(nd.Name)
 		if err != nil {
 			return err
@@ -155,9 +151,7 @@ Traverse:
 		}
 		for name, nd := range nd.Child {
 			if name == "" {
-				// Node storing inactive watchpoints has empty name, skip it
-				// form traversing. Root node has also an empty name, but it
-				// never has a parent node.
+
 				continue
 			}
 			stack = append(stack, nd)

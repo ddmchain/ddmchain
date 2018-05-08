@@ -20,8 +20,6 @@ var (
 	procFillConsoleOutputCharacter    = kernel32.NewProc("FillConsoleOutputCharacterW")
 )
 
-// These names are from the Win32 api, so they use underscores (contrary to
-// what golint suggests)
 const (
 	std_input_handle     = uint32(-10 & 0xFFFFFFFF)
 	std_output_handle    = uint32(-11 & 0xFFFFFFFF)
@@ -31,7 +29,6 @@ const (
 
 type inputMode uint32
 
-// State represents an open terminal
 type State struct {
 	commonState
 	handle      syscall.Handle
@@ -52,8 +49,6 @@ const (
 	enableWindowInput    = 0x8
 )
 
-// NewLiner initializes a new *State, and sets the terminal into raw mode. To
-// restore the terminal to its previous state, call State.Close().
 func NewLiner() *State {
 	var s State
 	hIn, _, _ := procGetStdHandle.Call(uintptr(std_input_handle))
@@ -82,8 +77,6 @@ func NewLiner() *State {
 	return &s
 }
 
-// These names are from the Win32 api, so they use underscores (contrary to
-// what golint suggests)
 const (
 	focus_event              = 0x0010
 	key_event                = 0x0001
@@ -107,8 +100,6 @@ type key_event_record struct {
 	ControlKeyState uint32
 }
 
-// These names are from the Win32 api, so they use underscores (contrary to
-// what golint suggests)
 const (
 	vk_tab    = 0x09
 	vk_prior  = 0x21
@@ -148,18 +139,14 @@ const (
 	modKeys = shiftPressed | leftAltPressed | rightAltPressed | leftCtrlPressed | rightCtrlPressed
 )
 
-// inputWaiting only returns true if the next call to readNext will return immediately.
 func (s *State) inputWaiting() bool {
 	var num uint32
 	ok, _, _ := procGetNumberOfConsoleInputEvents.Call(uintptr(s.handle), uintptr(unsafe.Pointer(&num)))
 	if ok == 0 {
-		// call failed, so we cannot guarantee a non-blocking readNext
+
 		return false
 	}
 
-	// during a "paste" input events are always an odd number, and
-	// the last one results in a blocking readNext, so return false
-	// when num is 1 or 0.
 	return num > 1
 }
 
@@ -267,9 +254,7 @@ func (s *State) readNext() (interface{}, error) {
 			case vk_f12:
 				s.key = f12
 			default:
-				// Eat modifier keys
-				// TODO: return Action(Unknown) if the key isn't a
-				// modifier.
+
 				continue
 			}
 		}
@@ -281,7 +266,6 @@ func (s *State) readNext() (interface{}, error) {
 	}
 }
 
-// Close returns the terminal to its previous mode
 func (s *State) Close() error {
 	s.origMode.ApplyMode()
 	return nil
@@ -303,8 +287,6 @@ func (s *State) stopPrompt() {
 	s.defaultMode.ApplyMode()
 }
 
-// TerminalSupported returns true because line editing is always
-// supported on Windows.
 func TerminalSupported() bool {
 	return true
 }
@@ -321,10 +303,6 @@ func (mode inputMode) ApplyMode() error {
 	return err
 }
 
-// TerminalMode returns the current terminal input mode as an InputModeSetter.
-//
-// This function is provided for convenience, and should
-// not be necessary for most users of liner.
 func TerminalMode() (ModeApplier, error) {
 	var mode inputMode
 	hIn, _, err := procGetStdHandle.Call(uintptr(std_input_handle))

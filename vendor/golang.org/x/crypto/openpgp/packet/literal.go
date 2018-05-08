@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package packet
 
 import (
@@ -9,16 +6,13 @@ import (
 	"io"
 )
 
-// LiteralData represents an encrypted file. See RFC 4880, section 5.9.
 type LiteralData struct {
 	IsBinary bool
 	FileName string
-	Time     uint32 // Unix epoch time. Either creation time or modification time. 0 means undefined.
+	Time     uint32 
 	Body     io.Reader
 }
 
-// ForEyesOnly returns whether the contents of the LiteralData have been marked
-// as especially sensitive.
 func (l *LiteralData) ForEyesOnly() bool {
 	return l.FileName == "_CONSOLE"
 }
@@ -51,9 +45,6 @@ func (l *LiteralData) parse(r io.Reader) (err error) {
 	return
 }
 
-// SerializeLiteral serializes a literal data packet to w and returns a
-// WriteCloser to which the data itself can be written and which MUST be closed
-// on completion. The fileName is truncated to 255 bytes.
 func SerializeLiteral(w io.WriteCloser, isBinary bool, fileName string, time uint32) (plaintext io.WriteCloser, err error) {
 	var buf [4]byte
 	buf[0] = 't'
