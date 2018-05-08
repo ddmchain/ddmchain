@@ -1,0 +1,180 @@
+
+syntax = "proto2";
+
+option java_package = "com.satoshilabs.trezor.lib.protobuf";
+option java_outer_classname = "TrezorType";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.EnumValueOptions {
+	optional bool wire_in = 50002;		
+	optional bool wire_out = 50003;		
+	optional bool wire_debug_in = 50004;	
+	optional bool wire_debug_out = 50005;	
+	optional bool wire_tiny = 50006;	
+	optional bool wire_bootloader = 50007;  
+}
+
+enum FailureType {
+	Failure_UnexpectedMessage = 1;
+	Failure_ButtonExpected = 2;
+	Failure_DataError = 3;
+	Failure_ActionCancelled = 4;
+	Failure_PinExpected = 5;
+	Failure_PinCancelled = 6;
+	Failure_PinInvalid = 7;
+	Failure_InvalidSignature = 8;
+	Failure_ProcessError = 9;
+	Failure_NotEnoughFunds = 10;
+	Failure_NotInitialized = 11;
+	Failure_FirmwareError = 99;
+}
+
+enum OutputScriptType {
+	PAYTOADDRESS = 0;	
+	PAYTOSCRIPTHASH = 1;	
+	PAYTOMULTISIG = 2;	
+	PAYTOOPRETURN = 3;	
+	PAYTOWITNESS = 4;	
+	PAYTOP2SHWITNESS = 5;	
+}
+
+enum InputScriptType {
+	SPENDADDRESS = 0;		
+	SPENDMULTISIG = 1;		
+	EXTERNAL = 2;			
+	SPENDWITNESS = 3;		
+	SPENDP2SHWITNESS = 4;		
+}
+
+enum RequestType {
+	TXINPUT = 0;
+	TXOUTPUT = 1;
+	TXMETA = 2;
+	TXFINISHED = 3;
+	TXEXTRADATA = 4;
+}
+
+enum ButtonRequestType {
+	ButtonRequest_Other = 1;
+	ButtonRequest_FeeOverThreshold = 2;
+	ButtonRequest_ConfirmOutput = 3;
+	ButtonRequest_ResetDevice = 4;
+	ButtonRequest_ConfirmWord = 5;
+	ButtonRequest_WipeDevice = 6;
+	ButtonRequest_ProtectCall = 7;
+	ButtonRequest_SignTx = 8;
+	ButtonRequest_FirmwareCheck = 9;
+	ButtonRequest_Address = 10;
+	ButtonRequest_PublicKey = 11;
+}
+
+enum PinMatrixRequestType {
+	PinMatrixRequestType_Current = 1;
+	PinMatrixRequestType_NewFirst = 2;
+	PinMatrixRequestType_NewSecond = 3;
+}
+
+enum RecoveryDeviceType {
+
+	RecoveryDeviceType_ScrambledWords = 0;		
+	RecoveryDeviceType_Matrix = 1;				
+}
+
+enum WordRequestType {
+	WordRequestType_Plain = 0;
+	WordRequestType_Matrix9 = 1;
+	WordRequestType_Matrix6 = 2;
+}
+
+message HDNodeType {
+	required uint32 depth = 1;
+	required uint32 fingerprint = 2;
+	required uint32 child_num = 3;
+	required bytes chain_code = 4;
+	optional bytes private_key = 5;
+	optional bytes public_key = 6;
+}
+
+message HDNodePathType {
+	required HDNodeType node = 1;						
+	repeated uint32 address_n = 2;						
+}
+
+message CoinType {
+	optional string coin_name = 1;
+	optional string coin_shortcut = 2;
+	optional uint32 address_type = 3 [default=0];
+	optional uint64 maxfee_kb = 4;
+	optional uint32 address_type_p2sh = 5 [default=5];
+	optional string signed_message_header = 8;
+	optional uint32 xpub_magic = 9 [default=76067358];	
+	optional uint32 xprv_magic = 10 [default=76066276];	
+	optional bool segwit = 11;
+	optional uint32 forkid = 12;
+}
+
+message MultisigRedeemScriptType {
+	repeated HDNodePathType pubkeys = 1;					
+	repeated bytes signatures = 2;						
+	optional uint32 m = 3;							
+}
+
+message TxInputType {
+	repeated uint32 address_n = 1;						
+	required bytes prev_hash = 2;						
+	required uint32 prev_index = 3;						
+	optional bytes script_sig = 4;						
+	optional uint32 sequence = 5 [default=4294967295];			
+	optional InputScriptType script_type = 6 [default=SPENDADDRESS];	
+	optional MultisigRedeemScriptType multisig = 7;				
+	optional uint64 amount = 8;						
+}
+
+message TxOutputType {
+	optional string address = 1;			
+	repeated uint32 address_n = 2;			
+	required uint64 amount = 3;			
+	required OutputScriptType script_type = 4;	
+	optional MultisigRedeemScriptType multisig = 5; 
+	optional bytes op_return_data = 6;		
+}
+
+message TxOutputBinType {
+	required uint64 amount = 1;
+	required bytes script_pubkey = 2;
+}
+
+message TransactionType {
+	optional uint32 version = 1;
+	repeated TxInputType inputs = 2;
+	repeated TxOutputBinType bin_outputs = 3;
+	repeated TxOutputType outputs = 5;
+	optional uint32 lock_time = 4;
+	optional uint32 inputs_cnt = 6;
+	optional uint32 outputs_cnt = 7;
+	optional bytes extra_data = 8;
+	optional uint32 extra_data_len = 9;
+}
+
+message TxRequestDetailsType {
+	optional uint32 request_index = 1;	
+	optional bytes tx_hash = 2;		
+	optional uint32 extra_data_len = 3;	
+	optional uint32 extra_data_offset = 4;	
+}
+
+message TxRequestSerializedType {
+	optional uint32 signature_index = 1;	
+	optional bytes signature = 2;		
+	optional bytes serialized_tx = 3;	
+}
+
+message IdentityType {
+	optional string proto = 1;			
+	optional string user = 2;			
+	optional string host = 3;			
+	optional string port = 4;			
+	optional string path = 5;			
+	optional uint32 index = 6 [default=0];		
+}

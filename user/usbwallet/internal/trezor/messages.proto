@@ -1,0 +1,497 @@
+
+syntax = "proto2";
+
+option java_package = "com.satoshilabs.trezor.lib.protobuf";
+option java_outer_classname = "TrezorMessage";
+
+import "types.proto";
+
+enum MessageType {
+	MessageType_Initialize = 0 [(wire_in) = true];
+	MessageType_Ping = 1 [(wire_in) = true];
+	MessageType_Success = 2 [(wire_out) = true];
+	MessageType_Failure = 3 [(wire_out) = true];
+	MessageType_ChangePin = 4 [(wire_in) = true];
+	MessageType_WipeDevice = 5 [(wire_in) = true];
+	MessageType_FirmwareErase = 6 [(wire_in) = true, (wire_bootloader) = true];
+	MessageType_FirmwareUpload = 7 [(wire_in) = true, (wire_bootloader) = true];
+	MessageType_FirmwareRequest = 8 [(wire_out) = true, (wire_bootloader) = true];
+	MessageType_GetEntropy = 9 [(wire_in) = true];
+	MessageType_Entropy = 10 [(wire_out) = true];
+	MessageType_GetPublicKey = 11 [(wire_in) = true];
+	MessageType_PublicKey = 12 [(wire_out) = true];
+	MessageType_LoadDevice = 13 [(wire_in) = true];
+	MessageType_ResetDevice = 14 [(wire_in) = true];
+	MessageType_SignTx = 15 [(wire_in) = true];
+	MessageType_SimpleSignTx = 16 [(wire_in) = true, deprecated = true];
+	MessageType_Features = 17 [(wire_out) = true];
+	MessageType_PinMatrixRequest = 18 [(wire_out) = true];
+	MessageType_PinMatrixAck = 19 [(wire_in) = true, (wire_tiny) = true];
+	MessageType_Cancel = 20 [(wire_in) = true];
+	MessageType_TxRequest = 21 [(wire_out) = true];
+	MessageType_TxAck = 22 [(wire_in) = true];
+	MessageType_CipherKeyValue = 23 [(wire_in) = true];
+	MessageType_ClearSession = 24 [(wire_in) = true];
+	MessageType_ApplySettings = 25 [(wire_in) = true];
+	MessageType_ButtonRequest = 26 [(wire_out) = true];
+	MessageType_ButtonAck = 27 [(wire_in) = true, (wire_tiny) = true];
+	MessageType_ApplyFlags = 28 [(wire_in) = true];
+	MessageType_GetAddress = 29 [(wire_in) = true];
+	MessageType_Address = 30 [(wire_out) = true];
+	MessageType_SelfTest = 32 [(wire_in) = true, (wire_bootloader) = true];
+	MessageType_BackupDevice = 34 [(wire_in) = true];
+	MessageType_EntropyRequest = 35 [(wire_out) = true];
+	MessageType_EntropyAck = 36 [(wire_in) = true];
+	MessageType_SignMessage = 38 [(wire_in) = true];
+	MessageType_VerifyMessage = 39 [(wire_in) = true];
+	MessageType_MessageSignature = 40 [(wire_out) = true];
+	MessageType_PassphraseRequest = 41 [(wire_out) = true];
+	MessageType_PassphraseAck = 42 [(wire_in) = true, (wire_tiny) = true];
+	MessageType_EstimateTxSize = 43 [(wire_in) = true, deprecated = true];
+	MessageType_TxSize = 44 [(wire_out) = true, deprecated = true];
+	MessageType_RecoveryDevice = 45 [(wire_in) = true];
+	MessageType_WordRequest = 46 [(wire_out) = true];
+	MessageType_WordAck = 47 [(wire_in) = true];
+	MessageType_CipheredKeyValue = 48 [(wire_out) = true];
+	MessageType_EncryptMessage = 49 [(wire_in) = true, deprecated = true];
+	MessageType_EncryptedMessage = 50 [(wire_out) = true, deprecated = true];
+	MessageType_DecryptMessage = 51 [(wire_in) = true, deprecated = true];
+	MessageType_DecryptedMessage = 52 [(wire_out) = true, deprecated = true];
+	MessageType_SignIdentity = 53 [(wire_in) = true];
+	MessageType_SignedIdentity = 54 [(wire_out) = true];
+	MessageType_GetFeatures = 55 [(wire_in) = true];
+	MessageType_DDMchainGetAddress = 56 [(wire_in) = true];
+	MessageType_DDMchainAddress = 57 [(wire_out) = true];
+	MessageType_DDMchainSignTx = 58 [(wire_in) = true];
+	MessageType_DDMchainTxRequest = 59 [(wire_out) = true];
+	MessageType_DDMchainTxAck = 60 [(wire_in) = true];
+	MessageType_GetECDHSessionKey = 61 [(wire_in) = true];
+	MessageType_ECDHSessionKey = 62 [(wire_out) = true];
+	MessageType_SetU2FCounter = 63 [(wire_in) = true];
+	MessageType_DDMchainSignMessage = 64 [(wire_in) = true];
+	MessageType_DDMchainVerifyMessage = 65 [(wire_in) = true];
+	MessageType_DDMchainMessageSignature = 66 [(wire_out) = true];
+	MessageType_DebugLinkDecision = 100 [(wire_debug_in) = true, (wire_tiny) = true];
+	MessageType_DebugLinkGetState = 101 [(wire_debug_in) = true];
+	MessageType_DebugLinkState = 102 [(wire_debug_out) = true];
+	MessageType_DebugLinkStop = 103 [(wire_debug_in) = true];
+	MessageType_DebugLinkLog = 104 [(wire_debug_out) = true];
+	MessageType_DebugLinkMemoryRead = 110 [(wire_debug_in) = true];
+	MessageType_DebugLinkMemory = 111 [(wire_debug_out) = true];
+	MessageType_DebugLinkMemoryWrite = 112 [(wire_debug_in) = true];
+	MessageType_DebugLinkFlashErase = 113 [(wire_debug_in) = true];
+}
+
+message Initialize {
+}
+
+message GetFeatures {
+}
+
+message Features {
+	optional string vendor = 1;			
+	optional uint32 major_version = 2;		
+	optional uint32 minor_version = 3;		
+	optional uint32 patch_version = 4;		
+	optional bool bootloader_mode = 5;		
+	optional string device_id = 6;			
+	optional bool pin_protection = 7;		
+	optional bool passphrase_protection = 8;	
+	optional string language = 9;			
+	optional string label = 10;			
+	repeated CoinType coins = 11;			
+	optional bool initialized = 12;			
+	optional bytes revision = 13;			
+	optional bytes bootloader_hash = 14;		
+	optional bool imported = 15;			
+	optional bool pin_cached = 16;			
+	optional bool passphrase_cached = 17;		
+	optional bool firmware_present = 18;		
+	optional bool needs_backup = 19;		
+	optional uint32 flags = 20;			
+}
+
+message ClearSession {
+}
+
+message ApplySettings {
+	optional string language = 1;
+	optional string label = 2;
+	optional bool use_passphrase = 3;
+	optional bytes homescreen = 4;
+}
+
+message ApplyFlags {
+	optional uint32 flags = 1;	
+}
+
+message ChangePin {
+	optional bool remove = 1;	
+}
+
+message Ping {
+	optional string message = 1;			
+	optional bool button_protection = 2;		
+	optional bool pin_protection = 3;		
+	optional bool passphrase_protection = 4;	
+}
+
+message Success {
+	optional string message = 1;	
+}
+
+message Failure {
+	optional FailureType code = 1;	
+	optional string message = 2;	
+}
+
+message ButtonRequest {
+	optional ButtonRequestType code = 1;
+	optional string data = 2;
+}
+
+message ButtonAck {
+}
+
+message PinMatrixRequest {
+	optional PinMatrixRequestType type = 1;
+}
+
+message PinMatrixAck {
+	required string pin = 1;		
+}
+
+message Cancel {
+}
+
+message PassphraseRequest {
+}
+
+message PassphraseAck {
+	required string passphrase = 1;
+}
+
+message GetEntropy {
+	required uint32 size = 1;		
+}
+
+message Entropy {
+	required bytes entropy = 1;		
+}
+
+message GetPublicKey {
+	repeated uint32 address_n = 1;		
+	optional string ecdsa_curve_name = 2;	
+	optional bool show_display = 3;		
+	optional string coin_name = 4 [default='Bitcoin'];
+}
+
+message PublicKey {
+	required HDNodeType node = 1;		
+	optional string xpub = 2;		
+}
+
+message GetAddress {
+	repeated uint32 address_n = 1;						
+	optional string coin_name = 2 [default='Bitcoin'];
+	optional bool show_display = 3			;			
+	optional MultisigRedeemScriptType multisig = 4;				
+	optional InputScriptType script_type = 5 [default=SPENDADDRESS];	
+}
+
+message DDMchainGetAddress {
+	repeated uint32 address_n = 1;			
+	optional bool show_display = 2;			
+}
+
+message Address {
+	required string address = 1;		
+}
+
+message DDMchainAddress {
+	required bytes address = 1;		
+}
+
+message WipeDevice {
+}
+
+message LoadDevice {
+	optional string mnemonic = 1;				
+	optional HDNodeType node = 2;				
+	optional string pin = 3;				
+	optional bool passphrase_protection = 4;		
+	optional string language = 5 [default='english'];	
+	optional string label = 6;				
+	optional bool skip_checksum = 7;			
+	optional uint32 u2f_counter = 8;			
+}
+
+message ResetDevice {
+	optional bool display_random = 1;			
+	optional uint32 strength = 2 [default=256];		
+	optional bool passphrase_protection = 3;		
+	optional bool pin_protection = 4;			
+	optional string language = 5 [default='english'];	
+	optional string label = 6;				
+	optional uint32 u2f_counter = 7;			
+	optional bool skip_backup = 8;				
+}
+
+message BackupDevice {
+}
+
+message EntropyRequest {
+}
+
+message EntropyAck {
+	optional bytes entropy = 1;				
+}
+
+message RecoveryDevice {
+	optional uint32 word_count = 1;				
+	optional bool passphrase_protection = 2;		
+	optional bool pin_protection = 3;			
+	optional string language = 4 [default='english'];	
+	optional string label = 5;				
+	optional bool enforce_wordlist = 6;			
+
+	optional uint32 type = 8;				
+	optional uint32 u2f_counter = 9;			
+	optional bool dry_run = 10;				
+}
+
+message WordRequest {
+	optional WordRequestType type = 1;
+}
+
+message WordAck {
+	required string word = 1;				
+}
+
+message SignMessage {
+	repeated uint32 address_n = 1;						
+	required bytes message = 2;						
+	optional string coin_name = 3 [default='Bitcoin'];			
+	optional InputScriptType script_type = 4 [default=SPENDADDRESS];	
+}
+
+message VerifyMessage {
+	optional string address = 1;				
+	optional bytes signature = 2;				
+	optional bytes message = 3;				
+	optional string coin_name = 4 [default='Bitcoin'];	
+}
+
+message MessageSignature {
+	optional string address = 1;				
+	optional bytes signature = 2;				
+}
+
+message EncryptMessage {
+	optional bytes pubkey = 1;				
+	optional bytes message = 2;				
+	optional bool display_only = 3;				
+	repeated uint32 address_n = 4;				
+	optional string coin_name = 5 [default='Bitcoin'];	
+}
+
+message EncryptedMessage {
+	optional bytes nonce = 1;				
+	optional bytes message = 2;				
+	optional bytes hmac = 3;				
+}
+
+message DecryptMessage {
+	repeated uint32 address_n = 1;				
+	optional bytes nonce = 2;				
+	optional bytes message = 3;				
+	optional bytes hmac = 4;				
+}
+
+message DecryptedMessage {
+	optional bytes message = 1;				
+	optional string address = 2;				
+}
+
+message CipherKeyValue {
+	repeated uint32 address_n = 1;		
+	optional string key = 2;		
+	optional bytes value = 3;		
+	optional bool encrypt = 4;		
+	optional bool ask_on_encrypt = 5;	
+	optional bool ask_on_decrypt = 6;	
+	optional bytes iv = 7;			
+}
+
+message CipheredKeyValue {
+	optional bytes value = 1;		
+}
+
+message EstimateTxSize {
+	required uint32 outputs_count = 1;			
+	required uint32 inputs_count = 2;			
+	optional string coin_name = 3 [default='Bitcoin'];	
+}
+
+message TxSize {
+	optional uint32 tx_size = 1;				
+}
+
+message SignTx {
+	required uint32 outputs_count = 1;			
+	required uint32 inputs_count = 2;			
+	optional string coin_name = 3 [default='Bitcoin'];	
+	optional uint32 version = 4 [default=1];		
+	optional uint32 lock_time = 5 [default=0];		
+}
+
+message SimpleSignTx {
+	repeated TxInputType inputs = 1;			
+	repeated TxOutputType outputs = 2;			
+	repeated TransactionType transactions = 3;		
+	optional string coin_name = 4 [default='Bitcoin'];	
+	optional uint32 version = 5 [default=1];		
+	optional uint32 lock_time = 6 [default=0];		
+}
+
+message TxRequest {
+	optional RequestType request_type = 1;			
+	optional TxRequestDetailsType details = 2;		
+	optional TxRequestSerializedType serialized = 3;	
+}
+
+message TxAck {
+	optional TransactionType tx = 1;
+}
+
+message DDMchainSignTx {
+	repeated uint32 address_n = 1;			
+	optional bytes nonce = 2;			
+	optional bytes gas_price = 3;			
+	optional bytes gas_limit = 4;			
+	optional bytes to = 5;				
+	optional bytes value = 6;			
+	optional bytes data_initial_chunk = 7;		
+	optional uint32 data_length = 8;		
+	optional uint32 chain_id = 9;			
+}
+
+message DDMchainTxRequest {
+	optional uint32 data_length = 1;		
+	optional uint32 signature_v = 2;		
+	optional bytes signature_r = 3;			
+	optional bytes signature_s = 4;			
+}
+
+message DDMchainTxAck {
+	optional bytes data_chunk = 1;			
+}
+
+message DDMchainSignMessage {
+	repeated uint32 address_n = 1;				
+	required bytes message = 2;				
+}
+
+message DDMchainVerifyMessage {
+	optional bytes address = 1;				
+	optional bytes signature = 2;				
+	optional bytes message = 3;				
+}
+
+message DDMchainMessageSignature {
+	optional bytes address = 1;				
+	optional bytes signature = 2;				
+}
+
+message SignIdentity {
+	optional IdentityType identity = 1;		
+	optional bytes challenge_hidden = 2;		
+	optional string challenge_visual = 3;		
+	optional string ecdsa_curve_name = 4;		
+}
+
+message SignedIdentity {
+	optional string address = 1;			
+	optional bytes public_key = 2;			
+	optional bytes signature = 3;			
+}
+
+message GetECDHSessionKey {
+	optional IdentityType identity = 1;		
+	optional bytes peer_public_key = 2;		
+	optional string ecdsa_curve_name = 3;		
+}
+
+message ECDHSessionKey {
+	optional bytes session_key = 1;			
+}
+
+message SetU2FCounter {
+	optional uint32 u2f_counter = 1;		
+}
+
+message FirmwareErase {
+	optional uint32 length = 1;			
+}
+
+message FirmwareRequest {
+	optional uint32 offset = 1;			
+	optional uint32 length = 2;			
+}
+
+message FirmwareUpload {
+	required bytes payload = 1;			
+	optional bytes hash = 2;			
+}
+
+message SelfTest {
+	optional bytes payload = 1;			
+}
+
+message DebugLinkDecision {
+	required bool yes_no = 1;			
+}
+
+message DebugLinkGetState {
+}
+
+message DebugLinkState {
+	optional bytes layout = 1;			
+	optional string pin = 2;			
+	optional string matrix = 3;			
+	optional string mnemonic = 4;			
+	optional HDNodeType node = 5;			
+	optional bool passphrase_protection = 6;	
+	optional string reset_word = 7;			
+	optional bytes reset_entropy = 8;		
+	optional string recovery_fake_word = 9;		
+	optional uint32 recovery_word_pos = 10;		
+}
+
+message DebugLinkStop {
+}
+
+message DebugLinkLog {
+	optional uint32 level = 1;
+	optional string bucket = 2;
+	optional string text = 3;
+}
+
+message DebugLinkMemoryRead {
+	optional uint32 address = 1;
+	optional uint32 length = 2;
+}
+
+message DebugLinkMemory {
+	optional bytes memory = 1;
+}
+
+message DebugLinkMemoryWrite {
+	optional uint32 address = 1;
+	optional bytes memory = 2;
+	optional bool flash = 3;
+}
+
+message DebugLinkFlashErase {
+	optional uint32 sector = 1;
+}
