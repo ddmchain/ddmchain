@@ -1,9 +1,4 @@
 
-// All rights reserved.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package leveldb
 
 import (
@@ -105,7 +100,6 @@ const (
 	dirForward
 )
 
-// dbIter represent an interator states over a database session.
 type dbIter struct {
 	db     *DB
 	icmp   *iComparer
@@ -204,7 +198,7 @@ func (i *dbIter) next() bool {
 			if seq <= i.seq {
 				switch kt {
 				case keyTypeDel:
-					// Skip deleted key.
+
 					i.key = append(i.key[:0], ukey...)
 					i.dir = dirForward
 				case keyTypeVal:
@@ -327,7 +321,7 @@ func (i *dbIter) Value() []byte {
 
 func (i *dbIter) Release() {
 	if i.dir != dirReleased {
-		// Clear the finalizer.
+
 		runtime.SetFinalizer(i, nil)
 
 		if i.releaser != nil {

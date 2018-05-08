@@ -11,7 +11,6 @@ import (
 	"unicode/utf8"
 )
 
-// Global
 func builtinGlobal_eval(call FunctionCall) Value {
 	src := call.Argument(0)
 	if !src.IsString() {
@@ -20,7 +19,7 @@ func builtinGlobal_eval(call FunctionCall) Value {
 	runtime := call.runtime
 	program := runtime.cmpl_parseOrThrow(src.string(), nil)
 	if !call.eval {
-		// Not a direct call to eval, so we enter the global ExecutionContext
+
 		runtime.enterGlobalScope()
 		defer runtime.leaveScope()
 	}
@@ -41,8 +40,6 @@ func builtinGlobal_isFinite(call FunctionCall) Value {
 	return toValue_bool(!math.IsNaN(value) && !math.IsInf(value, 0))
 }
 
-// radix 3 => 2 (ASCII 50) +47
-// radix 11 => A/a (ASCII 65/97) +54/+86
 var parseInt_alphabetTable = func() []string {
 	table := []string{"", "", "01"}
 	for radix := 3; radix <= 36; radix += 1 {
@@ -66,7 +63,7 @@ func digitValue(chr rune) int {
 	case 'A' <= chr && chr <= 'Z':
 		return int(chr - 'A' + 10)
 	}
-	return 36 // Larger than any legal digit value
+	return 36 
 }
 
 func builtinGlobal_parseInt(call FunctionCall) Value {
@@ -113,7 +110,7 @@ func builtinGlobal_parseInt(call FunctionCall) Value {
 	base := radix
 	index := 0
 	for ; index < len(input); index++ {
-		digit := digitValue(rune(input[index])) // If not ASCII, then an error anyway
+		digit := digitValue(rune(input[index])) 
 		if digit >= base {
 			break
 		}
@@ -124,7 +121,7 @@ func builtinGlobal_parseInt(call FunctionCall) Value {
 	if err != nil {
 		if err.(*strconv.NumError).Err == strconv.ErrRange {
 			base := float64(base)
-			// Could just be a very large number (e.g. 0x8000000000000000)
+
 			var value float64
 			for _, chr := range input {
 				digit := float64(digitValue(chr))
@@ -152,7 +149,7 @@ var parseFloat_matchBadSpecial = regexp.MustCompile(`[\+\-]?(?:[Ii]nf$|infinity)
 var parseFloat_matchValid = regexp.MustCompile(`[0-9eE\+\-\.]|Infinity`)
 
 func builtinGlobal_parseFloat(call FunctionCall) Value {
-	// Caveat emptor: This implementation does NOT match the specification
+
 	input := strings.Trim(call.Argument(0).string(), builtinString_trim_whitespace)
 
 	if parseFloat_matchBadSpecial.MatchString(input) {
@@ -176,8 +173,6 @@ func builtinGlobal_parseFloat(call FunctionCall) Value {
 	}
 	return toValue_float64(value)
 }
-
-// encodeURI/decodeURI
 
 func _builtinGlobal_encodeURI(call FunctionCall, escape *regexp.Regexp) Value {
 	value := call.Argument(0)
@@ -205,7 +200,7 @@ func _builtinGlobal_encodeURI(call FunctionCall, escape *regexp.Regexp) Value {
 			if index >= length {
 				panic(call.runtime.panicURIError("URI malformed"))
 			}
-			// input = ..., value, value1, ...
+
 			value1 := input[index]
 			if value1 < 0xDC00 || value1 > 0xDFFF {
 				panic(call.runtime.panicURIError("URI malformed"))
@@ -219,7 +214,7 @@ func _builtinGlobal_encodeURI(call FunctionCall, escape *regexp.Regexp) Value {
 	}
 	{
 		value := escape.ReplaceAllFunc(output, func(target []byte) []byte {
-			// Probably a better way of doing this
+
 			if target[0] == ' ' {
 				return []byte("%20")
 			}
@@ -241,14 +236,13 @@ func builtinGlobal_encodeURIComponent(call FunctionCall) Value {
 	return _builtinGlobal_encodeURI(call, encodeURIComponent_Regexp)
 }
 
-// 3B/2F/3F/3A/40/26/3D/2B/24/2C/23
 var decodeURI_guard = regexp.MustCompile(`(?i)(?:%)(3B|2F|3F|3A|40|26|3D|2B|24|2C|23)`)
 
 func _decodeURI(input string, reserve bool) (string, bool) {
 	if reserve {
 		input = decodeURI_guard.ReplaceAllString(input, "%25$1")
 	}
-	input = strings.Replace(input, "+", "%2B", -1) // Ugly hack to make QueryUnescape work with our use case
+	input = strings.Replace(input, "+", "%2B", -1) 
 	output, err := url.QueryUnescape(input)
 	if err != nil || !utf8.ValidString(output) {
 		return "", true
@@ -271,8 +265,6 @@ func builtinGlobal_decodeURIComponent(call FunctionCall) Value {
 	}
 	return toValue_string(output)
 }
-
-// escape/unescape
 
 func builtin_shouldEscape(chr byte) bool {
 	if 'A' <= chr && chr <= 'Z' || 'a' <= chr && chr <= 'z' || '0' <= chr && chr <= '9' {

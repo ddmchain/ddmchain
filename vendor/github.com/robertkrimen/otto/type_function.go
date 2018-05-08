@@ -1,9 +1,7 @@
 package otto
 
-// _constructFunction
 type _constructFunction func(*_object, []Value) Value
 
-// 13.2.2 [[Construct]]
 func defaultConstruct(fn *_object, argumentList []Value) Value {
 	object := fn.runtime.newObject()
 	object.class = "Object"
@@ -22,19 +20,14 @@ func defaultConstruct(fn *_object, argumentList []Value) Value {
 	return this
 }
 
-// _nativeFunction
 type _nativeFunction func(FunctionCall) Value
-
-// ===================== //
-// _nativeFunctionObject //
-// ===================== //
 
 type _nativeFunctionObject struct {
 	name      string
 	file      string
 	line      int
-	call      _nativeFunction    // [[Call]]
-	construct _constructFunction // [[Construct]]
+	call      _nativeFunction    
+	construct _constructFunction 
 }
 
 func (runtime *_runtime) newNativeFunctionObject(name, file string, line int, native _nativeFunction, length int) *_object {
@@ -49,10 +42,6 @@ func (runtime *_runtime) newNativeFunctionObject(name, file string, line int, na
 	self.defineProperty("length", toValue_int(length), 0000, false)
 	return self
 }
-
-// =================== //
-// _bindFunctionObject //
-// =================== //
 
 type _bindFunctionObject struct {
 	target       *_object
@@ -73,12 +62,11 @@ func (runtime *_runtime) newBoundFunctionObject(target *_object, this Value, arg
 		length = 0
 	}
 	self.defineProperty("length", toValue_int(length), 0000, false)
-	self.defineProperty("caller", Value{}, 0000, false)    // TODO Should throw a TypeError
-	self.defineProperty("arguments", Value{}, 0000, false) // TODO Should throw a TypeError
+	self.defineProperty("caller", Value{}, 0000, false)    
+	self.defineProperty("arguments", Value{}, 0000, false) 
 	return self
 }
 
-// [[Construct]]
 func (fn _bindFunctionObject) construct(argumentList []Value) Value {
 	object := fn.target
 	switch value := object.value.(type) {
@@ -90,10 +78,6 @@ func (fn _bindFunctionObject) construct(argumentList []Value) Value {
 	}
 	panic(fn.target.runtime.panicTypeError())
 }
-
-// =================== //
-// _nodeFunctionObject //
-// =================== //
 
 type _nodeFunctionObject struct {
 	node  *_nodeFunctionLiteral
@@ -109,10 +93,6 @@ func (runtime *_runtime) newNodeFunctionObject(node *_nodeFunctionLiteral, stash
 	self.defineProperty("length", toValue_int(len(node.parameterList)), 0000, false)
 	return self
 }
-
-// ======= //
-// _object //
-// ======= //
 
 func (self *_object) isCall() bool {
 	switch fn := self.value.(type) {
@@ -130,12 +110,11 @@ func (self *_object) call(this Value, argumentList []Value, eval bool, frame _fr
 	switch fn := self.value.(type) {
 
 	case _nativeFunctionObject:
-		// Since eval is a native function, we only have to check for it here
+
 		if eval {
-			eval = self == self.runtime.eval // If eval is true, then it IS a direct eval
+			eval = self == self.runtime.eval 
 		}
 
-		// Enter a scope, name from the native object...
 		rt := self.runtime
 		if rt.scope != nil && !eval {
 			rt.enterFunctionScope(rt.scope.lexical, this)
@@ -161,7 +140,7 @@ func (self *_object) call(this Value, argumentList []Value, eval bool, frame _fr
 		})
 
 	case _bindFunctionObject:
-		// TODO Passthrough site, do not enter a scope
+
 		argumentList = append(fn.argumentList, argumentList...)
 		return fn.target.call(fn.this, argumentList, false, frame)
 
@@ -207,10 +186,9 @@ func (self *_object) construct(argumentList []Value) Value {
 	panic(self.runtime.panicTypeError("%v is not a function", toValue_object(self)))
 }
 
-// 15.3.5.3
 func (self *_object) hasInstance(of Value) bool {
 	if !self.isCall() {
-		// We should not have a hasInstance method
+
 		panic(self.runtime.panicTypeError())
 	}
 	if !of.IsObject() {
@@ -232,24 +210,16 @@ func (self *_object) hasInstance(of Value) bool {
 	return false
 }
 
-// ============ //
-// FunctionCall //
-// ============ //
-
-// FunctionCall is an encapsulation of a JavaScript function call.
 type FunctionCall struct {
 	runtime     *_runtime
 	_thisObject *_object
-	eval        bool // This call is a direct call to eval
+	eval        bool 
 
 	This         Value
 	ArgumentList []Value
 	Otto         *Otto
 }
 
-// Argument will return the value of the argument at the given index.
-//
-// If no such argument exists, undefined is returned.
 func (self FunctionCall) Argument(index int) Value {
 	return valueOfArrayIndex(self.ArgumentList, index)
 }
@@ -267,7 +237,7 @@ func (self FunctionCall) slice(index int) []Value {
 
 func (self *FunctionCall) thisObject() *_object {
 	if self._thisObject == nil {
-		this := self.This.resolve() // FIXME Is this right?
+		this := self.This.resolve() 
 		self._thisObject = self.runtime.toObject(this)
 	}
 	return self._thisObject
@@ -285,8 +255,7 @@ func (self FunctionCall) toObject(value Value) *_object {
 	return self.runtime.toObject(value)
 }
 
-// CallerLocation will return file location information (file:line:pos) where this function is being called.
 func (self FunctionCall) CallerLocation() string {
-	// see error.go for location()
+
 	return self.runtime.scope.outer.frame.location()
 }

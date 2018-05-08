@@ -1,19 +1,3 @@
-/*
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #include <config.h>
 
@@ -32,20 +16,17 @@
 #include "libusbi.h"
 
 struct device_priv {
-	char *devname;				/* name of the ugen(4) node */
-	int fd;					/* device file descriptor */
+	char *devname;				
+	int fd;					
 
-	unsigned char *cdesc;			/* active config descriptor */
-	usb_device_descriptor_t ddesc;		/* usb device descriptor */
+	unsigned char *cdesc;			
+	usb_device_descriptor_t ddesc;		
 };
 
 struct handle_priv {
 	int endpoints[USB_MAX_ENDPOINTS];
 };
 
-/*
- * Backend functions
- */
 static int obsd_get_device_list(struct libusb_context *,
     struct discovered_devs **);
 static int obsd_open(struct libusb_device_handle *);
@@ -76,9 +57,6 @@ static void obsd_clear_transfer_priv(struct usbi_transfer *);
 static int obsd_handle_transfer_completion(struct usbi_transfer *);
 static int obsd_clock_gettime(int, struct timespec *);
 
-/*
- * Private functions
- */
 static int _errno_to_libusb(int);
 static int _cache_active_config_descriptor(struct libusb_device *);
 static int _sync_control_transfer(struct usbi_transfer *);
@@ -87,21 +65,20 @@ static int _access_endpoint(struct libusb_transfer *);
 
 static int _bus_open(int);
 
-
 const struct usbi_os_backend openbsd_backend = {
 	"Synchronous OpenBSD backend",
 	0,
-	NULL,				/* init() */
-	NULL,				/* exit() */
+	NULL,				
+	NULL,				
 	obsd_get_device_list,
-	NULL,				/* hotplug_poll */
+	NULL,				
 	obsd_open,
 	obsd_close,
 
 	obsd_get_device_descriptor,
 	obsd_get_active_config_descriptor,
 	obsd_get_config_descriptor,
-	NULL,				/* get_config_descriptor_by_value() */
+	NULL,				
 
 	obsd_get_configuration,
 	obsd_set_configuration,
@@ -113,15 +90,15 @@ const struct usbi_os_backend openbsd_backend = {
 	obsd_clear_halt,
 	obsd_reset_device,
 
-	NULL,				/* alloc_streams */
-	NULL,				/* free_streams */
+	NULL,				
+	NULL,				
 
-	NULL,				/* dev_mem_alloc() */
-	NULL,				/* dev_mem_free() */
+	NULL,				
+	NULL,				
 
-	NULL,				/* kernel_driver_active() */
-	NULL,				/* detach_kernel_driver() */
-	NULL,				/* attach_kernel_driver() */
+	NULL,				
+	NULL,				
+	NULL,				
 
 	obsd_destroy_device,
 
@@ -129,13 +106,13 @@ const struct usbi_os_backend openbsd_backend = {
 	obsd_cancel_transfer,
 	obsd_clear_transfer_priv,
 
-	NULL,				/* handle_events() */
+	NULL,				
 	obsd_handle_transfer_completion,
 
 	obsd_clock_gettime,
 	sizeof(struct device_priv),
 	sizeof(struct handle_priv),
-	0,				/* transfer_priv_size */
+	0,				
 };
 
 #define DEVPATH	"/dev/"
@@ -176,10 +153,6 @@ obsd_get_device_list(struct libusb_context * ctx,
 			if (ioctl(fd, USB_DEVICEINFO, &di) < 0)
 				continue;
 
-			/*
-			 * XXX If ugen(4) is attached to the USB device
-			 * it will be used.
-			 */
 			udevname = NULL;
 			for (j = 0; j < USB_MAX_DEVNAMES; j++)
 				if (!strncmp("ugen", di.udi_devnames[j], 4)) {
@@ -250,10 +223,7 @@ obsd_open(struct libusb_device_handle *handle)
 	char devnode[16];
 
 	if (dpriv->devname) {
-		/*
-		 * Only open ugen(4) attached devices read-write, all
-		 * read-only operations are done through the bus node.
-		 */
+
 		snprintf(devnode, sizeof(devnode), DEVPATH "%s.00",
 		    dpriv->devname);
 		dpriv->fd = open(devnode, O_RDWR);
@@ -485,7 +455,7 @@ obsd_submit_transfer(struct usbi_transfer *itransfer)
 		break;
 	case LIBUSB_TRANSFER_TYPE_ISOCHRONOUS:
 		if (IS_XFEROUT(transfer)) {
-			/* Isochronous write is not supported */
+
 			err = LIBUSB_ERROR_NOT_SUPPORTED;
 			break;
 		}
@@ -526,7 +496,6 @@ obsd_clear_transfer_priv(struct usbi_transfer *itransfer)
 {
 	usbi_dbg("");
 
-	/* Nothing to do */
 }
 
 int
@@ -644,7 +613,7 @@ _sync_control_transfer(struct usbi_transfer *itransfer)
 	req.ucr_addr = transfer->dev_handle->dev->device_address;
 	req.ucr_request.bmRequestType = setup->bmRequestType;
 	req.ucr_request.bRequest = setup->bRequest;
-	/* Don't use USETW, libusb already deals with the endianness */
+
 	(*(uint16_t *)req.ucr_request.wValue) = setup->wValue;
 	(*(uint16_t *)req.ucr_request.wIndex) = setup->wIndex;
 	(*(uint16_t *)req.ucr_request.wLength) = setup->wLength;
@@ -654,11 +623,7 @@ _sync_control_transfer(struct usbi_transfer *itransfer)
 		req.ucr_flags = USBD_SHORT_XFER_OK;
 
 	if (dpriv->devname == NULL) {
-		/*
-		 * XXX If the device is not attached to ugen(4) it is
-		 * XXX still possible to submit a control transfer but
-		 * XXX with the default timeout only.
-		 */
+
 		int fd, err;
 
 		if ((fd = _bus_open(transfer->dev_handle->dev->bus_number)) < 0)
@@ -703,11 +668,10 @@ _access_endpoint(struct libusb_transfer *transfer)
 	usbi_dbg("endpoint %d mode %d", endpt, mode);
 
 	if (hpriv->endpoints[endpt] < 0) {
-		/* Pick the right endpoint node */
+
 		snprintf(devnode, sizeof(devnode), DEVPATH "%s.%02d",
 		    dpriv->devname, endpt);
 
-		/* We may need to read/write to the same endpoint later. */
 		if (((fd = open(devnode, O_RDWR)) < 0) && (errno == ENXIO))
 			if ((fd = open(devnode, mode)) < 0)
 				return (-1);
@@ -731,10 +695,6 @@ _sync_gen_transfer(struct usbi_transfer *itransfer)
 	if (dpriv->devname == NULL)
 		return (LIBUSB_ERROR_NOT_SUPPORTED);
 
-	/*
-	 * Bulk, Interrupt or Isochronous transfer depends on the
-	 * endpoint and thus the node to open.
-	 */
 	if ((fd = _access_endpoint(transfer)) < 0)
 		return _errno_to_libusb(errno);
 

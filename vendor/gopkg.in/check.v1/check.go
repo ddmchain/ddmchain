@@ -1,9 +1,4 @@
-// Package check is a rich testing extension for Go's testing package.
-//
-// For details about the project, see:
-//
-//     http://labix.org/gocheck
-//
+
 package check
 
 import (
@@ -25,9 +20,6 @@ import (
 	"time"
 )
 
-// -----------------------------------------------------------------------
-// Internal type which deals with suite method calling.
-
 const (
 	fixtureKd = iota
 	testKd
@@ -46,7 +38,6 @@ const (
 
 type funcStatus uint32
 
-// A method value can't reach its own Method structure.
 type methodType struct {
 	reflect.Value
 	Info reflect.Method
@@ -106,7 +97,6 @@ func (c *C) stopNow() {
 	runtime.Goexit()
 }
 
-// logger is a concurrency safe byte.Buffer
 type logger struct {
 	sync.Mutex
 	writer bytes.Buffer
@@ -129,9 +119,6 @@ func (l *logger) String() string {
 	defer l.Unlock()
 	return l.writer.String()
 }
-
-// -----------------------------------------------------------------------
-// Handling of temporary files and directories.
 
 type tempDir struct {
 	sync.Mutex
@@ -171,8 +158,6 @@ func (td *tempDir) removeAll() {
 	}
 }
 
-// Create a new temporary directory which is automatically removed after
-// the suite finishes running.
 func (c *C) MkDir() string {
 	path := c.tempDir.newPath()
 	if err := os.Mkdir(path, 0700); err != nil {
@@ -180,9 +165,6 @@ func (c *C) MkDir() string {
 	}
 	return path
 }
-
-// -----------------------------------------------------------------------
-// Low-level logging functions.
 
 func (c *C) log(args ...interface{}) {
 	c.writeLog([]byte(fmt.Sprint(args...) + "\n"))
@@ -273,8 +255,8 @@ func (c *C) logString(issue string) {
 }
 
 func (c *C) logCaller(skip int) {
-	// This is a bit heavier than it ought to be.
-	skip++ // Our own frame.
+
+	skip++ 
 	pc, callerFile, callerLine, ok := runtime.Caller(skip)
 	if !ok {
 		return
@@ -286,9 +268,7 @@ func (c *C) logCaller(skip int) {
 		for {
 			skip++
 			if pc, file, line, ok := runtime.Caller(skip); ok {
-				// Note that the test line may be different on
-				// distinct calls for the same test.  Showing
-				// the "internal" line is helpful when debugging.
+
 				if runtime.FuncForPC(pc) == testFunc {
 					testFile, testLine = file, line
 					break
@@ -308,7 +288,7 @@ func (c *C) logCode(path string, line int) {
 	c.logf("%s:%d:", nicePath(path), line)
 	code, err := printLine(path, line)
 	if code == "" {
-		code = "..." // XXX Open the file and take the raw line.
+		code = "..." 
 		if err != nil {
 			code += err.Error()
 		}
@@ -320,7 +300,7 @@ var valueGo = filepath.Join("reflect", "value.go")
 var asmGo = filepath.Join("runtime", "asm_")
 
 func (c *C) logPanic(skip int, value interface{}) {
-	skip++ // Our own frame.
+	skip++ 
 	initialSkip := skip
 	for ; ; skip++ {
 		if pc, file, line, ok := runtime.Caller(skip); ok {
@@ -353,9 +333,6 @@ func (c *C) logArgPanic(method *methodType, expectedType string) {
 	c.logf("... Panic: %s argument should be %s",
 		niceFuncName(method.PC()), expectedType)
 }
-
-// -----------------------------------------------------------------------
-// Some simple formatting helpers.
 
 var initWD, initWDErr = os.Getwd()
 
@@ -406,9 +383,6 @@ func niceFuncName(pc uintptr) string {
 	return "<unknown function>"
 }
 
-// -----------------------------------------------------------------------
-// Result tracker to aggregate call results.
-
 type Result struct {
 	Succeeded        int
 	Failed           int
@@ -416,9 +390,9 @@ type Result struct {
 	Panicked         int
 	FixturePanicked  int
 	ExpectedFailures int
-	Missed           int    // Not even tried to run, related to a panic in the fixture.
-	RunError         error  // Houston, we've got a problem.
-	WorkDir          string // If KeepWorkDir is true
+	Missed           int    
+	RunError         error  
+	WorkDir          string 
 }
 
 type resultTracker struct {
@@ -432,9 +406,9 @@ type resultTracker struct {
 }
 
 func newResultTracker() *resultTracker {
-	return &resultTracker{_expectChan: make(chan *C), // Synchronous
-		_doneChan: make(chan *C, 32), // Asynchronous
-		_stopChan: make(chan bool)}   // Synchronous
+	return &resultTracker{_expectChan: make(chan *C), 
+		_doneChan: make(chan *C, 32), 
+		_stopChan: make(chan bool)}   
 }
 
 func (tracker *resultTracker) start() {
@@ -457,9 +431,9 @@ func (tracker *resultTracker) _loopRoutine() {
 	for {
 		var c *C
 		if tracker._waiting > 0 {
-			// Calls still running. Can't stop.
+
 			select {
-			// XXX Reindent this (not now to make diff clear)
+
 			case <-tracker._expectChan:
 				tracker._waiting++
 			case c = <-tracker._doneChan:
@@ -482,8 +456,7 @@ func (tracker *resultTracker) _loopRoutine() {
 						tracker.result.Panicked++
 					}
 				case fixturePanickedSt:
-					// Track it as missed, since the panic
-					// was on the fixture, not on the test.
+
 					tracker.result.Missed++
 				case missedSt:
 					tracker.result.Missed++
@@ -494,7 +467,7 @@ func (tracker *resultTracker) _loopRoutine() {
 				}
 			}
 		} else {
-			// No calls.  Can stop, but no done calls here.
+
 			select {
 			case tracker._stopChan <- true:
 				return
@@ -506,9 +479,6 @@ func (tracker *resultTracker) _loopRoutine() {
 		}
 	}
 }
-
-// -----------------------------------------------------------------------
-// The underlying suite runner.
 
 type suiteRunner struct {
 	suite                     interface{}
@@ -530,12 +500,11 @@ type RunConf struct {
 	Verbose       bool
 	Filter        string
 	Benchmark     bool
-	BenchmarkTime time.Duration // Defaults to 1 second
+	BenchmarkTime time.Duration 
 	BenchmarkMem  bool
 	KeepWorkDir   bool
 }
 
-// Create a new suiteRunner able to run all methods in the given suite.
 func newSuiteRunner(suite interface{}, runConf *RunConf) *suiteRunner {
 	var conf RunConf
 	if runConf != nil {
@@ -604,7 +573,6 @@ func newSuiteRunner(suite interface{}, runConf *RunConf) *suiteRunner {
 	return runner
 }
 
-// Run all methods in the given suite.
 func (runner *suiteRunner) run() *Result {
 	if runner.tracker.result.RunError == nil && len(runner.tests) > 0 {
 		runner.tracker.start()
@@ -637,8 +605,6 @@ func (runner *suiteRunner) run() *Result {
 	return &runner.tracker.result
 }
 
-// Create a call object with the given suite method, and fork a
-// goroutine with the provided dispatcher for running it.
 func (runner *suiteRunner) forkCall(method *methodType, kind funcKind, testName string, logb *logger, dispatcher func(c *C)) *C {
 	var logw io.Writer
 	if runner.output.Stream {
@@ -668,15 +634,12 @@ func (runner *suiteRunner) forkCall(method *methodType, kind funcKind, testName 
 	return c
 }
 
-// Same as forkCall(), but wait for call to finish before returning.
 func (runner *suiteRunner) runFunc(method *methodType, kind funcKind, testName string, logb *logger, dispatcher func(c *C)) *C {
 	c := runner.forkCall(method, kind, testName, logb, dispatcher)
 	<-c.done
 	return c
 }
 
-// Handle a finished call.  If there were any panics, update the call status
-// accordingly.  Then, mark the call as done and report to the tracker.
 func (runner *suiteRunner) callDone(c *C) {
 	value := recover()
 	if value != nil {
@@ -708,10 +671,6 @@ func (runner *suiteRunner) callDone(c *C) {
 	c.done <- c
 }
 
-// Runs a fixture call synchronously.  The fixture will still be run in a
-// goroutine like all suite methods, but this method will not return
-// while the fixture goroutine is not done, because the fixture must be
-// run in a desired order.
 func (runner *suiteRunner) runFixture(method *methodType, testName string, logb *logger) *C {
 	if method != nil {
 		c := runner.runFunc(method, fixtureKd, testName, logb, func(c *C) {
@@ -725,9 +684,6 @@ func (runner *suiteRunner) runFixture(method *methodType, testName string, logb 
 	return nil
 }
 
-// Run the fixture method with runFixture(), but panic with a fixturePanic{}
-// in case the fixture method panics.  This makes it easier to track the
-// fixture panic together with other call panics within forkTest().
 func (runner *suiteRunner) runFixtureWithPanic(method *methodType, testName string, logb *logger, skipped *bool) *C {
 	if skipped != nil && *skipped {
 		return nil
@@ -747,8 +703,6 @@ type fixturePanic struct {
 	method *methodType
 }
 
-// Run the suite test method, together with the test-specific fixture,
-// asynchronously.
 func (runner *suiteRunner) forkTest(method *methodType) *C {
 	testName := method.String()
 	return runner.forkCall(method, testKd, testName, nil, func(c *C) {
@@ -760,8 +714,7 @@ func (runner *suiteRunner) forkTest(method *methodType) *C {
 			runner.runFixtureWithPanic(runner.setUpTest, testName, c.logb, &skipped)
 			mt := c.method.Type()
 			if mt.NumIn() != 1 || mt.In(0) != reflect.TypeOf(c) {
-				// Rather than a plain panic, provide a more helpful message when
-				// the argument type is incorrect.
+
 				c.setStatus(panickedSt)
 				c.logArgPanic(c.method, "*check.C")
 				return
@@ -790,30 +743,22 @@ func (runner *suiteRunner) forkTest(method *methodType) *C {
 				perOpN = int(c.benchTime.Nanoseconds() / c.nsPerOp())
 			}
 
-			// Logic taken from the stock testing package:
-			// - Run more iterations than we think we'll need for a second (1.5x).
-			// - Don't grow too fast in case we had timing errors previously.
-			// - Be sure to run at least one more than last time.
 			benchN = max(min(perOpN+perOpN/2, 100*benchN), benchN+1)
 			benchN = roundUp(benchN)
 
-			skipped = true // Don't run the deferred one if this panics.
+			skipped = true 
 			runner.runFixtureWithPanic(runner.tearDownTest, testName, nil, nil)
 			skipped = false
 		}
 	})
 }
 
-// Same as forkTest(), but wait for the test to finish before returning.
 func (runner *suiteRunner) runTest(method *methodType) *C {
 	c := runner.forkTest(method)
 	<-c.done
 	return c
 }
 
-// Helper to mark tests as skipped or missed.  A bit heavy for what
-// it does, but it enables homogeneous handling of tracking, including
-// nice verbose output.
 func (runner *suiteRunner) skipTests(status funcStatus, methods []*methodType) {
 	for _, method := range methods {
 		runner.runFunc(method, testKd, "", nil, func(c *C) {
@@ -822,8 +767,6 @@ func (runner *suiteRunner) skipTests(status funcStatus, methods []*methodType) {
 	}
 }
 
-// Verify if the fixture arguments are *check.C.  In case of errors,
-// log the error as a panic in the fixture method call, and return false.
 func (runner *suiteRunner) checkFixtureArgs() bool {
 	succeeded := true
 	argType := reflect.TypeOf(&C{})
@@ -862,10 +805,7 @@ func (runner *suiteRunner) reportCallDone(c *C) {
 	case panickedSt:
 		runner.output.WriteCallProblem("PANIC", c)
 	case fixturePanickedSt:
-		// That's a testKd call reporting that its fixture
-		// has panicked. The fixture call which caused the
-		// panic itself was tracked above. We'll report to
-		// aid debugging.
+
 		runner.output.WriteCallProblem("PANIC", c)
 	case missedSt:
 		runner.output.WriteCallSuccess("MISS", c)

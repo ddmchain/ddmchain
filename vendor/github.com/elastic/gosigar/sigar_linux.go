@@ -1,5 +1,4 @@
 
-
 package gosigar
 
 import (
@@ -10,7 +9,7 @@ import (
 )
 
 func init() {
-	system.ticks = 100 // C.sysconf(C._SC_CLK_TCK)
+	system.ticks = 100 
 
 	Procd = "/proc"
 

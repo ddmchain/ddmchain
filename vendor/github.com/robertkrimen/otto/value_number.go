@@ -113,7 +113,6 @@ const (
 	maxInt    = int(^uint(0) >> 1)
 	minInt    = -maxInt - 1
 
-	// int64
 	int64_maxInt    int64 = int64(maxInt)
 	int64_minInt    int64 = int64(minInt)
 	int64_maxInt8   int64 = math.MaxInt8
@@ -126,7 +125,6 @@ const (
 	int64_maxUint16 int64 = math.MaxUint16
 	int64_maxUint32 int64 = math.MaxUint32
 
-	// float64
 	float_maxInt    float64 = float64(int(^uint(0) >> 1))
 	float_minInt    float64 = float64(int(-maxInt - 1))
 	float_minUint   float64 = float64(0)
@@ -153,10 +151,10 @@ func toIntegerFloat(value Value) float64 {
 type _numberKind int
 
 const (
-	numberInteger  _numberKind = iota // 3.0 => 3.0
-	numberFloat                       // 3.14159 => 3.0, 1+2**63 > 2**63-1
-	numberInfinity                    // Infinity => 2**63-1
-	numberNaN                         // NaN => 0
+	numberInteger  _numberKind = iota 
+	numberFloat                       
+	numberInfinity                    
+	numberNaN                         
 )
 
 type _number struct {
@@ -165,9 +163,6 @@ type _number struct {
 	float64 float64
 }
 
-// FIXME
-// http://www.goinggo.net/2013/08/gustavos-ieee-754-brain-teaser.html
-// http://bazaar.launchpad.net/~niemeyer/strepr/trunk/view/6/strepr.go#L160
 func (value Value) number() (number _number) {
 	switch value := value.value.(type) {
 	case int8:
@@ -234,7 +229,6 @@ func (value Value) number() (number _number) {
 	return
 }
 
-// ECMA 262: 9.5
 func toInt32(value Value) int32 {
 	{
 		switch value := value.value.(type) {
@@ -250,7 +244,7 @@ func toInt32(value Value) int32 {
 	if math.IsNaN(floatValue) || math.IsInf(floatValue, 0) {
 		return 0
 	}
-	if floatValue == 0 { // This will work for +0 & -0
+	if floatValue == 0 { 
 		return 0
 	}
 	remainder := math.Mod(floatValue, float_2_32)

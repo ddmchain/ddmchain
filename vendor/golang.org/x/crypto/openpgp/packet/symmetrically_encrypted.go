@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package packet
 
 import (
@@ -14,11 +11,8 @@ import (
 	"strconv"
 )
 
-// SymmetricallyEncrypted represents a symmetrically encrypted byte string. The
-// encrypted contents will consist of more OpenPGP packets. See RFC 4880,
-// sections 5.7 and 5.13.
 type SymmetricallyEncrypted struct {
-	MDC      bool // true iff this is a type 18 packet and thus has an embedded MAC.
+	MDC      bool 
 	contents io.Reader
 	prefix   []byte
 }
@@ -27,7 +21,7 @@ const symmetricallyEncryptedVersion = 1
 
 func (se *SymmetricallyEncrypted) parse(r io.Reader) error {
 	if se.MDC {
-		// See RFC 4880, section 5.13.
+
 		var buf [1]byte
 		_, err := readFull(r, buf[:])
 		if err != nil {
@@ -41,9 +35,6 @@ func (se *SymmetricallyEncrypted) parse(r io.Reader) error {
 	return nil
 }
 
-// Decrypt returns a ReadCloser, from which the decrypted contents of the
-// packet can be read. An incorrect key can, with high probability, be detected
-// immediately and this will result in a KeyIncorrect error being returned.
 func (se *SymmetricallyEncrypted) Decrypt(c CipherFunction, key []byte) (io.ReadCloser, error) {
 	keySize := c.KeySize()
 	if keySize == 0 {
@@ -65,7 +56,7 @@ func (se *SymmetricallyEncrypted) Decrypt(c CipherFunction, key []byte) (io.Read
 
 	ocfbResync := OCFBResync
 	if se.MDC {
-		// MDC packets use a different form of OCFB mode.
+
 		ocfbResync = OCFBNoResync
 	}
 
@@ -77,17 +68,15 @@ func (se *SymmetricallyEncrypted) Decrypt(c CipherFunction, key []byte) (io.Read
 	plaintext := cipher.StreamReader{S: s, R: se.contents}
 
 	if se.MDC {
-		// MDC packets have an embedded hash that we need to check.
+
 		h := sha1.New()
 		h.Write(se.prefix)
 		return &seMDCReader{in: plaintext, h: h}, nil
 	}
 
-	// Otherwise, we just need to wrap plaintext so that it's a valid ReadCloser.
 	return seReader{plaintext}, nil
 }
 
-// seReader wraps an io.Reader with a no-op Close method.
 type seReader struct {
 	in io.Reader
 }
@@ -100,12 +89,8 @@ func (ser seReader) Close() error {
 	return nil
 }
 
-const mdcTrailerSize = 1 /* tag byte */ + 1 /* length byte */ + sha1.Size
+const mdcTrailerSize = 1  + 1  + sha1.Size
 
-// An seMDCReader wraps an io.Reader, maintains a running hash and keeps hold
-// of the most recent 22 bytes (mdcTrailerSize). Upon EOF, those bytes form an
-// MDC packet containing a hash of the previous contents which is checked
-// against the running hash. See RFC 4880, section 5.13.
 type seMDCReader struct {
 	in          io.Reader
 	h           hash.Hash
@@ -126,8 +111,6 @@ func (ser *seMDCReader) Read(buf []byte) (n int, err error) {
 		return
 	}
 
-	// If we haven't yet filled the trailer buffer then we must do that
-	// first.
 	for ser.trailerUsed < mdcTrailerSize {
 		n, err = ser.in.Read(ser.trailer[ser.trailerUsed:])
 		ser.trailerUsed += n
@@ -149,8 +132,6 @@ func (ser *seMDCReader) Read(buf []byte) (n int, err error) {
 		}
 	}
 
-	// If it's a short read then we read into a temporary buffer and shift
-	// the data into the caller's buffer.
 	if len(buf) <= mdcTrailerSize {
 		n, err = readFull(ser.in, ser.scratch[:len(buf)])
 		copy(buf, ser.trailer[:n])
@@ -175,7 +156,6 @@ func (ser *seMDCReader) Read(buf []byte) (n int, err error) {
 	return
 }
 
-// This is a new-format packet tag byte for a type 19 (MDC) packet.
 const mdcPacketTagByte = byte(0x80) | 0x40 | 19
 
 func (ser *seMDCReader) Close() error {
@@ -184,7 +164,7 @@ func (ser *seMDCReader) Close() error {
 	}
 
 	for !ser.eof {
-		// We haven't seen EOF so we need to read to the end
+
 		var buf [1024]byte
 		_, err := ser.Read(buf[:])
 		if err == io.EOF {
@@ -207,9 +187,6 @@ func (ser *seMDCReader) Close() error {
 	return nil
 }
 
-// An seMDCWriter writes through to an io.WriteCloser while maintains a running
-// hash of the data written. On close, it emits an MDC packet containing the
-// running hash.
 type seMDCWriter struct {
 	w io.WriteCloser
 	h hash.Hash
@@ -236,7 +213,6 @@ func (w *seMDCWriter) Close() (err error) {
 	return w.w.Close()
 }
 
-// noOpCloser is like an ioutil.NopCloser, but for an io.Writer.
 type noOpCloser struct {
 	w io.Writer
 }
@@ -249,10 +225,6 @@ func (c noOpCloser) Close() error {
 	return nil
 }
 
-// SerializeSymmetricallyEncrypted serializes a symmetrically encrypted packet
-// to w and returns a WriteCloser to which the to-be-encrypted packets can be
-// written.
-// If config is nil, sensible defaults will be used.
 func SerializeSymmetricallyEncrypted(w io.Writer, c CipherFunction, key []byte, config *Config) (contents io.WriteCloser, err error) {
 	if c.KeySize() != len(key) {
 		return nil, errors.InvalidArgumentError("SymmetricallyEncrypted.Serialize: bad key length")

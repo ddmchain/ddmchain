@@ -34,7 +34,7 @@ func objectLength(object *_object) uint32 {
 func arrayUint32(rt *_runtime, value Value) uint32 {
 	nm := value.number()
 	if nm.kind != numberInteger || !isUint32(nm.int64) {
-		// FIXME
+
 		panic(rt.panicRangeError())
 	}
 	return uint32(nm.int64)
@@ -65,7 +65,7 @@ func arrayDefineOwnProperty(self *_object, name string, descriptor _property, th
 		}
 		newWritable := true
 		if descriptor.mode&0700 == 0 {
-			// If writable is off
+
 			newWritable = false
 			descriptor.mode |= 0100
 		}

@@ -8,7 +8,6 @@ import (
 func (self *_parser) parseBlockStatement() *ast.BlockStatement {
 	node := &ast.BlockStatement{}
 
-	// Find comments before the leading brace
 	if self.mode&StoreComments != 0 {
 		self.comments.CommentMap.AddComments(node, self.comments.FetchAll(), ast.LEADING)
 		self.comments.Unset()
@@ -25,7 +24,6 @@ func (self *_parser) parseBlockStatement() *ast.BlockStatement {
 
 	node.RightBrace = self.expect(token.RIGHT_BRACE)
 
-	// Find comments after the trailing brace
 	if self.mode&StoreComments != 0 {
 		self.comments.ResetLineBreak()
 		self.comments.CommentMap.AddComments(node, self.comments.Fetch(), ast.TRAILING)
@@ -104,12 +102,12 @@ func (self *_parser) parseStatement() ast.Statement {
 	expression := self.parseExpression()
 
 	if identifier, isIdentifier := expression.(*ast.Identifier); isIdentifier && self.token == token.COLON {
-		// LabelledStatement
+
 		colon := self.idx
 		if self.mode&StoreComments != 0 {
 			self.comments.Unset()
 		}
-		self.next() // :
+		self.next() 
 
 		label := identifier.Name
 		for _, value := range self.scope.labels {
@@ -121,9 +119,9 @@ func (self *_parser) parseStatement() ast.Statement {
 		if self.mode&StoreComments != 0 {
 			labelComments = self.comments.FetchAll()
 		}
-		self.scope.labels = append(self.scope.labels, label) // Push the label
+		self.scope.labels = append(self.scope.labels, label) 
 		statement := self.parseStatement()
-		self.scope.labels = self.scope.labels[:len(self.scope.labels)-1] // Pop the label
+		self.scope.labels = self.scope.labels[:len(self.scope.labels)-1] 
 		exp := &ast.LabelledStatement{
 			Label:     identifier,
 			Colon:     colon,
@@ -285,7 +283,7 @@ func (self *_parser) parseFunction(declaration bool) *ast.FunctionLiteral {
 			})
 		}
 	} else if declaration {
-		// Use expect error handling
+
 		self.expect(token.IDENTIFIER)
 	}
 	if self.mode&StoreComments != 0 {
@@ -364,7 +362,7 @@ func (self *_parser) parseThrowStatement() ast.Statement {
 	idx := self.expect(token.THROW)
 
 	if self.implicitSemicolon {
-		if self.chr == -1 { // Hackish
+		if self.chr == -1 { 
 			self.error(idx, "Unexpected end of input")
 		} else {
 			self.error(idx, "Illegal newline after throw")
@@ -454,7 +452,7 @@ func (self *_parser) parseWithStatement() ast.Statement {
 	self.expect(token.RIGHT_PARENTHESIS)
 
 	if self.mode&StoreComments != 0 {
-		//comments = append(comments, self.comments.FetchAll()...)
+
 		self.comments.CommentMap.AddComments(node, comments, ast.LEADING)
 		self.comments.CommentMap.AddComments(node, withComments, ast.WITH)
 	}
@@ -498,7 +496,6 @@ func (self *_parser) parseCaseStatement() *ast.CaseStatement {
 		node.Consequent = append(node.Consequent, consequent)
 	}
 
-	// Link the comments to the case statement
 	if self.mode&StoreComments != 0 {
 		self.comments.CommentMap.AddComments(node, comments, ast.LEADING)
 	}
@@ -517,8 +514,6 @@ func (self *_parser) parseIterationStatement() ast.Statement {
 
 func (self *_parser) parseForIn(into ast.Expression) *ast.ForInStatement {
 
-	// Already have consumed "<into> in"
-
 	source := self.parseExpression()
 	self.expect(token.RIGHT_PARENTHESIS)
 	body := self.parseIterationStatement()
@@ -533,8 +528,6 @@ func (self *_parser) parseForIn(into ast.Expression) *ast.ForInStatement {
 }
 
 func (self *_parser) parseFor(initializer ast.Expression) *ast.ForStatement {
-
-	// Already have consumed "<initializer> ;"
 
 	var test, update ast.Expression
 
@@ -594,9 +587,9 @@ func (self *_parser) parseForOrForInStatement() ast.Statement {
 				if self.mode&StoreComments != 0 {
 					self.comments.Unset()
 				}
-				self.next() // in
+				self.next() 
 				forIn = true
-				left = []ast.Expression{list[0]} // There is only one declaration
+				left = []ast.Expression{list[0]} 
 			} else {
 				left = list
 			}
@@ -616,7 +609,7 @@ func (self *_parser) parseForOrForInStatement() ast.Statement {
 	if forIn {
 		switch left[0].(type) {
 		case *ast.Identifier, *ast.DotExpression, *ast.BracketExpression, *ast.VariableExpression:
-			// These are all acceptable
+
 		default:
 			self.error(idx, "Invalid left-hand side in for-in")
 			self.nextStatement()
@@ -772,7 +765,7 @@ func (self *_parser) parseIfStatement() ast.Statement {
 
 func (self *_parser) parseSourceElement() ast.Statement {
 	statement := self.parseStatement()
-	//self.comments.Unset()
+
 	return statement
 }
 
@@ -904,7 +897,6 @@ illegal:
 	return &ast.BadStatement{From: idx, To: self.idx}
 }
 
-// Find the next statement after an error (recover)
 func (self *_parser) nextStatement() {
 	for {
 		switch self.token {
@@ -912,10 +904,7 @@ func (self *_parser) nextStatement() {
 			token.FOR, token.IF, token.RETURN, token.SWITCH,
 			token.VAR, token.DO, token.TRY, token.WITH,
 			token.WHILE, token.THROW, token.CATCH, token.FINALLY:
-			// Return only if parser made some progress since last
-			// sync or if it has not reached 10 next calls without
-			// progress. Otherwise consume at least one token to
-			// avoid an endless parser loop
+
 			if self.idx == self.recover.idx && self.recover.count < 10 {
 				self.recover.count++
 				return
@@ -925,11 +914,7 @@ func (self *_parser) nextStatement() {
 				self.recover.count = 0
 				return
 			}
-			// Reaching here indicates a parser bug, likely an
-			// incorrect token list in this function, but it only
-			// leads to skipping of possibly correct code if a
-			// previous error is present, and thus is preferred
-			// over a non-terminating parse.
+
 		case token.EOF:
 			return
 		}

@@ -15,7 +15,6 @@ func (w wildcard) match(s string) bool {
 	return len(s) >= len(w.prefix+w.suffix) && strings.HasPrefix(s, w.prefix) && strings.HasSuffix(s, w.suffix)
 }
 
-// convert converts a list of string using the passed converter function
 func convert(s []string, c converter) []string {
 	out := []string{}
 	for _, i := range s {
@@ -24,12 +23,11 @@ func convert(s []string, c converter) []string {
 	return out
 }
 
-// parseHeaderList tokenize + normalize a string containing a list of headers
 func parseHeaderList(headerList string) []string {
 	l := len(headerList)
 	h := make([]byte, 0, l)
 	upper := true
-	// Estimate the number headers in order to allocate the right splice size
+
 	t := 0
 	for i := 0; i < l; i++ {
 		if headerList[i] == ',' {
@@ -57,7 +55,7 @@ func parseHeaderList(headerList string) []string {
 
 		if b == ' ' || b == ',' || i == l-1 {
 			if len(h) > 0 {
-				// Flush the found header
+
 				headers = append(headers, string(h))
 				h = h[:0]
 				upper = true

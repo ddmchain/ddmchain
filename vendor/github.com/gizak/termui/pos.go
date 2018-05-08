@@ -1,15 +1,10 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
 import "image"
 
-// Align is the position of the gauge's label.
 type Align uint
 
-// All supported positions.
 const (
 	AlignNone Align = 0
 	AlignLeft Align = 1 << iota
@@ -24,9 +19,8 @@ const (
 func AlignArea(parent, child image.Rectangle, a Align) image.Rectangle {
 	w, h := child.Dx(), child.Dy()
 
-	// parent center
 	pcx, pcy := parent.Min.X+parent.Dx()/2, parent.Min.Y+parent.Dy()/2
-	// child center
+
 	ccx, ccy := child.Min.X+child.Dx()/2, child.Min.Y+child.Dy()/2
 
 	if a&AlignLeft == AlignLeft {

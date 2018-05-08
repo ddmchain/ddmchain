@@ -1,28 +1,19 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package html
 
 import (
 	"strings"
 )
 
-// parseDoctype parses the data from a DoctypeToken into a name,
-// public identifier, and system identifier. It returns a Node whose Type
-// is DoctypeNode, whose Data is the name, and which has attributes
-// named "system" and "public" for the two identifiers if they were present.
-// quirks is whether the document should be parsed in "quirks mode".
 func parseDoctype(s string) (n *Node, quirks bool) {
 	n = &Node{Type: DoctypeNode}
 
-	// Find the name.
 	space := strings.IndexAny(s, whitespace)
 	if space == -1 {
 		space = len(s)
 	}
 	n.Data = s[:space]
-	// The comparison to "html" is case-sensitive.
+
 	if n.Data != "html" {
 		quirks = true
 	}
@@ -30,8 +21,7 @@ func parseDoctype(s string) (n *Node, quirks bool) {
 	s = strings.TrimLeft(s[space:], whitespace)
 
 	if len(s) < 6 {
-		// It can't start with "PUBLIC" or "SYSTEM".
-		// Ignore the rest of the string.
+
 		return n, quirks || s != ""
 	}
 
@@ -80,7 +70,7 @@ func parseDoctype(s string) (n *Node, quirks bool) {
 					}
 				}
 			}
-			// The following two public IDs only cause quirks mode if there is no system ID.
+
 			if len(n.Attr) == 1 && (strings.HasPrefix(public, "-//w3c//dtd html 4.01 frameset//") ||
 				strings.HasPrefix(public, "-//w3c//dtd html 4.01 transitional//")) {
 				quirks = true
@@ -95,8 +85,6 @@ func parseDoctype(s string) (n *Node, quirks bool) {
 	return n, quirks
 }
 
-// quirkyIDs is a list of public doctype identifiers that cause a document
-// to be interpreted in quirks mode. The identifiers should be in lower case.
 var quirkyIDs = []string{
 	"+//silmaril//dtd html pro v0r11 19970101//",
 	"-//advasoft ltd//dtd html 3.0 aswedit + extensions//",

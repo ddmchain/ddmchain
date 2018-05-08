@@ -1,18 +1,3 @@
-// 
-// This file is part of the go-ddmchain library.
-//
-// The go-ddmchain library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ddmchain library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ddmchain library. If not, see <http://www.gnu.org/licenses/>.
 
 package trie
 
@@ -21,8 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/ddmchain/go-ddmchain/common"
-	"github.com/ddmchain/go-ddmchain/rlp"
+	"github.com/ddmchain/go-ddmchain/general"
+	"github.com/ddmchain/go-ddmchain/ptl"
 )
 
 var indices = []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "[17]"}
@@ -35,7 +20,7 @@ type node interface {
 
 type (
 	fullNode struct {
-		Children [17]node // Actual trie node data to encode/decode (needs custom encoder)
+		Children [17]node 
 		flags    nodeFlag
 	}
 	shortNode struct {
@@ -47,7 +32,6 @@ type (
 	valueNode []byte
 )
 
-// EncodeRLP encodes a full node into the consensus RLP format.
 func (n *fullNode) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, n.Children)
 }
@@ -55,14 +39,12 @@ func (n *fullNode) EncodeRLP(w io.Writer) error {
 func (n *fullNode) copy() *fullNode   { copy := *n; return &copy }
 func (n *shortNode) copy() *shortNode { copy := *n; return &copy }
 
-// nodeFlag contains caching-related metadata about a node.
 type nodeFlag struct {
-	hash  hashNode // cached hash of the node (may be nil)
-	gen   uint16   // cache generation counter
-	dirty bool     // whether the node has changes that must be written to the database
+	hash  hashNode 
+	gen   uint16   
+	dirty bool     
 }
 
-// canUnload tells whether a node can be unloaded.
 func (n *nodeFlag) canUnload(cachegen, cachelimit uint16) bool {
 	return !n.dirty && cachegen-n.gen >= cachelimit
 }
@@ -77,7 +59,6 @@ func (n *shortNode) cache() (hashNode, bool) { return n.flags.hash, n.flags.dirt
 func (n hashNode) cache() (hashNode, bool)   { return nil, true }
 func (n valueNode) cache() (hashNode, bool)  { return nil, true }
 
-// Pretty printing.
 func (n *fullNode) String() string  { return n.fstring("") }
 func (n *shortNode) String() string { return n.fstring("") }
 func (n hashNode) String() string   { return n.fstring("") }
@@ -112,7 +93,6 @@ func mustDecodeNode(hash, buf []byte, cachegen uint16) node {
 	return n
 }
 
-// decodeNode parses the RLP encoding of a trie node.
 func decodeNode(hash, buf []byte, cachegen uint16) (node, error) {
 	if len(buf) == 0 {
 		return nil, io.ErrUnexpectedEOF
@@ -141,7 +121,7 @@ func decodeShort(hash, buf, elems []byte, cachegen uint16) (node, error) {
 	flag := nodeFlag{hash: hash, gen: cachegen}
 	key := compactToHex(kbuf)
 	if hasTerm(key) {
-		// value node
+
 		val, _, err := rlp.SplitString(rest)
 		if err != nil {
 			return nil, fmt.Errorf("invalid value node: %v", err)
@@ -183,8 +163,7 @@ func decodeRef(buf []byte, cachegen uint16) (node, []byte, error) {
 	}
 	switch {
 	case kind == rlp.List:
-		// 'embedded' node reference. The encoding must be smaller
-		// than a hash in order to be valid.
+
 		if size := len(buf) - len(rest); size > hashLen {
 			err := fmt.Errorf("oversized embedded node (size is %d bytes, want size < %d)", size, hashLen)
 			return nil, buf, err
@@ -192,7 +171,7 @@ func decodeRef(buf []byte, cachegen uint16) (node, []byte, error) {
 		n, err := decodeNode(nil, buf, cachegen)
 		return n, rest, err
 	case kind == rlp.String && len(val) == 0:
-		// empty node
+
 		return nil, rest, nil
 	case kind == rlp.String && len(val) == 32:
 		return append(hashNode{}, val...), rest, nil
@@ -201,8 +180,6 @@ func decodeRef(buf []byte, cachegen uint16) (node, []byte, error) {
 	}
 }
 
-// wraps a decoding error with information about the path to the
-// invalid child node (for debugging encoding issues).
 type decodeError struct {
 	what  error
 	stack []string

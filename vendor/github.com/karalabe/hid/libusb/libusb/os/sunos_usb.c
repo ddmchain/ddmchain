@@ -1,20 +1,3 @@
-/*
- *
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #include <config.h>
 
@@ -37,9 +20,6 @@
 #include "libusbi.h"
 #include "sunos_usb.h"
 
-/*
- * Backend functions
- */
 static int sunos_init(struct libusb_context *);
 static void sunos_exit(void);
 static int sunos_get_device_list(struct libusb_context *,
@@ -67,9 +47,6 @@ static void sunos_clear_transfer_priv(struct usbi_transfer *);
 static int sunos_handle_transfer_completion(struct usbi_transfer *);
 static int sunos_clock_gettime(int, struct timespec *);
 
-/*
- * Private functions
- */
 static int _errno_to_libusb(int);
 static int sunos_usb_get_status(int fd);
 
@@ -93,7 +70,6 @@ sunos_fill_in_dev_info(di_node_t node, struct libusb_device *dev)
 	struct libusb_device_descriptor	*descr;
 	sunos_dev_priv_t	*dpriv = (sunos_dev_priv_t *)dev->os_priv;
 
-	/* Device descriptors */
 	proplen = di_prop_lookup_bytes(DDI_DEV_T_ANY, node,
 	    "usb-dev-descriptor", &rdata);
 	if (proplen <= 0) {
@@ -108,7 +84,6 @@ sunos_fill_in_dev_info(di_node_t node, struct libusb_device *dev)
 	dpriv->dev_descr.idProduct = libusb_cpu_to_le16(descr->idProduct);
 	dpriv->dev_descr.bcdDevice = libusb_cpu_to_le16(descr->bcdDevice);
 
-	/* Raw configuration descriptors */
 	proplen = di_prop_lookup_bytes(DDI_DEV_T_ANY, node,
 	    "usb-raw-cfg-descriptors", &rdata);
 	if (proplen <= 0) {
@@ -132,7 +107,6 @@ sunos_fill_in_dev_info(di_node_t node, struct libusb_device *dev)
 	}
 	dev->port_number = *port_prop;
 
-	/* device physical path */
 	phypath = di_devfs_path(node);
 	if (phypath) {
 		dpriv->phypath = strdup(phypath);
@@ -143,7 +117,6 @@ sunos_fill_in_dev_info(di_node_t node, struct libusb_device *dev)
 		return (LIBUSB_ERROR_IO);
 	}
 
-	/* address */
 	n = di_prop_lookup_ints(DDI_DEV_T_ANY, node, "assigned-address", &addr);
 	if (n != 1 || *addr == 0) {
 		usbi_dbg("can't get address");
@@ -151,7 +124,6 @@ sunos_fill_in_dev_info(di_node_t node, struct libusb_device *dev)
 		dev->device_address = *addr;
 	}
 
-	/* speed */
 	if (di_prop_exists(DDI_DEV_T_ANY, node, "low-speed") == 1) {
 		dev->speed = LIBUSB_SPEED_LOW;
 	} else if (di_prop_exists(DDI_DEV_T_ANY, node, "high-speed") == 1) {
@@ -168,7 +140,6 @@ sunos_fill_in_dev_info(di_node_t node, struct libusb_device *dev)
 
 	return (LIBUSB_SUCCESS);
 }
-
 
 static int
 sunos_add_devices(di_devlink_t link, void *arg)
@@ -188,19 +159,15 @@ sunos_add_devices(di_devlink_t link, void *arg)
 	nargs = (struct node_args *)largs->nargs;
 	myself = largs->myself;
 	if (nargs->last_ugenpath) {
-		/* the same node's links */
+
 		return (DI_WALK_CONTINUE);
 	}
 
-	/*
-	 * Construct session ID.
-	 * session ID = ...parent hub addr|hub addr|dev addr.
-	 */
 	pnode = myself;
 	i = 0;
 	while (pnode != DI_NODE_NIL) {
 		if (di_prop_exists(DDI_DEV_T_ANY, pnode, "root-hub") == 1) {
-			/* walk to root */
+
 			uint32_t *regbuf = NULL;
 			uint32_t reg;
 
@@ -211,7 +178,6 @@ sunos_add_devices(di_devlink_t link, void *arg)
 			    (PCI_REG_DEV_G(reg) << 3) | PCI_REG_FUNC_G(reg);
 			session_id |= (bdf << i * 8);
 
-			/* same as 'unit-address' property */
 			bus_number =
 			    (PCI_REG_DEV_G(reg) << 3) | PCI_REG_FUNC_G(reg);
 
@@ -221,7 +187,6 @@ sunos_add_devices(di_devlink_t link, void *arg)
 			break;
 		}
 
-		/* usb_addr */
 		n = di_prop_lookup_ints(DDI_DEV_T_ANY, pnode,
 		    "assigned-address", &addr_prop);
 		if ((n != 1) || (addr_prop[0] == 0)) {
@@ -272,17 +237,13 @@ sunos_add_devices(di_devlink_t link, void *arg)
 
 	devpriv = (sunos_dev_priv_t *)dev->os_priv;
 	if (nargs->last_ugenpath == NULL) {
-		/* first device */
+
 		nargs->last_ugenpath = devpriv->ugenpath;
 
 		if (discovered_devs_append(*(nargs->discdevs), dev) == NULL) {
 			usbi_dbg("cannot append device");
 		}
 
-		/*
-		 * we alloc and hence ref this dev. We don't need to ref it
-		 * hereafter. Front end or app should take care of their ref.
-		 */
 		libusb_unref_device(dev);
 	}
 
@@ -302,7 +263,6 @@ sunos_walk_minor_node_link(di_node_t node, void *args)
 	struct node_args *nargs = (struct node_args *)args;
 	di_devlink_handle_t devlink_hdl = nargs->dlink_hdl;
 
-	/* walk each minor to find ugen devices */
         while ((minor = di_minor_next(node, minor)) != DI_MINOR_NIL) {
                 minor_path = di_devfs_minor_path(minor);
                 arg.nargs = args;
@@ -314,7 +274,6 @@ sunos_walk_minor_node_link(di_node_t node, void *args)
                 di_devfs_path_free(minor_path);
         }
 
-	/* switch to a different node */
 	nargs->last_ugenpath = NULL;
 
 	return (DI_WALK_CONTINUE);
@@ -344,7 +303,6 @@ sunos_get_device_list(struct libusb_context * ctx,
 	}
 	args.dlink_hdl = devlink_hdl;
 
-	/* walk each node to find USB devices */
 	if (di_walk_node(root_node, DI_WALK_SIBFIRST, &args,
 	    sunos_walk_minor_node_link) == -1) {
 		usbi_dbg("di_walk_node() failed: %s", strerror(errno));
@@ -395,7 +353,6 @@ sunos_usb_close_all_eps(sunos_dev_handle_priv_t *hdev)
 {
 	int i;
 
-	/* not close ep0 */
 	for (i = 1; i < USB_MAXENDPOINTS; i++) {
 		if (hdev->eps[i].datafd != -1) {
 			(void) close(hdev->eps[i].datafd);
@@ -482,7 +439,7 @@ sunos_check_device_and_status_open(struct libusb_device_handle *hdl,
 	usbi_dbg("open ep 0x%02x", ep_addr);
 	hpriv = (sunos_dev_handle_priv_t *)hdl->os_priv;
 	ep_index = sunos_usb_ep_index(ep_addr);
-	/* ep already opened */
+
 	if ((hpriv->eps[ep_index].datafd > 0) &&
 	    (hpriv->eps[ep_index].statfd > 0)) {
 		usbi_dbg("ep 0x%02x already opened, return success",
@@ -498,7 +455,6 @@ sunos_check_device_and_status_open(struct libusb_device_handle *hdl,
 		return (LIBUSB_ERROR_ACCESS);
 	}
 
-	/* create filename */
 	if (hpriv->config_index > 0) {
 		(void) snprintf(cfg_num, sizeof (cfg_num), "cfg%d",
 		    hpriv->config_index + 1);
@@ -519,35 +475,29 @@ sunos_check_device_and_status_open(struct libusb_device_handle *hdl,
 	    "out", (ep_addr & LIBUSB_ENDPOINT_ADDRESS_MASK));
 	(void) snprintf(statfilename, PATH_MAX, "%sstat", filename);
 
-	/*
-	 * for interrupt IN endpoints, we need to enable one xfer
-	 * mode before opening the endpoint
-	 */
 	if ((ep_type == LIBUSB_TRANSFER_TYPE_INTERRUPT) &&
 	    (ep_addr & LIBUSB_ENDPOINT_IN)) {
 		char	control = USB_EP_INTR_ONE_XFER;
 		int	count;
 
-		/* open the status device node for the ep first RDWR */
 		if ((fdstat = open(statfilename, O_RDWR)) == -1) {
 			usbi_dbg("can't open %s RDWR: %d",
 				statfilename, errno);
 		} else {
 			count = write(fdstat, &control, sizeof (control));
 			if (count != 1) {
-				/* this should have worked */
+
 				usbi_dbg("can't write to %s: %d",
 					statfilename, errno);
 				(void) close(fdstat);
 
 				return (errno);
 			}
-			/* close status node and open xfer node first */
+
 			close (fdstat);
 		}
 	}
 
-	/* open the xfer node first in case alt needs to be changed */
 	if (ep_type == LIBUSB_TRANSFER_TYPE_ISOCHRONOUS) {
 		mode = O_RDWR;
 	} else if (ep_addr & LIBUSB_ENDPOINT_IN) {
@@ -556,19 +506,13 @@ sunos_check_device_and_status_open(struct libusb_device_handle *hdl,
 		mode = O_WRONLY;
 	}
 
-	/*
-	 * IMPORTANT: must open data xfer node first and then open stat node
-	 * Otherwise, it will fail on multi-config or multi-altsetting devices
-	 * with "Device Busy" error. See ugen_epxs_switch_cfg_alt() and
-	 * ugen_epxs_check_alt_switch() in ugen driver source code.
-	 */
 	if ((fd = open(filename, mode)) == -1) {
 		usbi_dbg("can't open %s: %d(%s)", filename, errno,
 		    strerror(errno));
 
 		return (errno);
 	}
-	/* open the status node */
+
 	if ((fdstat = open(statfilename, O_RDONLY)) == -1) {
 		usbi_dbg("can't open %s: %d", statfilename, errno);
 
@@ -596,7 +540,6 @@ sunos_open(struct libusb_device_handle *handle)
 	dpriv = (sunos_dev_priv_t *)handle->dev->os_priv;
 	hpriv->dpriv = dpriv;
 
-	/* set all file descriptors to "closed" */
 	for (i = 0; i < USB_MAXENDPOINTS; i++) {
 		hpriv->eps[i].datafd = -1;
 		hpriv->eps[i].statfd = -1;
@@ -656,10 +599,6 @@ sunos_get_active_config_descriptor(struct libusb_device *dev,
 	di_node_t node;
 	uint8_t	*rdata;
 
-	/*
-	 * Keep raw configuration descriptors updated, in case config
-	 * has ever been changed through setCfg.
-	 */
 	if ((node = di_init(dpriv->phypath, DINFOCPYALL)) == DI_NODE_NIL) {
 		usbi_dbg("di_int() failed: %s", strerror(errno));
 		return (LIBUSB_ERROR_IO);
@@ -694,7 +633,7 @@ int
 sunos_get_config_descriptor(struct libusb_device *dev, uint8_t idx,
     uint8_t *buf, size_t len, int *host_endian)
 {
-	/* XXX */
+
 	return(sunos_get_active_config_descriptor(dev, buf, len, host_endian));
 }
 
@@ -753,7 +692,6 @@ sunos_release_interface(struct libusb_device_handle *handle, int iface)
 		return (LIBUSB_ERROR_INVALID_PARAM);
 	}
 
-	/* XXX: can we release it? */
 	hpriv->altsetting[iface] = 0;
 
 	return (LIBUSB_SUCCESS);
@@ -775,7 +713,6 @@ sunos_set_interface_altsetting(struct libusb_device_handle *handle, int iface,
 	if (dpriv->ugenpath == NULL)
 		return (LIBUSB_ERROR_NOT_FOUND);
 
-	/* XXX: can we switch altsetting? */
 	hpriv->altsetting[iface] = altsetting;
 
 	return (LIBUSB_SUCCESS);
@@ -828,7 +765,6 @@ sunos_async_callback(union sigval arg)
 	usbi_dbg("ret=%d, len=%d, actual_len=%d", ret, xfer->length,
 	    xfer->actual_length);
 
-	/* async notification */
 	usbi_signal_transfer_completion(LIBUSB_TRANSFER_TO_USBI_TRANSFER(xfer));
 }
 
@@ -869,7 +805,6 @@ sunos_do_async_io(struct libusb_transfer *transfer)
 	return (ret);
 }
 
-/* return the number of bytes read/written */
 static int
 usb_do_io(int fd, int stat_fd, char *data, size_t size, int flag, int *status)
 {
@@ -900,7 +835,6 @@ usb_do_io(int fd, int stat_fd, char *data, size_t size, int flag, int *status)
 		usbi_dbg("TID=%x io %s errno=%d(%s) ret=%d", pthread_self(),
 		    flag?"WRITE":"READ", errno, strerror(errno), ret);
 
-		/* sunos_usb_get_status will do a read and overwrite errno */
 		error = sunos_usb_get_status(stat_fd);
 		usbi_dbg("io status=%d errno=%d(%s)", error,
 			save_errno, strerror(save_errno));
@@ -958,7 +892,6 @@ solaris_submit_ctrl_on_default(struct libusb_transfer *transfer)
 
 	ret = transfer->length - LIBUSB_CONTROL_SETUP_SIZE;
 
-	/* Read the remaining bytes for IN request */
 	if ((wLength) && ((data[0] & LIBUSB_ENDPOINT_DIR_MASK) ==
 	    LIBUSB_ENDPOINT_IN)) {
 		usbi_dbg("DATA: %d", transfer->length - setup_ret);
@@ -974,7 +907,6 @@ solaris_submit_ctrl_on_default(struct libusb_transfer *transfer)
 	}
 	usbi_dbg("Done: ctrl data bytes %d", ret);
 
-	/* sync transfer handling */
 	ret = usbi_handle_transfer_completion(LIBUSB_TRANSFER_TO_USBI_TRANSFER(transfer),
 	    transfer->status);
 
@@ -1036,13 +968,13 @@ sunos_submit_transfer(struct usbi_transfer *itransfer)
 
 	switch (transfer->type) {
 	case LIBUSB_TRANSFER_TYPE_CONTROL:
-		/* sync transfer */
+
 		usbi_dbg("CTRL transfer: %d", transfer->length);
 		err = solaris_submit_ctrl_on_default(transfer);
 		break;
 
 	case LIBUSB_TRANSFER_TYPE_BULK:
-		/* fallthru */
+
 	case LIBUSB_TRANSFER_TYPE_INTERRUPT:
 		if (transfer->type == LIBUSB_TRANSFER_TYPE_BULK)
 			usbi_dbg("BULK transfer: %d", transfer->length);
@@ -1052,9 +984,7 @@ sunos_submit_transfer(struct usbi_transfer *itransfer)
 		break;
 
 	case LIBUSB_TRANSFER_TYPE_ISOCHRONOUS:
-		/* Isochronous/Stream is not supported */
 
-		/* fallthru */
 	case LIBUSB_TRANSFER_TYPE_BULK_STREAM:
 		if (transfer->type == LIBUSB_TRANSFER_TYPE_ISOCHRONOUS)
 			usbi_dbg("ISOC transfer: %d", transfer->length);
@@ -1092,10 +1022,7 @@ sunos_cancel_transfer(struct usbi_transfer *itransfer)
 	if (ret != AIO_CANCELED) {
 		ret = _errno_to_libusb(errno);
 	} else {
-	/*
-	 * we don't need to call usbi_handle_transfer_cancellation(),
-	 * because we'll handle everything in sunos_async_callback.
-	 */
+
 		ret = LIBUSB_SUCCESS;
 	}
 
@@ -1107,7 +1034,6 @@ sunos_clear_transfer_priv(struct usbi_transfer *itransfer)
 {
 	usbi_dbg("");
 
-	/* Nothing to do */
 }
 
 int
@@ -1151,12 +1077,6 @@ _errno_to_libusb(int err)
 	return (LIBUSB_ERROR_OTHER);
 }
 
-/*
- * sunos_usb_get_status:
- *	gets status of endpoint
- *
- * Returns: ugen's last cmd status
- */
 static int
 sunos_usb_get_status(int fd)
 {
@@ -1272,7 +1192,7 @@ const struct usbi_os_backend sunos_backend = {
         .release_interface = sunos_release_interface,
         .set_interface_altsetting = sunos_set_interface_altsetting,
         .clear_halt = sunos_clear_halt,
-        .reset_device = sunos_reset_device, /* TODO */
+        .reset_device = sunos_reset_device, 
         .alloc_streams = NULL,
         .free_streams = NULL,
         .kernel_driver_active = NULL,

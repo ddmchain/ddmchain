@@ -1,12 +1,6 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Bluetooth sockets and messages
-
 package unix
 
-// Bluetooth Protocols
 const (
 	BTPROTO_L2CAP  = 0
 	BTPROTO_HCI    = 1
@@ -25,7 +19,6 @@ const (
 	HCI_CHANNEL_CONTROL = 3
 )
 
-// Socketoption Level
 const (
 	SOL_BLUETOOTH = 0x112
 	SOL_HCI       = 0x0

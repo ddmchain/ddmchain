@@ -6,7 +6,7 @@ import (
 
 func (runtime *_runtime) newGoMapObject(value reflect.Value) *_object {
 	self := runtime.newObject()
-	self.class = "Object" // TODO Should this be something else?
+	self.class = "Object" 
 	self.objectClass = _classGoMap
 	self.value = _newGoMapObject(value)
 	return self
@@ -68,7 +68,7 @@ func goMapEnumerate(self *_object, all bool, each func(string) bool) {
 
 func goMapDefineOwnProperty(self *_object, name string, descriptor _property, throw bool) bool {
 	object := self.value.(*_goMapObject)
-	// TODO ...or 0222
+
 	if descriptor.mode != 0111 {
 		return self.runtime.typeErrorResult(throw)
 	}
@@ -82,6 +82,6 @@ func goMapDefineOwnProperty(self *_object, name string, descriptor _property, th
 func goMapDelete(self *_object, name string, throw bool) bool {
 	object := self.value.(*_goMapObject)
 	object.value.SetMapIndex(object.toKey(name), reflect.Value{})
-	// FIXME
+
 	return true
 }

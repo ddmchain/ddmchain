@@ -1,14 +1,5 @@
 package azure
 
-/*
-  This file is largely based on rjw57/oauth2device's code, with the follow differences:
-   * scope -> resource, and only allow a single one
-   * receive "Message" in the DeviceCode struct and show it to users as the prompt
-   * azure-xplat-cli has the following behavior that this emulates:
-     - does not send client_secret during the token exchange
-     - sends resource again in the token exchange request
-*/
-
 import (
 	"fmt"
 	"net/http"
@@ -23,19 +14,15 @@ const (
 )
 
 var (
-	// ErrDeviceGeneric represents an unknown error from the token endpoint when using device flow
+
 	ErrDeviceGeneric = fmt.Errorf("%s Error while retrieving OAuth token: Unknown Error", logPrefix)
 
-	// ErrDeviceAccessDenied represents an access denied error from the token endpoint when using device flow
 	ErrDeviceAccessDenied = fmt.Errorf("%s Error while retrieving OAuth token: Access Denied", logPrefix)
 
-	// ErrDeviceAuthorizationPending represents the server waiting on the user to complete the device flow
 	ErrDeviceAuthorizationPending = fmt.Errorf("%s Error while retrieving OAuth token: Authorization Pending", logPrefix)
 
-	// ErrDeviceCodeExpired represents the server timing out and expiring the code during device flow
 	ErrDeviceCodeExpired = fmt.Errorf("%s Error while retrieving OAuth token: Code Expired", logPrefix)
 
-	// ErrDeviceSlowDown represents the service telling us we're polling too often during device flow
 	ErrDeviceSlowDown = fmt.Errorf("%s Error while retrieving OAuth token: Slow Down", logPrefix)
 
 	errCodeSendingFails   = "Error occurred while sending request for Device Authorization Code"
@@ -44,8 +31,6 @@ var (
 	errTokenHandlingFails = "Error occurred while handling response from the Token Endpoint (during device flow)"
 )
 
-// DeviceCode is the object returned by the device auth endpoint
-// It contains information to instruct the user to complete the auth flow
 type DeviceCode struct {
 	DeviceCode      *string `json:"device_code,omitempty"`
 	UserCode        *string `json:"user_code,omitempty"`
@@ -53,14 +38,12 @@ type DeviceCode struct {
 	ExpiresIn       *int64  `json:"expires_in,string,omitempty"`
 	Interval        *int64  `json:"interval,string,omitempty"`
 
-	Message     *string `json:"message"` // Azure specific
-	Resource    string  // store the following, stored when initiating, used when exchanging
+	Message     *string `json:"message"` 
+	Resource    string  
 	OAuthConfig OAuthConfig
 	ClientID    string
 }
 
-// TokenError is the object returned by the token exchange endpoint
-// when something is amiss
 type TokenError struct {
 	Error            *string `json:"error,omitempty"`
 	ErrorCodes       []int   `json:"error_codes,omitempty"`
@@ -69,16 +52,11 @@ type TokenError struct {
 	TraceID          *string `json:"trace_id,omitempty"`
 }
 
-// DeviceToken is the object return by the token exchange endpoint
-// It can either look like a Token or an ErrorToken, so put both here
-// and check for presence of "Error" to know if we are in error state
 type deviceToken struct {
 	Token
 	TokenError
 }
 
-// InitiateDeviceAuth initiates a device auth flow. It returns a DeviceCode
-// that can be used with CheckForUserCompletion or WaitForUserCompletion.
 func InitiateDeviceAuth(client *autorest.Client, oauthConfig OAuthConfig, clientID, resource string) (*DeviceCode, error) {
 	req, _ := autorest.Prepare(
 		&http.Request{},
@@ -113,8 +91,6 @@ func InitiateDeviceAuth(client *autorest.Client, oauthConfig OAuthConfig, client
 	return &code, nil
 }
 
-// CheckForUserCompletion takes a DeviceCode and checks with the Azure AD OAuth endpoint
-// to see if the device flow has: been completed, timed out, or otherwise failed
 func CheckForUserCompletion(client *autorest.Client, code *DeviceCode) (*Token, error) {
 	req, _ := autorest.Prepare(
 		&http.Request{},
@@ -162,8 +138,6 @@ func CheckForUserCompletion(client *autorest.Client, code *DeviceCode) (*Token, 
 	}
 }
 
-// WaitForUserCompletion calls CheckForUserCompletion repeatedly until a token is granted or an error state occurs.
-// This prevents the user from looping and checking against 'ErrDeviceAuthorizationPending'.
 func WaitForUserCompletion(client *autorest.Client, code *DeviceCode) (*Token, error) {
 	intervalDuration := time.Duration(*code.Interval) * time.Second
 	waitDuration := intervalDuration
@@ -179,8 +153,8 @@ func WaitForUserCompletion(client *autorest.Client, code *DeviceCode) (*Token, e
 		case ErrDeviceSlowDown:
 			waitDuration += waitDuration
 		case ErrDeviceAuthorizationPending:
-			// noop
-		default: // everything else is "fatal" to us
+
+		default: 
 			return nil, err
 		}
 

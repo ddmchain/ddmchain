@@ -4,17 +4,13 @@ import (
 	"fmt"
 )
 
-// ======
-// _stash
-// ======
-
 type _stash interface {
-	hasBinding(string) bool            //
-	createBinding(string, bool, Value) // CreateMutableBinding
-	setBinding(string, Value, bool)    // SetMutableBinding
-	getBinding(string, bool) Value     // GetBindingValue
-	deleteBinding(string) bool         //
-	setValue(string, Value, bool)      // createBinding + setBinding
+	hasBinding(string) bool            
+	createBinding(string, bool, Value) 
+	setBinding(string, Value, bool)    
+	getBinding(string, bool) Value     
+	deleteBinding(string) bool         
+	setValue(string, Value, bool)      
 
 	outer() _stash
 	runtime() *_runtime
@@ -23,10 +19,6 @@ type _stash interface {
 
 	clone(clone *_clone) _stash
 }
-
-// ==========
-// _objectStash
-// ==========
 
 type _objectStash struct {
 	_runtime *_runtime
@@ -75,7 +67,7 @@ func (self *_objectStash) createBinding(name string, deletable bool, value Value
 	if !deletable {
 		mode = _propertyMode(0110)
 	}
-	// TODO False?
+
 	self.object.defineProperty(name, value, mode, false)
 }
 
@@ -85,7 +77,7 @@ func (self *_objectStash) setBinding(name string, value Value, strict bool) {
 
 func (self *_objectStash) setValue(name string, value Value, throw bool) {
 	if !self.hasBinding(name) {
-		self.createBinding(name, true, value) // Configurable by default
+		self.createBinding(name, true, value) 
 	} else {
 		self.setBinding(name, value, throw)
 	}
@@ -95,7 +87,7 @@ func (self *_objectStash) getBinding(name string, throw bool) Value {
 	if self.object.hasProperty(name) {
 		return self.object.get(name)
 	}
-	if throw { // strict?
+	if throw { 
 		panic(self._runtime.panicReferenceError("Not Defined", name))
 	}
 	return Value{}
@@ -112,10 +104,6 @@ func (self *_objectStash) outer() _stash {
 func (self *_objectStash) newReference(name string, strict bool, at _at) _reference {
 	return newPropertyReference(self._runtime, self.object, name, strict, at)
 }
-
-// =========
-// _dclStash
-// =========
 
 type _dclStash struct {
 	_runtime *_runtime
@@ -192,20 +180,19 @@ func (self *_dclStash) setBinding(name string, value Value, strict bool) {
 
 func (self *_dclStash) setValue(name string, value Value, throw bool) {
 	if !self.hasBinding(name) {
-		self.createBinding(name, false, value) // NOT deletable by default
+		self.createBinding(name, false, value) 
 	} else {
 		self.setBinding(name, value, throw)
 	}
 }
 
-// FIXME This is called a __lot__
 func (self *_dclStash) getBinding(name string, throw bool) Value {
 	property, exists := self.property[name]
 	if !exists {
 		panic(fmt.Errorf("getBinding: %s: missing", name))
 	}
 	if !property.mutable && !property.readable {
-		if throw { // strict?
+		if throw { 
 			panic(self._runtime.panicTypeError())
 		}
 		return Value{}
@@ -235,10 +222,6 @@ func (self *_dclStash) newReference(name string, strict bool, _ _at) _reference 
 		base: self,
 	}
 }
-
-// ========
-// _fnStash
-// ========
 
 type _fnStash struct {
 	_dclStash

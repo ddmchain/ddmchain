@@ -35,16 +35,15 @@ func openOSXFUSEDev(devPrefix string) (*os.File, error) {
 		f, err = os.OpenFile(path, os.O_RDWR, 0000)
 		if os.IsNotExist(err) {
 			if i == 0 {
-				// not even the first device was found -> fuse is not loaded
+
 				return nil, errNotLoaded
 			}
 
-			// we've run out of kernel-provided devices
 			return nil, errNoAvail
 		}
 
 		if err2, ok := err.(*os.PathError); ok && err2.Err == syscall.EBUSY {
-			// try the next one
+
 			continue
 		}
 
@@ -60,8 +59,7 @@ func handleMountOSXFUSE(helperName string, errCh chan<- error) func(line string)
 	const noMountpointSuffix = `: No such file or directory`
 	return func(line string) (ignore bool) {
 		if strings.HasPrefix(line, noMountpointPrefix) && strings.HasSuffix(line, noMountpointSuffix) {
-			// re-extract it from the error message in case some layer
-			// changed the path
+
 			mountpoint := line[len(noMountpointPrefix) : len(line)-len(noMountpointSuffix)]
 			err := &MountpointDoesNotExistError{
 				Path: mountpoint,
@@ -70,7 +68,7 @@ func handleMountOSXFUSE(helperName string, errCh chan<- error) func(line string)
 			case errCh <- err:
 				return true
 			default:
-				// not the first error; fall back to logging it
+
 				return false
 			}
 		}
@@ -79,8 +77,6 @@ func handleMountOSXFUSE(helperName string, errCh chan<- error) func(line string)
 	}
 }
 
-// isBoringMountOSXFUSEError returns whether the Wait error is
-// uninteresting; exit status 64 is.
 func isBoringMountOSXFUSEError(err error) bool {
 	if err, ok := err.(*exec.ExitError); ok && err.Exited() {
 		if status, ok := err.Sys().(syscall.WaitStatus); ok && status.ExitStatus() == 64 {
@@ -93,29 +89,24 @@ func isBoringMountOSXFUSEError(err error) bool {
 func callMount(bin string, daemonVar string, dir string, conf *mountConfig, f *os.File, ready chan<- struct{}, errp *error) error {
 	for k, v := range conf.options {
 		if strings.Contains(k, ",") || strings.Contains(v, ",") {
-			// Silly limitation but the mount helper does not
-			// understand any escaping. See TestMountOptionCommaError.
+
 			return fmt.Errorf("mount options cannot contain commas on darwin: %q=%q", k, v)
 		}
 	}
 	cmd := exec.Command(
 		bin,
 		"-o", conf.getOptions(),
-		// Tell osxfuse-kext how large our buffer is. It must split
-		// writes larger than this into multiple writes.
-		//
-		// OSXFUSE seems to ignore InitResponse.MaxWrite, and uses
-		// this instead.
+
 		"-o", "iosize="+strconv.FormatUint(maxWrite, 10),
-		// refers to fd passed in cmd.ExtraFiles
+
 		"3",
 		dir,
 	)
 	cmd.ExtraFiles = []*os.File{f}
 	cmd.Env = os.Environ()
-	// OSXFUSE <3.3.0
+
 	cmd.Env = append(cmd.Env, "MOUNT_FUSEFS_CALL_BY_LIB=")
-	// OSXFUSE >=3.3.0
+
 	cmd.Env = append(cmd.Env, "MOUNT_OSXFUSE_CALL_BY_LIB=")
 
 	daemon := os.Args[0]
@@ -144,20 +135,19 @@ func callMount(bin string, daemonVar string, dir string, conf *mountConfig, f *o
 		go lineLogger(&wg, "mount helper error", handleMountOSXFUSE(helperName, helperErrCh), stderr)
 		wg.Wait()
 		if err := cmd.Wait(); err != nil {
-			// see if we have a better error to report
+
 			select {
 			case helperErr := <-helperErrCh:
-				// log the Wait error if it's not what we expected
+
 				if !isBoringMountOSXFUSEError(err) {
 					log.Printf("mount helper failed: %v", err)
 				}
-				// and now return what we grabbed from stderr as the real
-				// error
+
 				*errp = helperErr
 				close(ready)
 				return
 			default:
-				// nope, fall back to generic message
+
 			}
 
 			*errp = fmt.Errorf("mount_osxfusefs: %v", err)
@@ -181,7 +171,7 @@ func mount(dir string, conf *mountConfig, ready chan<- struct{}, errp *error) (*
 	}
 	for _, loc := range locations {
 		if _, err := os.Stat(loc.Mount); os.IsNotExist(err) {
-			// try the other locations
+
 			continue
 		}
 
@@ -191,7 +181,7 @@ func mount(dir string, conf *mountConfig, ready chan<- struct{}, errp *error) (*
 			if err != nil {
 				return nil, err
 			}
-			// try again
+
 			f, err = openOSXFUSEDev(loc.DevicePrefix)
 		}
 		if err != nil {

@@ -13,9 +13,6 @@ func cleanWhitespace(s *string) {
 	*s = strings.TrimSpace(*s)
 }
 
-// SCPD is the service description as described by section 2.5 "Service
-// description" in
-// http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf
 type SCPD struct {
 	XMLName        xml.Name        `xml:"scpd"`
 	ConfigId       string          `xml:"configId,attr"`
@@ -24,9 +21,6 @@ type SCPD struct {
 	StateVariables []StateVariable `xml:"serviceStateTable>stateVariable"`
 }
 
-// Clean attempts to remove stray whitespace etc. in the structure. It seems
-// unfortunately common for stray whitespace to be present in SCPD documents,
-// this method attempts to make it easy to clean them out.
 func (scpd *SCPD) Clean() {
 	cleanWhitespace(&scpd.ConfigId)
 	for i := range scpd.Actions {
@@ -57,8 +51,6 @@ func (scpd *SCPD) GetAction(action string) *Action {
 	return nil
 }
 
-// SpecVersion is part of a SCPD document, describes the version of the
-// specification that the data adheres to.
 type SpecVersion struct {
 	Major int32 `xml:"major"`
 	Minor int32 `xml:"minor"`
@@ -100,9 +92,9 @@ func (action *Action) OutputArguments() []*Argument {
 
 type Argument struct {
 	Name                 string `xml:"name"`
-	Direction            string `xml:"direction"`            // in|out
-	RelatedStateVariable string `xml:"relatedStateVariable"` // ?
-	Retval               string `xml:"retval"`               // ?
+	Direction            string `xml:"direction"`            
+	RelatedStateVariable string `xml:"relatedStateVariable"` 
+	Retval               string `xml:"retval"`               
 }
 
 func (arg *Argument) clean() {
@@ -122,8 +114,8 @@ func (arg *Argument) IsOutput() bool {
 
 type StateVariable struct {
 	Name              string             `xml:"name"`
-	SendEvents        string             `xml:"sendEvents,attr"` // yes|no
-	Multicast         string             `xml:"multicast,attr"`  // yes|no
+	SendEvents        string             `xml:"sendEvents,attr"` 
+	Multicast         string             `xml:"multicast,attr"`  
 	DataType          DataType           `xml:"dataType"`
 	DefaultValue      string             `xml:"defaultValue"`
 	AllowedValueRange *AllowedValueRange `xml:"allowedValueRange"`

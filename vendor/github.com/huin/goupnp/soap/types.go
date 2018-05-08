@@ -14,9 +14,7 @@ import (
 )
 
 var (
-	// localLoc acts like time.Local for this package, but is faked out by the
-	// unit tests to ensure that things stay constant (especially when running
-	// this test in a place where local time is UTC which might mask bugs).
+
 	localLoc = time.Local
 )
 
@@ -100,7 +98,6 @@ func UnmarshalR8(s string) (float64, error) {
 	return float64(v), err
 }
 
-// MarshalFixed14_4 marshals float64 to SOAP "fixed.14.4" type.
 func MarshalFixed14_4(v float64) (string, error) {
 	if v >= 1e14 || v <= -1e14 {
 		return "", fmt.Errorf("soap fixed14.4: value %v out of bounds", v)
@@ -108,7 +105,6 @@ func MarshalFixed14_4(v float64) (string, error) {
 	return strconv.FormatFloat(v, 'f', 4, 64), nil
 }
 
-// UnmarshalFixed14_4 unmarshals float64 from SOAP "fixed.14.4" type.
 func UnmarshalFixed14_4(s string) (float64, error) {
 	v, err := strconv.ParseFloat(s, 64)
 	if err != nil {
@@ -120,7 +116,6 @@ func UnmarshalFixed14_4(s string) (float64, error) {
 	return v, nil
 }
 
-// MarshalChar marshals rune to SOAP "char" type.
 func MarshalChar(v rune) (string, error) {
 	if v == 0 {
 		return "", errors.New("soap char: rune 0 is not allowed")
@@ -128,7 +123,6 @@ func MarshalChar(v rune) (string, error) {
 	return string(v), nil
 }
 
-// UnmarshalChar unmarshals rune from SOAP "char" type.
 func UnmarshalChar(s string) (rune, error) {
 	if len(s) == 0 {
 		return 0, errors.New("soap char: got empty string")
@@ -157,9 +151,9 @@ func parseInt(s string, err *error) int {
 }
 
 var dateRegexps = []*regexp.Regexp{
-	// yyyy[-mm[-dd]]
+
 	regexp.MustCompile(`^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$`),
-	// yyyy[mm[dd]]
+
 	regexp.MustCompile(`^(\d{4})(?:(\d{2})(?:(\d{2}))?)?$`),
 }
 
@@ -194,9 +188,9 @@ func parseDateParts(s string) (year, month, day int, err error) {
 }
 
 var timeRegexps = []*regexp.Regexp{
-	// hh[:mm[:ss]]
+
 	regexp.MustCompile(`^(\d{2})(?::(\d{2})(?::(\d{2}))?)?$`),
-	// hh[mm[ss]]
+
 	regexp.MustCompile(`^(\d{2})(?:(\d{2})(?:(\d{2}))?)?$`),
 }
 
@@ -228,7 +222,6 @@ func parseTimeParts(s string) (hour, minute, second int, err error) {
 	return
 }
 
-// (+|-)hh[[:]mm]
 var timezoneRegexp = regexp.MustCompile(`^([+-])(\d{2})(?::?(\d{2}))?$`)
 
 func parseTimezone(s string) (offset int, err error) {
@@ -258,10 +251,6 @@ func parseTimezone(s string) (offset int, err error) {
 
 var completeDateTimeZoneRegexp = regexp.MustCompile(`^([^T]+)(?:T([^-+Z]+)(.+)?)?$`)
 
-// splitCompleteDateTimeZone splits date, time and timezone apart from an
-// ISO8601 string. It does not ensure that the contents of each part are
-// correct, it merely splits on certain delimiters.
-// Timezone can only be present if time is also present.
 func splitCompleteDateTimeZone(s string) (dateStr, timeStr, zoneStr string, err error) {
 	parts := completeDateTimeZoneRegexp.FindStringSubmatch(s)
 	if parts == nil {
@@ -274,16 +263,12 @@ func splitCompleteDateTimeZone(s string) (dateStr, timeStr, zoneStr string, err 
 	return
 }
 
-// MarshalDate marshals time.Time to SOAP "date" type. Note that this converts
-// to local time, and discards the time-of-day components.
 func MarshalDate(v time.Time) (string, error) {
 	return v.In(localLoc).Format("2006-01-02"), nil
 }
 
 var dateFmts = []string{"2006-01-02", "20060102"}
 
-// UnmarshalDate unmarshals time.Time from SOAP "date" type. This outputs the
-// date as midnight in the local time zone.
 func UnmarshalDate(s string) (time.Time, error) {
 	year, month, day, err := parseDateParts(s)
 	if err != nil {
@@ -292,22 +277,15 @@ func UnmarshalDate(s string) (time.Time, error) {
 	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, localLoc), nil
 }
 
-// TimeOfDay is used in cases where SOAP "time" or "time.tz" is used.
 type TimeOfDay struct {
-	// Duration of time since midnight.
+
 	FromMidnight time.Duration
 
-	// Set to true if Offset is specified. If false, then the timezone is
-	// unspecified (and by ISO8601 - implies some "local" time).
 	HasOffset bool
 
-	// Offset is non-zero only if time.tz is used. It is otherwise ignored. If
-	// non-zero, then it is regarded as a UTC offset in seconds. Note that the
-	// sub-minutes is ignored by the marshal function.
 	Offset int
 }
 
-// MarshalTimeOfDay marshals TimeOfDay to the "time" type.
 func MarshalTimeOfDay(v TimeOfDay) (string, error) {
 	d := int64(v.FromMidnight / time.Second)
 	hour := d / 3600
@@ -318,7 +296,6 @@ func MarshalTimeOfDay(v TimeOfDay) (string, error) {
 	return fmt.Sprintf("%02d:%02d:%02d", hour, minute, second), nil
 }
 
-// UnmarshalTimeOfDay unmarshals TimeOfDay from the "time" type.
 func UnmarshalTimeOfDay(s string) (TimeOfDay, error) {
 	t, err := UnmarshalTimeOfDayTz(s)
 	if err != nil {
@@ -329,7 +306,6 @@ func UnmarshalTimeOfDay(s string) (TimeOfDay, error) {
 	return t, nil
 }
 
-// MarshalTimeOfDayTz marshals TimeOfDay to the "time.tz" type.
 func MarshalTimeOfDayTz(v TimeOfDay) (string, error) {
 	d := int64(v.FromMidnight / time.Second)
 	hour := d / 3600
@@ -355,7 +331,6 @@ func MarshalTimeOfDayTz(v TimeOfDay) (string, error) {
 	return fmt.Sprintf("%02d:%02d:%02d%s", hour, minute, second, tz), nil
 }
 
-// UnmarshalTimeOfDayTz unmarshals TimeOfDay from the "time.tz" type.
 func UnmarshalTimeOfDayTz(s string) (tod TimeOfDay, err error) {
 	zoneIndex := strings.IndexAny(s, "Z+-")
 	var timePart string
@@ -379,8 +354,6 @@ func UnmarshalTimeOfDayTz(s string) (tod TimeOfDay, err error) {
 
 	fromMidnight := time.Duration(hour*3600+minute*60+second) * time.Second
 
-	// ISO8601 special case - values up to 24:00:00 are allowed, so using
-	// strictly greater-than for the maximum value.
 	if fromMidnight > 24*time.Hour || minute >= 60 || second >= 60 {
 		return TimeOfDay{}, fmt.Errorf("soap time.tz: value %q has value(s) out of range", s)
 	}
@@ -392,14 +365,10 @@ func UnmarshalTimeOfDayTz(s string) (tod TimeOfDay, err error) {
 	}, nil
 }
 
-// MarshalDateTime marshals time.Time to SOAP "dateTime" type. Note that this
-// converts to local time.
 func MarshalDateTime(v time.Time) (string, error) {
 	return v.In(localLoc).Format("2006-01-02T15:04:05"), nil
 }
 
-// UnmarshalDateTime unmarshals time.Time from the SOAP "dateTime" type. This
-// returns a value in the local timezone.
 func UnmarshalDateTime(s string) (result time.Time, err error) {
 	dateStr, timeStr, zoneStr, err := splitCompleteDateTimeZone(s)
 	if err != nil {
@@ -428,13 +397,10 @@ func UnmarshalDateTime(s string) (result time.Time, err error) {
 	return
 }
 
-// MarshalDateTimeTz marshals time.Time to SOAP "dateTime.tz" type.
 func MarshalDateTimeTz(v time.Time) (string, error) {
 	return v.Format("2006-01-02T15:04:05-07:00"), nil
 }
 
-// UnmarshalDateTimeTz unmarshals time.Time from the SOAP "dateTime.tz" type.
-// This returns a value in the local timezone when the timezone is unspecified.
 func UnmarshalDateTimeTz(s string) (result time.Time, err error) {
 	dateStr, timeStr, zoneStr, err := splitCompleteDateTimeZone(s)
 	if err != nil {
@@ -468,7 +434,6 @@ func UnmarshalDateTimeTz(s string) (result time.Time, err error) {
 	return
 }
 
-// MarshalBoolean marshals bool to SOAP "boolean" type.
 func MarshalBoolean(v bool) (string, error) {
 	if v {
 		return "1", nil
@@ -476,7 +441,6 @@ func MarshalBoolean(v bool) (string, error) {
 	return "0", nil
 }
 
-// UnmarshalBoolean unmarshals bool from the SOAP "boolean" type.
 func UnmarshalBoolean(s string) (bool, error) {
 	switch s {
 	case "0", "false", "no":
@@ -487,32 +451,26 @@ func UnmarshalBoolean(s string) (bool, error) {
 	return false, fmt.Errorf("soap boolean: %q is not a valid boolean value", s)
 }
 
-// MarshalBinBase64 marshals []byte to SOAP "bin.base64" type.
 func MarshalBinBase64(v []byte) (string, error) {
 	return base64.StdEncoding.EncodeToString(v), nil
 }
 
-// UnmarshalBinBase64 unmarshals []byte from the SOAP "bin.base64" type.
 func UnmarshalBinBase64(s string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(s)
 }
 
-// MarshalBinHex marshals []byte to SOAP "bin.hex" type.
 func MarshalBinHex(v []byte) (string, error) {
 	return hex.EncodeToString(v), nil
 }
 
-// UnmarshalBinHex unmarshals []byte from the SOAP "bin.hex" type.
 func UnmarshalBinHex(s string) ([]byte, error) {
 	return hex.DecodeString(s)
 }
 
-// MarshalURI marshals *url.URL to SOAP "uri" type.
 func MarshalURI(v *url.URL) (string, error) {
 	return v.String(), nil
 }
 
-// UnmarshalURI unmarshals *url.URL from the SOAP "uri" type.
 func UnmarshalURI(s string) (*url.URL, error) {
 	return url.Parse(s)
 }

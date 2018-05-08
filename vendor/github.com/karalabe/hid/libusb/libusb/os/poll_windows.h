@@ -1,50 +1,29 @@
-/*
- * Windows compat: POSIX compatibility wrapper
- * With contributions from Michael Plante, Orin Eman et al.
- * Parts of poll implementation from libusb-win32, by Stephan Meyer et al.
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
- */
+
 #pragma once
 
 #if defined(_MSC_VER)
-// disable /W4 MSVC warnings that are benign
-#pragma warning(disable:4127) // conditional expression is constant
+
+#pragma warning(disable:4127) 
 #endif
 
-// Handle synchronous completion through the overlapped structure
-#if !defined(STATUS_REPARSE)	// reuse the REPARSE status code
+#if !defined(STATUS_REPARSE)	
 #define STATUS_REPARSE ((LONG)0x00000104L)
 #endif
 #define STATUS_COMPLETED_SYNCHRONOUSLY	STATUS_REPARSE
 #if defined(_WIN32_WCE)
-// WinCE doesn't have a HasOverlappedIoCompleted() macro, so attempt to emulate it
+
 #define HasOverlappedIoCompleted(lpOverlapped) (((DWORD)(lpOverlapped)->Internal) != STATUS_PENDING)
 #endif
 #define HasOverlappedIoCompletedSync(lpOverlapped)	(((DWORD)(lpOverlapped)->Internal) == STATUS_COMPLETED_SYNCHRONOUSLY)
 
 #define DUMMY_HANDLE ((HANDLE)(LONG_PTR)-2)
 
-/* Windows versions */
 enum windows_version {
 	WINDOWS_CE = -2,
 	WINDOWS_UNDEFINED = -1,
 	WINDOWS_UNSUPPORTED = 0,
 	WINDOWS_XP = 0x51,
-	WINDOWS_2003 = 0x52,	// Also XP x64
+	WINDOWS_2003 = 0x52,	
 	WINDOWS_VISTA = 0x60,
 	WINDOWS_7 = 0x61,
 	WINDOWS_8 = 0x62,
@@ -55,36 +34,34 @@ extern int windows_version;
 
 #define MAX_FDS     256
 
-#define POLLIN      0x0001    /* There is data to read */
-#define POLLPRI     0x0002    /* There is urgent data to read */
-#define POLLOUT     0x0004    /* Writing now will not block */
-#define POLLERR     0x0008    /* Error condition */
-#define POLLHUP     0x0010    /* Hung up */
-#define POLLNVAL    0x0020    /* Invalid request: fd not open */
+#define POLLIN      0x0001    
+#define POLLPRI     0x0002    
+#define POLLOUT     0x0004    
+#define POLLERR     0x0008    
+#define POLLHUP     0x0010    
+#define POLLNVAL    0x0020    
 
 struct pollfd {
-    int fd;           /* file descriptor */
-    short events;     /* requested events */
-    short revents;    /* returned events */
+    int fd;           
+    short events;     
+    short revents;    
 };
 
-// access modes
 enum rw_type {
 	RW_NONE,
 	RW_READ,
 	RW_WRITE,
 };
 
-// fd struct that can be used for polling on Windows
 typedef int cancel_transfer(struct usbi_transfer *itransfer);
 
 struct winfd {
-	int fd;							// what's exposed to libusb core
-	HANDLE handle;					// what we need to attach overlapped to the I/O op, so we can poll it
-	OVERLAPPED* overlapped;			// what will report our I/O status
-	struct usbi_transfer *itransfer;		// Associated transfer, or NULL if completed
-	cancel_transfer *cancel_fn;		// Function pointer to cancel transfer API
-	enum rw_type rw;				// I/O transfer direction: read *XOR* write (NOT BOTH)
+	int fd;							
+	HANDLE handle;					
+	OVERLAPPED* overlapped;			
+	struct usbi_transfer *itransfer;		
+	cancel_transfer *cancel_fn;		
+	enum rw_type rw;				
 };
 extern const struct winfd INVALID_WINFD;
 
@@ -103,11 +80,8 @@ struct winfd fd_to_winfd(int fd);
 struct winfd handle_to_winfd(HANDLE handle);
 struct winfd overlapped_to_winfd(OVERLAPPED* overlapped);
 
-/*
- * Timeval operations
- */
 #if defined(DDKBUILD)
-#include <winsock.h>	// defines timeval functions on DDK
+#include <winsock.h>	
 #endif
 
 #if !defined(TIMESPEC_TO_TIMEVAL)

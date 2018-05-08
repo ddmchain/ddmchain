@@ -1,9 +1,5 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Package openpgp implements high level operations on OpenPGP messages.
-package openpgp // import "golang.org/x/crypto/openpgp"
+package openpgp 
 
 import (
 	"crypto"
@@ -17,10 +13,8 @@ import (
 	"golang.org/x/crypto/openpgp/packet"
 )
 
-// SignatureType is the armor type for a PGP signature.
 var SignatureType = "PGP SIGNATURE"
 
-// readArmored reads an armored block with the given type.
 func readArmored(r io.Reader, expectedType string) (body io.Reader, err error) {
 	block, err := armor.Decode(r)
 	if err != nil {
@@ -34,55 +28,31 @@ func readArmored(r io.Reader, expectedType string) (body io.Reader, err error) {
 	return block.Body, nil
 }
 
-// MessageDetails contains the result of parsing an OpenPGP encrypted and/or
-// signed message.
 type MessageDetails struct {
-	IsEncrypted              bool                // true if the message was encrypted.
-	EncryptedToKeyIds        []uint64            // the list of recipient key ids.
-	IsSymmetricallyEncrypted bool                // true if a passphrase could have decrypted the message.
-	DecryptedWith            Key                 // the private key used to decrypt the message, if any.
-	IsSigned                 bool                // true if the message is signed.
-	SignedByKeyId            uint64              // the key id of the signer, if any.
-	SignedBy                 *Key                // the key of the signer, if available.
-	LiteralData              *packet.LiteralData // the metadata of the contents
-	UnverifiedBody           io.Reader           // the contents of the message.
+	IsEncrypted              bool                
+	EncryptedToKeyIds        []uint64            
+	IsSymmetricallyEncrypted bool                
+	DecryptedWith            Key                 
+	IsSigned                 bool                
+	SignedByKeyId            uint64              
+	SignedBy                 *Key                
+	LiteralData              *packet.LiteralData 
+	UnverifiedBody           io.Reader           
 
-	// If IsSigned is true and SignedBy is non-zero then the signature will
-	// be verified as UnverifiedBody is read. The signature cannot be
-	// checked until the whole of UnverifiedBody is read so UnverifiedBody
-	// must be consumed until EOF before the data can be trusted. Even if a
-	// message isn't signed (or the signer is unknown) the data may contain
-	// an authentication code that is only checked once UnverifiedBody has
-	// been consumed. Once EOF has been seen, the following fields are
-	// valid. (An authentication code failure is reported as a
-	// SignatureError error when reading from UnverifiedBody.)
-	SignatureError error               // nil if the signature is good.
-	Signature      *packet.Signature   // the signature packet itself, if v4 (default)
-	SignatureV3    *packet.SignatureV3 // the signature packet if it is a v2 or v3 signature
+	SignatureError error               
+	Signature      *packet.Signature   
+	SignatureV3    *packet.SignatureV3 
 
 	decrypted io.ReadCloser
 }
 
-// A PromptFunction is used as a callback by functions that may need to decrypt
-// a private key, or prompt for a passphrase. It is called with a list of
-// acceptable, encrypted private keys and a boolean that indicates whether a
-// passphrase is usable. It should either decrypt a private key or return a
-// passphrase to try. If the decrypted private key or given passphrase isn't
-// correct, the function will be called again, forever. Any error returned will
-// be passed up.
 type PromptFunction func(keys []Key, symmetric bool) ([]byte, error)
 
-// A keyEnvelopePair is used to store a private key with the envelope that
-// contains a symmetric key, encrypted with that key.
 type keyEnvelopePair struct {
 	key          Key
 	encryptedKey *packet.EncryptedKey
 }
 
-// ReadMessage parses an OpenPGP message that may be signed and/or encrypted.
-// The given KeyRing should contain both public keys (for signature
-// verification) and, possibly encrypted, private keys for decrypting.
-// If config is nil, sensible defaults will be used.
 func ReadMessage(r io.Reader, keyring KeyRing, prompt PromptFunction, config *packet.Config) (md *MessageDetails, err error) {
 	var p packet.Packet
 
@@ -94,10 +64,6 @@ func ReadMessage(r io.Reader, keyring KeyRing, prompt PromptFunction, config *pa
 	md = new(MessageDetails)
 	md.IsEncrypted = true
 
-	// The message, if encrypted, starts with a number of packets
-	// containing an encrypted decryption key. The decryption key is either
-	// encrypted to a public key, or with a passphrase. This loop
-	// collects these packets.
 ParsePackets:
 	for {
 		p, err = packets.Next()
@@ -106,11 +72,11 @@ ParsePackets:
 		}
 		switch p := p.(type) {
 		case *packet.SymmetricKeyEncrypted:
-			// This packet contains the decryption key encrypted with a passphrase.
+
 			md.IsSymmetricallyEncrypted = true
 			symKeys = append(symKeys, p)
 		case *packet.EncryptedKey:
-			// This packet contains the decryption key encrypted to a public key.
+
 			md.EncryptedToKeyIds = append(md.EncryptedToKeyIds, p.KeyId)
 			switch p.Algo {
 			case packet.PubKeyAlgoRSA, packet.PubKeyAlgoRSAEncryptOnly, packet.PubKeyAlgoElGamal:
@@ -131,7 +97,7 @@ ParsePackets:
 			se = p
 			break ParsePackets
 		case *packet.Compressed, *packet.LiteralData, *packet.OnePassSignature:
-			// This message isn't encrypted.
+
 			if len(symKeys) != 0 || len(pubKeys) != 0 {
 				return nil, errors.StructuralError("key material not followed by encrypted message")
 			}
@@ -143,12 +109,9 @@ ParsePackets:
 	var candidates []Key
 	var decrypted io.ReadCloser
 
-	// Now that we have the list of encrypted keys we need to decrypt at
-	// least one of them or, if we cannot, we need to call the prompt
-	// function so that it can decrypt a key or give us a passphrase.
 FindKey:
 	for {
-		// See if any of the keys already have a private key available
+
 		candidates = candidates[:0]
 		candidateFingerprints := make(map[string]bool)
 
@@ -194,7 +157,6 @@ FindKey:
 			return nil, err
 		}
 
-		// Try the symmetric passphrase first
 		if len(symKeys) != 0 && passphrase != nil {
 			for _, s := range symKeys {
 				key, cipherFunc, err := s.Decrypt(passphrase)
@@ -219,9 +181,6 @@ FindKey:
 	return readSignedMessage(packets, md, keyring)
 }
 
-// readSignedMessage reads a possibly signed message if mdin is non-zero then
-// that structure is updated and returned. Otherwise a fresh MessageDetails is
-// used.
 func readSignedMessage(packets *packet.Reader, mdin *MessageDetails, keyring KeyRing) (md *MessageDetails, err error) {
 	if mdin == nil {
 		mdin = new(MessageDetails)
@@ -276,11 +235,6 @@ FindLiteralData:
 	return md, nil
 }
 
-// hashForSignature returns a pair of hashes that can be used to verify a
-// signature. The signature may specify that the contents of the signed message
-// should be preprocessed (i.e. to normalize line endings). Thus this function
-// returns two hashes. The second should be used to hash the message itself and
-// performs any needed preprocessing.
 func hashForSignature(hashId crypto.Hash, sigType packet.SignatureType) (hash.Hash, hash.Hash, error) {
 	if !hashId.Available() {
 		return nil, nil, errors.UnsupportedError("hash not available: " + strconv.Itoa(int(hashId)))
@@ -297,9 +251,6 @@ func hashForSignature(hashId crypto.Hash, sigType packet.SignatureType) (hash.Ha
 	return nil, nil, errors.UnsupportedError("unsupported signature type: " + strconv.Itoa(int(sigType)))
 }
 
-// checkReader wraps an io.Reader from a LiteralData packet. When it sees EOF
-// it closes the ReadCloser from any SymmetricallyEncrypted packet to trigger
-// MDC checks.
 type checkReader struct {
 	md *MessageDetails
 }
@@ -315,9 +266,6 @@ func (cr checkReader) Read(buf []byte) (n int, err error) {
 	return
 }
 
-// signatureCheckReader wraps an io.Reader from a LiteralData packet and hashes
-// the data as it is read. When it sees an EOF from the underlying io.Reader
-// it parses and checks a trailing Signature packet and triggers any MDC checks.
 type signatureCheckReader struct {
 	packets        *packet.Reader
 	h, wrappedHash hash.Hash
@@ -344,9 +292,6 @@ func (scr *signatureCheckReader) Read(buf []byte) (n int, err error) {
 			return
 		}
 
-		// The SymmetricallyEncrypted packet, if any, might have an
-		// unsigned hash of its own. In order to check this we need to
-		// close that Reader.
 		if scr.md.decrypted != nil {
 			mdcErr := scr.md.decrypted.Close()
 			if mdcErr != nil {
@@ -357,9 +302,6 @@ func (scr *signatureCheckReader) Read(buf []byte) (n int, err error) {
 	return
 }
 
-// CheckDetachedSignature takes a signed file and a detached signature and
-// returns the signer if the signature is valid. If the signer isn't known,
-// ErrUnknownIssuer is returned.
 func CheckDetachedSignature(keyring KeyRing, signed, signature io.Reader) (signer *Entity, err error) {
 	var issuerKeyId uint64
 	var hashFunc crypto.Hash
@@ -430,8 +372,6 @@ func CheckDetachedSignature(keyring KeyRing, signed, signature io.Reader) (signe
 	return nil, err
 }
 
-// CheckArmoredDetachedSignature performs the same actions as
-// CheckDetachedSignature but expects the signature to be armored.
 func CheckArmoredDetachedSignature(keyring KeyRing, signed, signature io.Reader) (signer *Entity, err error) {
 	body, err := readArmored(signature, SignatureType)
 	if err != nil {

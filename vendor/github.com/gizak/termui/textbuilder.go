@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
 import (
@@ -11,15 +8,12 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 )
 
-// TextBuilder is a minimal interface to produce text []Cell using specific syntax (markdown).
 type TextBuilder interface {
 	Build(s string, fg, bg Attribute) []Cell
 }
 
-// DefaultTxBuilder is set to be MarkdownTxBuilder.
 var DefaultTxBuilder = NewMarkdownTxBuilder()
 
-// MarkdownTxBuilder implements TextBuilder interface, using markdown syntax.
 type MarkdownTxBuilder struct {
 	baseFg  Attribute
 	baseBg  Attribute
@@ -57,19 +51,18 @@ func rmSpc(s string) string {
 	return reg.ReplaceAllString(s, "")
 }
 
-// readAttr translates strings like `fg-red,fg-bold,bg-white` to fg and bg Attribute
 func (mtb MarkdownTxBuilder) readAttr(s string) (Attribute, Attribute) {
 	fg := mtb.baseFg
 	bg := mtb.baseBg
 
 	updateAttr := func(a Attribute, attrs []string) Attribute {
 		for _, s := range attrs {
-			// replace the color
+
 			if c, ok := colorMap[s]; ok {
-				a &= 0xFF00 // erase clr 0 ~ 8 bits
-				a |= c      // set clr
+				a &= 0xFF00 
+				a |= c      
 			}
-			// add attrs
+
 			if c, ok := attrMap[s]; ok {
 				a |= c
 			}
@@ -102,7 +95,6 @@ func (mtb *MarkdownTxBuilder) reset() {
 	mtb.markers = []marker{}
 }
 
-// parse streams and parses text into normalized text and render sequence.
 func (mtb *MarkdownTxBuilder) parse(str string) {
 	rs := str2runes(str)
 	normTx := []rune{}
@@ -119,20 +111,20 @@ func (mtb *MarkdownTxBuilder) parse(str string) {
 		accBrackt = false
 		cntSquare = 0
 	}
-	// pipe stacks into normTx and clear
+
 	rollback := func() {
 		normTx = append(normTx, square...)
 		normTx = append(normTx, brackt...)
 		reset()
 	}
-	// chop first and last
+
 	chop := func(s []rune) []rune {
 		return s[1 : len(s)-1]
 	}
 
 	for i, r := range rs {
 		switch {
-		// stacking brackt
+
 		case accBrackt:
 			brackt = append(brackt, r)
 			if ')' == r {
@@ -145,14 +137,14 @@ func (mtb *MarkdownTxBuilder) parse(str string) {
 			} else if i+1 == len(rs) {
 				rollback()
 			}
-		// stacking square
+
 		case accSquare:
 			switch {
-			// squares closed and followed by a '('
+
 			case cntSquare == 0 && '(' == r:
 				accBrackt = true
 				brackt = append(brackt, '(')
-			// squares closed but not followed by a '('
+
 			case cntSquare == 0:
 				rollback()
 				if '[' == r {
@@ -162,7 +154,7 @@ func (mtb *MarkdownTxBuilder) parse(str string) {
 				} else {
 					normTx = append(normTx, r)
 				}
-			// hit the end
+
 			case i+1 == len(rs):
 				square = append(square, r)
 				rollback()
@@ -172,11 +164,11 @@ func (mtb *MarkdownTxBuilder) parse(str string) {
 			case ']' == r:
 				cntSquare--
 				square = append(square, ']')
-			// normal char
+
 			default:
 				square = append(square, r)
 			}
-		// stacking normTx
+
 		default:
 			if '[' == r {
 				accSquare = true
@@ -195,14 +187,11 @@ func wrapTx(cs []Cell, wl int) []Cell {
 	tmpCell := make([]Cell, len(cs))
 	copy(tmpCell, cs)
 
-	// get the plaintext
 	plain := CellsToStr(cs)
 
-	// wrap
 	plainWrapped := wordwrap.WrapString(plain, uint(wl))
 
-	// find differences and insert
-	finalCell := tmpCell // finalcell will get the inserts and is what is returned
+	finalCell := tmpCell 
 
 	plainRune := []rune(plain)
 	plainWrappedRune := []rune(plainWrapped)
@@ -219,30 +208,24 @@ func wrapTx(cs []Cell, wl int) []Cell {
 				cell := Cell{10, 0, 0}
 				j := i - 0
 
-				// insert a cell into the []Cell in correct position
 				tmpCell[i] = cell
 
-				// insert the newline into plain so we avoid indexing errors
 				plainRuneNew = append(plainRune, 10)
 				copy(plainRuneNew[j+1:], plainRuneNew[j:])
 				plainRuneNew[j] = plainWrappedRune[j]
 
-				// restart the inner for loop until plain and plain wrapped are
-				// the same; yeah, it's inefficient, but the text amounts
-				// should be small
 				break
 
 			} else if plainRune[i] != plainWrappedRune[i] &&
-				plainWrappedRune[i-1] == 10 && // if the prior rune is a newline
-				plainRune[i] == 32 { // and this rune is a space
+				plainWrappedRune[i-1] == 10 && 
+				plainRune[i] == 32 { 
 				trigger = "go"
-				// need to delete plainRune[i] because it gets rid of an extra
-				// space
+
 				plainRuneNew = append(plainRune[:i], plainRune[i+1:]...)
 				break
 
 			} else {
-				trigger = "stop" // stops the outer for loop
+				trigger = "stop" 
 			}
 		}
 	}
@@ -252,7 +235,6 @@ func wrapTx(cs []Cell, wl int) []Cell {
 	return finalCell
 }
 
-// Build implements TextBuilder interface.
 func (mtb MarkdownTxBuilder) Build(s string, fg, bg Attribute) []Cell {
 	mtb.baseFg = fg
 	mtb.baseBg = bg
@@ -272,7 +254,6 @@ func (mtb MarkdownTxBuilder) Build(s string, fg, bg Attribute) []Cell {
 	return cs
 }
 
-// NewMarkdownTxBuilder returns a TextBuilder employing markdown syntax.
 func NewMarkdownTxBuilder() TextBuilder {
 	return MarkdownTxBuilder{}
 }

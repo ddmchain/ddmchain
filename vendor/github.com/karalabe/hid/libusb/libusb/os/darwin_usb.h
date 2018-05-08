@@ -1,20 +1,3 @@
-/*
- * darwin backend for libusb 1.0
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #if !defined(LIBUSB_DARWIN_H)
 #define LIBUSB_DARWIN_H
@@ -26,7 +9,6 @@
 #include <IOKit/usb/IOUSBLib.h>
 #include <IOKit/IOCFPlugIn.h>
 
-/* IOUSBInterfaceInferface */
 #if defined (kIOUSBInterfaceInterfaceID700) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
 
 #define usb_interface_t IOUSBInterfaceInterface700
@@ -69,7 +51,6 @@
 
 #endif
 
-/* IOUSBDeviceInterface */
 #if defined (kIOUSBDeviceInterfaceID500) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
 
 #define usb_device_t    IOUSBDeviceInterface500
@@ -112,7 +93,6 @@
 typedef IOCFPlugInInterface *io_cf_plugin_ref_t;
 typedef IONotificationPortRef io_notification_port_t;
 
-/* private structures */
 struct darwin_cached_device {
   struct list_head      list;
   IOUSBDeviceDescriptor dev_descriptor;
@@ -146,16 +126,12 @@ struct darwin_device_handle_priv {
 };
 
 struct darwin_transfer_priv {
-  /* Isoc */
+
   IOUSBIsocFrame *isoc_framelist;
   int num_iso_packets;
 
-  /* Control */
   IOUSBDevRequestTO req;
 
-  /* Bulk */
-
-  /* Completion status */
   IOReturn result;
   UInt32 size;
 };

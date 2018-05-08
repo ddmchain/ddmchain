@@ -1,21 +1,3 @@
-/*
- * Haiku Backend for libusb
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
-
 
 #include <unistd.h>
 #include <string.h>
@@ -114,7 +96,7 @@ USBTransfer::Do(int fRawFD)
 			fUsbiTransfer->transferred = command.transfer.length;
 		}
 		break;
-		// IsochronousTransfers not tested
+
 		case LIBUSB_TRANSFER_TYPE_ISOCHRONOUS:
 		{
 			usb_raw_command command;
@@ -134,7 +116,7 @@ USBTransfer::Do(int fRawFD)
 				packetDescriptors[i].request_length = (int16)(fLibusbTransfer->iso_packet_desc[i]).length;
 			}
 			if (i < fLibusbTransfer->num_iso_packets)
-				break;	// TODO Handle this error
+				break;	
 			command.isochronous.packet_descriptors = packetDescriptors;
 			if (fCancelled)
 				break;
@@ -156,7 +138,7 @@ USBTransfer::Do(int fRawFD)
 				}
 			}
 			delete[] packetDescriptors;
-			// Do we put the length of transfer here, for isochronous transfers?
+
 			fUsbiTransfer->transferred = command.transfer.length;
 		}
 		break;
@@ -300,7 +282,7 @@ USBDeviceHandle::SetAltSetting(int inumber, int alt)
 	}
 	command.alternate.alternate_info = alt;
 	if (ioctl(fRawFD, B_USB_RAW_COMMAND_SET_ALT_INTERFACE, &command, sizeof(command)) ||
-			command.alternate.status != B_USB_RAW_STATUS_SUCCESS) { //IF IOCTL FAILS DEVICE DISONNECTED PROBABLY
+			command.alternate.status != B_USB_RAW_STATUS_SUCCESS) { 
 		usbi_err(NULL, "Error setting alternate interface");
 		return _errno_to_libusb(command.alternate.status);
 	}
@@ -308,11 +290,10 @@ USBDeviceHandle::SetAltSetting(int inumber, int alt)
 	return LIBUSB_SUCCESS;
 }
 
-
 USBDevice::USBDevice(const char *path)
 	:
 	fPath(NULL),
-	fActiveConfiguration(0),	//0?
+	fActiveConfiguration(0),	
 	fConfigurationDescriptors(NULL),
 	fClaimedInterfaces(0),
 	fEndpointToIndex(NULL),
@@ -429,7 +410,7 @@ USBDevice::EndpointToInterface(uint8 address) const
 }
 
 int
-USBDevice::Initialise()		//Do we need more error checking, etc? How to report?
+USBDevice::Initialise()		
 {
 	int fRawFD = open(fPath, O_RDWR | O_CLOEXEC);
 	if (fRawFD < 0)

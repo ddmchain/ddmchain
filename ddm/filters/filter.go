@@ -1,18 +1,3 @@
-// 
-// This file is part of the go-ddmchain library.
-//
-// The go-ddmchain library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ddmchain library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ddmchain library. If not, see <http://www.gnu.org/licenses/>.
 
 package filters
 
@@ -20,13 +5,13 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/ddmchain/go-ddmchain/common"
-	"github.com/ddmchain/go-ddmchain/core"
-	"github.com/ddmchain/go-ddmchain/core/bloombits"
-	"github.com/ddmchain/go-ddmchain/core/types"
-	"github.com/ddmchain/go-ddmchain/ddmdb"
-	"github.com/ddmchain/go-ddmchain/event"
-	"github.com/ddmchain/go-ddmchain/rpc"
+	"github.com/ddmchain/go-ddmchain/general"
+	"github.com/ddmchain/go-ddmchain/major"
+	"github.com/ddmchain/go-ddmchain/major/bloombits"
+	"github.com/ddmchain/go-ddmchain/major/types"
+	"github.com/ddmchain/go-ddmchain/ddmpv"
+	"github.com/ddmchain/go-ddmchain/signal"
+	"github.com/ddmchain/go-ddmchain/control"
 )
 
 type Backend interface {
@@ -44,7 +29,6 @@ type Backend interface {
 	ServiceFilter(ctx context.Context, session *bloombits.MatcherSession)
 }
 
-// Filter can be used to retrieve and filter logs.
 type Filter struct {
 	backend Backend
 
@@ -56,12 +40,8 @@ type Filter struct {
 	matcher *bloombits.Matcher
 }
 
-// New creates a new filter which uses a bloom filter on blocks to figure out whether
-// a particular block is interesting or not.
 func New(backend Backend, begin, end int64, addresses []common.Address, topics [][]common.Hash) *Filter {
-	// Flatten the address and topic filter clauses into a single bloombits filter
-	// system. Since the bloombits are not positional, nil topics are permitted,
-	// which get flattened into a nil byte slice.
+
 	var filters [][][]byte
 	if len(addresses) > 0 {
 		filter := make([][]byte, len(addresses))
@@ -77,7 +57,7 @@ func New(backend Backend, begin, end int64, addresses []common.Address, topics [
 		}
 		filters = append(filters, filter)
 	}
-	// Assemble and return the filter
+
 	size, _ := backend.BloomStatus()
 
 	return &Filter{
@@ -91,10 +71,8 @@ func New(backend Backend, begin, end int64, addresses []common.Address, topics [
 	}
 }
 
-// Logs searches the blockchain for matching log entries, returning all from the
-// first block that contains matches, updating the start of the filter accordingly.
 func (f *Filter) Logs(ctx context.Context) ([]*types.Log, error) {
-	// Figure out the limits of the filter range
+
 	header, _ := f.backend.HeaderByNumber(ctx, rpc.LatestBlockNumber)
 	if header == nil {
 		return nil, nil
@@ -108,7 +86,7 @@ func (f *Filter) Logs(ctx context.Context) ([]*types.Log, error) {
 	if f.end == -1 {
 		end = head
 	}
-	// Gather all indexed logs, and finish with non indexed ones
+
 	var (
 		logs []*types.Log
 		err  error
@@ -129,10 +107,8 @@ func (f *Filter) Logs(ctx context.Context) ([]*types.Log, error) {
 	return logs, err
 }
 
-// indexedLogs returns the logs matching the filter criteria based on the bloom
-// bits indexed available locally or via the network.
 func (f *Filter) indexedLogs(ctx context.Context, end uint64) ([]*types.Log, error) {
-	// Create a matcher session and request servicing from the backend
+
 	matches := make(chan uint64, 64)
 
 	session, err := f.matcher.Start(ctx, uint64(f.begin), end, matches)
@@ -143,13 +119,12 @@ func (f *Filter) indexedLogs(ctx context.Context, end uint64) ([]*types.Log, err
 
 	f.backend.ServiceFilter(ctx, session)
 
-	// Iterate over the matches until exhausted or context closed
 	var logs []*types.Log
 
 	for {
 		select {
 		case number, ok := <-matches:
-			// Abort if all matches have been fulfilled
+
 			if !ok {
 				err := session.Error()
 				if err == nil {
@@ -159,7 +134,6 @@ func (f *Filter) indexedLogs(ctx context.Context, end uint64) ([]*types.Log, err
 			}
 			f.begin = int64(number) + 1
 
-			// Retrieve the suggested block and pull any truly matching logs
 			header, err := f.backend.HeaderByNumber(ctx, rpc.BlockNumber(number))
 			if header == nil || err != nil {
 				return logs, err
@@ -176,8 +150,6 @@ func (f *Filter) indexedLogs(ctx context.Context, end uint64) ([]*types.Log, err
 	}
 }
 
-// indexedLogs returns the logs matching the filter criteria based on raw block
-// iteration and bloom matching.
 func (f *Filter) unindexedLogs(ctx context.Context, end uint64) ([]*types.Log, error) {
 	var logs []*types.Log
 
@@ -197,10 +169,8 @@ func (f *Filter) unindexedLogs(ctx context.Context, end uint64) ([]*types.Log, e
 	return logs, nil
 }
 
-// checkMatches checks if the receipts belonging to the given header contain any log events that
-// match the filter criteria. This function is called when the bloom filter signals a potential match.
 func (f *Filter) checkMatches(ctx context.Context, header *types.Header) (logs []*types.Log, err error) {
-	// Get the logs of the block
+
 	receipts, err := f.backend.GetReceipts(ctx, header.Hash())
 	if err != nil {
 		return nil, err
@@ -226,7 +196,6 @@ func includes(addresses []common.Address, a common.Address) bool {
 	return false
 }
 
-// filterLogs creates a slice of logs matching the given criteria.
 func filterLogs(logs []*types.Log, fromBlock, toBlock *big.Int, addresses []common.Address, topics [][]common.Hash) []*types.Log {
 	var ret []*types.Log
 Logs:
@@ -241,12 +210,12 @@ Logs:
 		if len(addresses) > 0 && !includes(addresses, log.Address) {
 			continue
 		}
-		// If the to filtered topics is greater than the amount of topics in logs, skip.
+
 		if len(topics) > len(log.Topics) {
 			continue Logs
 		}
 		for i, topics := range topics {
-			match := len(topics) == 0 // empty rule set == wildcard
+			match := len(topics) == 0 
 			for _, topic := range topics {
 				if log.Topics[i] == topic {
 					match = true
@@ -277,7 +246,7 @@ func bloomFilter(bloom types.Bloom, addresses []common.Address, topics [][]commo
 	}
 
 	for _, sub := range topics {
-		included := len(sub) == 0 // empty rule set == wildcard
+		included := len(sub) == 0 
 		for _, topic := range sub {
 			if types.BloomLookup(bloom, topic) {
 				included = true

@@ -8,4 +8,4 @@
 
 int usbi_pipe(int pipefd[2]);
 
-#endif /* LIBUSB_POLL_POSIX_H */
+#endif 

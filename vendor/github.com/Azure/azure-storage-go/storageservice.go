@@ -6,7 +6,6 @@ import (
 	"net/url"
 )
 
-// ServiceProperties represents the storage account service properties
 type ServiceProperties struct {
 	Logging       *Logging
 	HourMetrics   *Metrics
@@ -14,7 +13,6 @@ type ServiceProperties struct {
 	Cors          *Cors
 }
 
-// Logging represents the Azure Analytics Logging settings
 type Logging struct {
 	Version         string
 	Delete          bool
@@ -23,13 +21,11 @@ type Logging struct {
 	RetentionPolicy *RetentionPolicy
 }
 
-// RetentionPolicy indicates if retention is enabled and for how many days
 type RetentionPolicy struct {
 	Enabled bool
 	Days    *int
 }
 
-// Metrics provide request statistics.
 type Metrics struct {
 	Version         string
 	Enabled         bool
@@ -37,12 +33,10 @@ type Metrics struct {
 	RetentionPolicy *RetentionPolicy
 }
 
-// Cors includes all the CORS rules
 type Cors struct {
 	CorsRule []CorsRule
 }
 
-// CorsRule includes all settings for a Cors rule
 type CorsRule struct {
 	AllowedOrigins  string
 	AllowedMethods  string
@@ -85,8 +79,6 @@ func (c Client) setServiceProperties(props ServiceProperties, service string, au
 	}
 	uri := c.getEndpoint(service, "", query)
 
-	// Ideally, StorageServiceProperties would be the output struct
-	// This is to avoid golint stuttering, while generating the correct XML
 	type StorageServiceProperties struct {
 		Logging       *Logging
 		HourMetrics   *Metrics

@@ -1,22 +1,3 @@
-/*
- * libusb synchronization on Microsoft Windows
- *
- 
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #include <config.h>
 
@@ -66,10 +47,10 @@ int usbi_mutex_lock(usbi_mutex_t *mutex)
 		return EINVAL;
 	result = WaitForSingleObject(*mutex, INFINITE);
 	if (result == WAIT_OBJECT_0 || result == WAIT_ABANDONED)
-		return 0; // acquired (ToDo: check that abandoned is ok)
+		return 0; 
 	else
-		return EINVAL; // don't know how this would happen
-			       //   so don't know proper errno
+		return EINVAL; 
+
 }
 
 int usbi_mutex_unlock(usbi_mutex_t *mutex)
@@ -90,18 +71,17 @@ int usbi_mutex_trylock(usbi_mutex_t *mutex)
 		return EINVAL;
 	result = WaitForSingleObject(*mutex, 0);
 	if (result == WAIT_OBJECT_0 || result == WAIT_ABANDONED)
-		return 0; // acquired (ToDo: check that abandoned is ok)
+		return 0; 
 	else if (result == WAIT_TIMEOUT)
 		return EBUSY;
 	else
-		return EINVAL; // don't know how this would happen
-			       //   so don't know proper error
+		return EINVAL; 
+
 }
 
 int usbi_mutex_destroy(usbi_mutex_t *mutex)
 {
-	// It is not clear if CloseHandle failure is due to failure to unlock.
-	//   If so, this should be errno=EBUSY.
+
 	if (!mutex || !CloseHandle(*mutex))
 		return EINVAL;
 	*mutex = NULL;
@@ -119,13 +99,13 @@ int usbi_cond_init(usbi_cond_t *cond)
 
 int usbi_cond_destroy(usbi_cond_t *cond)
 {
-	// This assumes no one is using this anymore.  The check MAY NOT BE safe.
+
 	struct usbi_cond_perthread *pos, *next_pos;
 
 	if(!cond)
 		return EINVAL;
 	if (!list_empty(&cond->waiters))
-		return EBUSY; // (!see above!)
+		return EBUSY; 
 	list_for_each_entry_safe(pos, next_pos, &cond->not_waiting, list, struct usbi_cond_perthread) {
 		CloseHandle(pos->event);
 		list_del(&pos->list);
@@ -136,9 +116,7 @@ int usbi_cond_destroy(usbi_cond_t *cond)
 
 int usbi_cond_broadcast(usbi_cond_t *cond)
 {
-	// Assumes mutex is locked; this is not in keeping with POSIX spec, but
-	//   libusb does this anyway, so we simplify by not adding more sync
-	//   primitives to the CV definition!
+
 	int fail = 0;
 	struct usbi_cond_perthread *pos;
 
@@ -148,7 +126,7 @@ int usbi_cond_broadcast(usbi_cond_t *cond)
 		if (!SetEvent(pos->event))
 			fail = 1;
 	}
-	// The wait function will remove its respective item from the list.
+
 	return fail ? EINVAL : 0;
 }
 
@@ -171,9 +149,9 @@ __inline static int usbi_cond_intwait(usbi_cond_t *cond,
 	if (!found) {
 		pos = calloc(1, sizeof(struct usbi_cond_perthread));
 		if (!pos)
-			return ENOMEM; // This errno is not POSIX-allowed.
+			return ENOMEM; 
 		pos->tid = tid;
-		pos->event = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset.
+		pos->event = CreateEvent(NULL, FALSE, FALSE, NULL); 
 		if (!pos->event) {
 			free(pos);
 			return ENOMEM;
@@ -181,7 +159,7 @@ __inline static int usbi_cond_intwait(usbi_cond_t *cond,
 		list_add(&pos->list, &cond->not_waiting);
 	}
 
-	list_del(&pos->list); // remove from not_waiting list.
+	list_del(&pos->list); 
 	list_add(&pos->list, &cond->waiters);
 
 	r  = usbi_mutex_unlock(mutex);
@@ -203,7 +181,7 @@ __inline static int usbi_cond_intwait(usbi_cond_t *cond,
 	else
 		return EINVAL;
 }
-// N.B.: usbi_cond_*wait() can also return ENOMEM, even though pthread_cond_*wait cannot!
+
 int usbi_cond_wait(usbi_cond_t *cond, usbi_mutex_t *mutex)
 {
 	return usbi_cond_intwait(cond, mutex, INFINITE);
@@ -215,7 +193,7 @@ int usbi_cond_timedwait(usbi_cond_t *cond,
 	DWORD millis;
 
 	millis = (DWORD)(tv->tv_sec * 1000) + (tv->tv_usec / 1000);
-	/* round up to next millisecond */
+
 	if (tv->tv_usec % 1000)
 		millis++;
 	return usbi_cond_intwait(cond, mutex, millis);

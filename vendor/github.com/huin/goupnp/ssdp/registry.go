@@ -43,42 +43,34 @@ func (et EventType) String() string {
 }
 
 type Update struct {
-	// The USN of the service.
+
 	USN string
-	// What happened.
+
 	EventType EventType
-	// The entry, which is nil if the service was not known and
-	// EventType==EventByeBye. The contents of this must not be modified as it is
-	// shared with the registry and other listeners. Once created, the Registry
-	// does not modify the Entry value - any updates are replaced with a new
-	// Entry value.
+
 	Entry *Entry
 }
 
 type Entry struct {
-	// The address that the entry data was actually received from.
+
 	RemoteAddr string
-	// Unique Service Name. Identifies a unique instance of a device or service.
+
 	USN string
-	// Notfication Type. The type of device or service being announced.
+
 	NT string
-	// Server's self-identifying string.
+
 	Server string
 	Host   string
-	// Location of the UPnP root device description.
-	Location url.URL
 
-	// Despite BOOTID,CONFIGID being required fields, apparently they are not
-	// always set by devices. Set to -1 if not present.
+	Location url.URL
 
 	BootID   int32
 	ConfigID int32
 
 	SearchPort uint16
 
-	// When the last update was received for this entry identified by this USN.
 	LastUpdate time.Time
-	// When the last update's cached values are advised to expire.
+
 	CacheExpiry time.Time
 }
 
@@ -141,9 +133,6 @@ func parseCacheControlMaxAge(cc string) (time.Duration, error) {
 	return time.Duration(expirySeconds) * time.Second, nil
 }
 
-// parseUpnpIntHeader is intended to parse the
-// {BOOT,CONFIGID,SEARCHPORT}.UPNP.ORG header fields. It returns the def if
-// the head is empty or missing.
 func parseUpnpIntHeader(headers http.Header, headerName string, def int32) (int32, error) {
 	s := headers.Get(headerName)
 	if s == "" {
@@ -158,10 +147,6 @@ func parseUpnpIntHeader(headers http.Header, headerName string, def int32) (int3
 
 var _ httpu.Handler = new(Registry)
 
-// Registry maintains knowledge of discovered devices and services.
-//
-// NOTE: the interface for this is experimental and may change, or go away
-// entirely.
 type Registry struct {
 	lock  sync.Mutex
 	byUSN map[string]*Entry
@@ -177,9 +162,6 @@ func NewRegistry() *Registry {
 	}
 }
 
-// NewServerAndRegistry is a convenience function to create a registry, and an
-// httpu server to pass it messages. Call ListenAndServe on the server for
-// messages to be processed.
 func NewServerAndRegistry() (*httpu.Server, *Registry) {
 	reg := NewRegistry()
 	srv := &httpu.Server{
@@ -210,11 +192,8 @@ func (reg *Registry) sendUpdate(u Update) {
 	}
 }
 
-// GetService returns known service (or device) entries for the given service
-// URN.
 func (reg *Registry) GetService(serviceURN string) []*Entry {
-	// Currently assumes that the map is small, so we do a linear search rather
-	// than indexed to avoid maintaining two maps.
+
 	var results []*Entry
 	reg.lock.Lock()
 	defer reg.lock.Unlock()
@@ -226,8 +205,6 @@ func (reg *Registry) GetService(serviceURN string) []*Entry {
 	return results
 }
 
-// ServeMessage implements httpu.Handler, and uses SSDP NOTIFY requests to
-// maintain the registry of devices and services.
 func (reg *Registry) ServeMessage(r *http.Request) {
 	if r.Method != methodNotify {
 		return

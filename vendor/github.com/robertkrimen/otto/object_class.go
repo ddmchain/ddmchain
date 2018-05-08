@@ -163,11 +163,8 @@ func init() {
 	}
 }
 
-// Allons-y
-
-// 8.12.1
 func objectGetOwnProperty(self *_object, name string) *_property {
-	// Return a _copy_ of the property
+
 	property, exists := self._read(name)
 	if !exists {
 		return nil
@@ -175,7 +172,6 @@ func objectGetOwnProperty(self *_object, name string) *_property {
 	return &property
 }
 
-// 8.12.2
 func objectGetProperty(self *_object, name string) *_property {
 	property := self.getOwnProperty(name)
 	if property != nil {
@@ -187,7 +183,6 @@ func objectGetProperty(self *_object, name string) *_property {
 	return nil
 }
 
-// 8.12.3
 func objectGet(self *_object, name string) Value {
 	property := self.getProperty(name)
 	if property != nil {
@@ -196,7 +191,6 @@ func objectGet(self *_object, name string) Value {
 	return Value{}
 }
 
-// 8.12.4
 func objectCanPut(self *_object, name string) bool {
 	canPut, _, _ := _objectCanPut(self, name)
 	return canPut
@@ -242,18 +236,10 @@ func _objectCanPut(self *_object, name string) (canPut bool, property *_property
 	}
 }
 
-// 8.12.5
 func objectPut(self *_object, name string, value Value, throw bool) {
 
 	if true {
-		// Shortcut...
-		//
-		// So, right now, every class is using objectCanPut and every class
-		// is using objectPut.
-		//
-		// If that were to no longer be the case, we would have to have
-		// something to detect that here, so that we do not use an
-		// incompatible canPut routine
+
 		canPut, property, setter := _objectCanPut(self, name)
 		if !canPut {
 			self.runtime.typeErrorResult(throw)
@@ -268,9 +254,6 @@ func objectPut(self *_object, name string, value Value, throw bool) {
 		return
 	}
 
-	// The long way...
-	//
-	// Right now, code should never get here, see above
 	if !self.canPut(name) {
 		self.runtime.typeErrorResult(throw)
 		return
@@ -305,7 +288,6 @@ func objectPut(self *_object, name string, value Value, throw bool) {
 	}
 }
 
-// 8.12.6
 func objectHasProperty(self *_object, name string) bool {
 	return self.getProperty(name) != nil
 }
@@ -314,7 +296,6 @@ func objectHasOwnProperty(self *_object, name string) bool {
 	return self.getOwnProperty(name) != nil
 }
 
-// 8.12.9
 func objectDefineOwnProperty(self *_object, name string, descriptor _property, throw bool) bool {
 	property, exists := self._read(name)
 	{
@@ -338,16 +319,12 @@ func objectDefineOwnProperty(self *_object, name string, descriptor _property, t
 			return true
 		}
 
-		// TODO Per 8.12.9.6 - We should shortcut here (returning true) if
-		// the current and new (define) properties are the same
-
 		configurable := property.configurable()
 		if !configurable {
 			if descriptor.configurable() {
 				goto Reject
 			}
-			// Test that, if enumerable is set on the property descriptor, then it should
-			// be the same as the existing property
+
 			if descriptor.enumerateSet() && descriptor.enumerable() != property.enumerable() {
 				goto Reject
 			}
@@ -355,14 +332,14 @@ func objectDefineOwnProperty(self *_object, name string, descriptor _property, t
 		value, isDataDescriptor := property.value.(Value)
 		getSet, _ := property.value.(_propertyGetSet)
 		if descriptor.isGenericDescriptor() {
-			// GenericDescriptor
+
 		} else if isDataDescriptor != descriptor.isDataDescriptor() {
-			// DataDescriptor <=> AccessorDescriptor
+
 			if !configurable {
 				goto Reject
 			}
 		} else if isDataDescriptor && descriptor.isDataDescriptor() {
-			// DataDescriptor <=> DataDescriptor
+
 			if !configurable {
 				if !property.writable() && descriptor.writable() {
 					goto Reject
@@ -374,22 +351,22 @@ func objectDefineOwnProperty(self *_object, name string, descriptor _property, t
 				}
 			}
 		} else {
-			// AccessorDescriptor <=> AccessorDescriptor
+
 			newGetSet, _ := descriptor.value.(_propertyGetSet)
 			presentGet, presentSet := true, true
 			if newGetSet[0] == &_nilGetSetObject {
-				// Present, but nil
+
 				newGetSet[0] = nil
 			} else if newGetSet[0] == nil {
-				// Missing, not even nil
+
 				newGetSet[0] = getSet[0]
 				presentGet = false
 			}
 			if newGetSet[1] == &_nilGetSetObject {
-				// Present, but nil
+
 				newGetSet[1] = nil
 			} else if newGetSet[1] == nil {
-				// Missing, not even nil
+
 				newGetSet[1] = getSet[1]
 				presentSet = false
 			}
@@ -401,8 +378,7 @@ func objectDefineOwnProperty(self *_object, name string, descriptor _property, t
 			descriptor.value = newGetSet
 		}
 		{
-			// This section will preserve attributes of
-			// the original property, if necessary
+
 			value1 := descriptor.value
 			if value1 == nil {
 				value1 = property.value
@@ -417,12 +393,11 @@ func objectDefineOwnProperty(self *_object, name string, descriptor _property, t
 			}
 			mode1 := descriptor.mode
 			if mode1&0222 != 0 {
-				// TODO Factor this out into somewhere testable
-				// (Maybe put into switch ...)
+
 				mode0 := property.mode
 				if mode1&0200 != 0 {
 					if descriptor.isDataDescriptor() {
-						mode1 &= ^0200 // Turn off "writable" missing
+						mode1 &= ^0200 
 						mode1 |= (mode0 & 0100)
 					}
 				}
@@ -432,7 +407,7 @@ func objectDefineOwnProperty(self *_object, name string, descriptor _property, t
 				if mode1&02 != 0 {
 					mode1 |= (mode0 & 01)
 				}
-				mode1 &= 0311 // 0311 to preserve the non-setting on "writable"
+				mode1 &= 0311 
 			}
 			self._write(name, value1, mode1)
 		}

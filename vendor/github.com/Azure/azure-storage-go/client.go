@@ -1,4 +1,4 @@
-// Package storage provides clients for Microsoft Azure Storage Services.
+
 package storage
 
 import (
@@ -20,20 +20,15 @@ import (
 )
 
 const (
-	// DefaultBaseURL is the domain name used for storage requests in the
-	// public cloud when a default client is created.
+
 	DefaultBaseURL = "core.windows.net"
 
-	// DefaultAPIVersion is the Azure Storage API version string used when a
-	// basic client is created.
 	DefaultAPIVersion = "2016-05-31"
 
 	defaultUseHTTPS = true
 
-	// StorageEmulatorAccountName is the fixed storage account used by Azure Storage Emulator
 	StorageEmulatorAccountName = "devstoreaccount1"
 
-	// StorageEmulatorAccountKey is the the fixed storage account used by Azure Storage Emulator
 	StorageEmulatorAccountKey = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
 
 	blobServiceName  = "blob"
@@ -48,11 +43,8 @@ const (
 	userAgentHeader = "User-Agent"
 )
 
-// Client is the object that needs to be constructed to perform
-// operations on the storage account.
 type Client struct {
-	// HTTPClient is the http.Client used to initiate API
-	// requests.  If it is nil, http.DefaultClient is used.
+
 	HTTPClient *http.Client
 
 	accountName      string
@@ -75,9 +67,6 @@ type odataResponse struct {
 	odata odataErrorMessage
 }
 
-// AzureStorageServiceError contains fields of the error response from
-// Azure Storage Service REST API. See https://msdn.microsoft.com/en-us/library/azure/dd179382.aspx
-// Some fields might be specific to certain calls.
 type AzureStorageServiceError struct {
 	Code                      string `xml:"Code"`
 	Message                   string `xml:"Message"`
@@ -103,8 +92,6 @@ type odataErrorMessage struct {
 	Err odataErrorMessageInternal `json:"odata.error"`
 }
 
-// UnexpectedStatusCodeError is returned when a storage service responds with neither an error
-// nor with an HTTP status code indicating success.
 type UnexpectedStatusCodeError struct {
 	allowed []int
 	got     int
@@ -121,13 +108,10 @@ func (e UnexpectedStatusCodeError) Error() string {
 	return fmt.Sprintf("storage: status code from service response is %s; was expecting %s", got, strings.Join(expected, " or "))
 }
 
-// Got is the actual status code returned by Azure.
 func (e UnexpectedStatusCodeError) Got() int {
 	return e.got
 }
 
-// NewBasicClient constructs a Client with given storage service name and
-// key.
 func NewBasicClient(accountName, accountKey string) (Client, error) {
 	if accountName == StorageEmulatorAccountName {
 		return NewEmulatorClient()
@@ -135,8 +119,6 @@ func NewBasicClient(accountName, accountKey string) (Client, error) {
 	return NewClient(accountName, accountKey, DefaultBaseURL, DefaultAPIVersion, defaultUseHTTPS)
 }
 
-// NewBasicClientOnSovereignCloud constructs a Client with given storage service name and
-// key in the referenced cloud.
 func NewBasicClientOnSovereignCloud(accountName, accountKey string, env azure.Environment) (Client, error) {
 	if accountName == StorageEmulatorAccountName {
 		return NewEmulatorClient()
@@ -144,15 +126,10 @@ func NewBasicClientOnSovereignCloud(accountName, accountKey string, env azure.En
 	return NewClient(accountName, accountKey, env.StorageEndpointSuffix, DefaultAPIVersion, defaultUseHTTPS)
 }
 
-//NewEmulatorClient contructs a Client intended to only work with Azure
-//Storage Emulator
 func NewEmulatorClient() (Client, error) {
 	return NewClient(StorageEmulatorAccountName, StorageEmulatorAccountKey, DefaultBaseURL, DefaultAPIVersion, false)
 }
 
-// NewClient constructs a Client. This should be used if the caller wants
-// to specify whether to use HTTPS, a specific REST API version or a custom
-// storage endpoint than Azure Public Cloud.
 func NewClient(accountName, accountKey, blobServiceBaseURL, apiVersion string, useHTTPS bool) (Client, error) {
 	var c Client
 	if accountName == "" {
@@ -190,7 +167,6 @@ func (c Client) getDefaultUserAgent() string {
 	)
 }
 
-// AddToUserAgent adds an extension to the current user agent
 func (c *Client) AddToUserAgent(extension string) error {
 	if extension != "" {
 		c.userAgent = fmt.Sprintf("%s %s", c.userAgent, extension)
@@ -199,9 +175,6 @@ func (c *Client) AddToUserAgent(extension string) error {
 	return fmt.Errorf("Extension was empty, User Agent stayed as %s", c.userAgent)
 }
 
-// protectUserAgent is used in funcs that include extraheaders as a parameter.
-// It prevents the User-Agent header to be overwritten, instead if it happens to
-// be present, it gets added to the current User-Agent. Use it before getStandardHeaders
 func (c *Client) protectUserAgent(extraheaders map[string]string) map[string]string {
 	if v, ok := extraheaders[userAgentHeader]; ok {
 		c.AddToUserAgent(v)
@@ -238,11 +211,10 @@ func (c Client) getBaseURL(service string) string {
 func (c Client) getEndpoint(service, path string, params url.Values) string {
 	u, err := url.Parse(c.getBaseURL(service))
 	if err != nil {
-		// really should not be happening
+
 		panic(err)
 	}
 
-	// API doesn't accept path segments not starting with '/'
 	if !strings.HasPrefix(path, "/") {
 		path = fmt.Sprintf("/%v", path)
 	}
@@ -256,8 +228,6 @@ func (c Client) getEndpoint(service, path string, params url.Values) string {
 	return u.String()
 }
 
-// GetBlobService returns a BlobStorageClient which can operate on the blob
-// service of the storage account.
 func (c Client) GetBlobService() BlobStorageClient {
 	b := BlobStorageClient{
 		client: c,
@@ -270,8 +240,6 @@ func (c Client) GetBlobService() BlobStorageClient {
 	return b
 }
 
-// GetQueueService returns a QueueServiceClient which can operate on the queue
-// service of the storage account.
 func (c Client) GetQueueService() QueueServiceClient {
 	q := QueueServiceClient{
 		client: c,
@@ -284,8 +252,6 @@ func (c Client) GetQueueService() QueueServiceClient {
 	return q
 }
 
-// GetTableService returns a TableServiceClient which can operate on the table
-// service of the storage account.
 func (c Client) GetTableService() TableServiceClient {
 	t := TableServiceClient{
 		client: c,
@@ -298,8 +264,6 @@ func (c Client) GetTableService() TableServiceClient {
 	return t
 }
 
-// GetFileService returns a FileServiceClient which can operate on the file
-// service of the storage account.
 func (c Client) GetFileService() FileServiceClient {
 	f := FileServiceClient{
 		client: c,
@@ -332,10 +296,7 @@ func (c Client) exec(verb, url string, headers map[string]string, body io.Reader
 	}
 
 	if clstr, ok := headers["Content-Length"]; ok {
-		// content length header is being signed, but completely ignored by golang.
-		// instead we have to use the ContentLength property on the request struct
-		// (see https://golang.org/src/net/http/request.go?s=18140:18370#L536 and
-		// https://golang.org/src/net/http/transfer.go?s=1739:2467#L49)
+
 		req.ContentLength, err = strconv.ParseInt(clstr, 10, 64)
 		if err != nil {
 			return nil, err
@@ -364,12 +325,12 @@ func (c Client) exec(verb, url string, headers map[string]string, body io.Reader
 
 		requestID := resp.Header.Get("x-ms-request-id")
 		if len(respBody) == 0 {
-			// no error in response body, might happen in HEAD requests
+
 			err = serviceErrFromStatusCode(resp.StatusCode, resp.Status, requestID)
 		} else {
-			// response contains storage service error object, unmarshal
+
 			storageErr, errIn := serviceErrFromXML(respBody, resp.StatusCode, requestID)
-			if err != nil { // error unmarshaling the error response
+			if err != nil { 
 				err = errIn
 			}
 			err = storageErr
@@ -377,7 +338,7 @@ func (c Client) exec(verb, url string, headers map[string]string, body io.Reader
 		return &storageResponse{
 			statusCode: resp.StatusCode,
 			headers:    resp.Header,
-			body:       ioutil.NopCloser(bytes.NewReader(respBody)), /* restore the body */
+			body:       ioutil.NopCloser(bytes.NewReader(respBody)), 
 		}, err
 	}
 
@@ -422,11 +383,11 @@ func (c Client) execInternalJSON(verb, url string, headers map[string]string, bo
 		}
 
 		if len(respBody) == 0 {
-			// no error in response body, might happen in HEAD requests
+
 			err = serviceErrFromStatusCode(resp.StatusCode, resp.Status, resp.Header.Get("x-ms-request-id"))
 			return respToRet, err
 		}
-		// try unmarshal as odata.error json
+
 		err = json.Unmarshal(respBody, &respToRet.odata)
 		return respToRet, err
 	}
@@ -467,8 +428,6 @@ func (e AzureStorageServiceError) Error() string {
 		e.StatusCode, e.Code, e.Message, e.RequestID, e.QueryParameterName, e.QueryParameterValue)
 }
 
-// checkRespCode returns UnexpectedStatusError if the given response code is not
-// one of the allowed status codes; otherwise nil.
 func checkRespCode(respCode int, allowed []int) error {
 	for _, v := range allowed {
 		if respCode == v {

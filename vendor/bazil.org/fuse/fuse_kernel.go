@@ -1,35 +1,3 @@
-// See the file LICENSE for copyright and licensing information.
-
-// Derived from FUSE's fuse_kernel.h, which carries this notice:
-/*
-   This file defines the kernel interface of FUSE
-
-
-   This -- and only this -- header file may also be distributed under
-   the terms of the BSD Licence as follows:
-
-
-   Redistribution and use in source and binary forms, with or without
-   modification, are permitted provided that the following conditions
-   are met:
-   1. Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-   2. Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-
-   THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-   ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
-   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-   OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-   SUCH DAMAGE.
-*/
 
 package fuse
 
@@ -39,7 +7,6 @@ import (
 	"unsafe"
 )
 
-// The FUSE version implemented by the package.
 const (
 	protoVersionMinMajor = 7
 	protoVersionMinMinor = 8
@@ -71,11 +38,10 @@ type fileLock struct {
 	Pid   uint32
 }
 
-// GetattrFlags are bit flags that can be seen in GetattrRequest.
 type GetattrFlags uint32
 
 const (
-	// Indicates the handle is valid.
+
 	GetattrFh GetattrFlags = 1 << 0
 )
 
@@ -87,8 +53,6 @@ func (fl GetattrFlags) String() string {
 	return flagString(uint32(fl), getattrFlagsNames)
 }
 
-// The SetattrValid are bit flags describing which fields in the SetattrRequest
-// are included in the change.
 type SetattrValid uint32
 
 const (
@@ -100,12 +64,10 @@ const (
 	SetattrMtime  SetattrValid = 1 << 5
 	SetattrHandle SetattrValid = 1 << 6
 
-	// Linux only(?)
 	SetattrAtimeNow  SetattrValid = 1 << 7
 	SetattrMtimeNow  SetattrValid = 1 << 8
-	SetattrLockOwner SetattrValid = 1 << 9 // http://www.mail-archive.com/git-commits-head@vger.kernel.org/msg27852.html
+	SetattrLockOwner SetattrValid = 1 << 9 
 
-	// OS X only
 	SetattrCrtime   SetattrValid = 1 << 28
 	SetattrChgtime  SetattrValid = 1 << 29
 	SetattrBkuptime SetattrValid = 1 << 30
@@ -148,17 +110,12 @@ var setattrValidNames = []flagName{
 	{uint32(SetattrFlags), "SetattrFlags"},
 }
 
-// Flags that can be seen in OpenRequest.Flags.
 const (
-	// Access modes. These are not 1-bit flags, but alternatives where
-	// only one can be chosen. See the IsReadOnly etc convenience
-	// methods.
+
 	OpenReadOnly  OpenFlags = syscall.O_RDONLY
 	OpenWriteOnly OpenFlags = syscall.O_WRONLY
 	OpenReadWrite OpenFlags = syscall.O_RDWR
 
-	// File was opened in append-only mode, all writes will go to end
-	// of file. OS X does not provide this information.
 	OpenAppend    OpenFlags = syscall.O_APPEND
 	OpenCreate    OpenFlags = syscall.O_CREAT
 	OpenDirectory OpenFlags = syscall.O_DIRECTORY
@@ -168,16 +125,12 @@ const (
 	OpenTruncate  OpenFlags = syscall.O_TRUNC
 )
 
-// OpenAccessModeMask is a bitmask that separates the access mode
-// from the other flags in OpenFlags.
 const OpenAccessModeMask OpenFlags = syscall.O_ACCMODE
 
-// OpenFlags are the O_FOO flags passed to open/create/etc calls. For
-// example, os.O_WRONLY | os.O_APPEND.
 type OpenFlags uint32
 
 func (fl OpenFlags) String() string {
-	// O_RDONLY, O_RWONLY, O_RDWR are not flags
+
 	s := accModeName(fl & OpenAccessModeMask)
 	flags := uint32(fl &^ OpenAccessModeMask)
 	if flags != 0 {
@@ -186,17 +139,14 @@ func (fl OpenFlags) String() string {
 	return s
 }
 
-// Return true if OpenReadOnly is set.
 func (fl OpenFlags) IsReadOnly() bool {
 	return fl&OpenAccessModeMask == OpenReadOnly
 }
 
-// Return true if OpenWriteOnly is set.
 func (fl OpenFlags) IsWriteOnly() bool {
 	return fl&OpenAccessModeMask == OpenWriteOnly
 }
 
-// Return true if OpenReadWrite is set.
 func (fl OpenFlags) IsReadWrite() bool {
 	return fl&OpenAccessModeMask == OpenReadWrite
 }
@@ -224,16 +174,15 @@ var openFlagNames = []flagName{
 	{uint32(OpenTruncate), "OpenTruncate"},
 }
 
-// The OpenResponseFlags are returned in the OpenResponse.
 type OpenResponseFlags uint32
 
 const (
-	OpenDirectIO    OpenResponseFlags = 1 << 0 // bypass page cache for this open file
-	OpenKeepCache   OpenResponseFlags = 1 << 1 // don't invalidate the data cache on open
-	OpenNonSeekable OpenResponseFlags = 1 << 2 // mark the file as non-seekable (not supported on OS X)
+	OpenDirectIO    OpenResponseFlags = 1 << 0 
+	OpenKeepCache   OpenResponseFlags = 1 << 1 
+	OpenNonSeekable OpenResponseFlags = 1 << 2 
 
-	OpenPurgeAttr OpenResponseFlags = 1 << 30 // OS X
-	OpenPurgeUBC  OpenResponseFlags = 1 << 31 // OS X
+	OpenPurgeAttr OpenResponseFlags = 1 << 30 
+	OpenPurgeUBC  OpenResponseFlags = 1 << 31 
 )
 
 func (fl OpenResponseFlags) String() string {
@@ -248,7 +197,6 @@ var openResponseFlagNames = []flagName{
 	{uint32(OpenPurgeUBC), "OpenPurgeUBC"},
 }
 
-// The InitFlags are used in the Init exchange.
 type InitFlags uint32
 
 const (
@@ -258,7 +206,7 @@ const (
 	InitAtomicTrunc   InitFlags = 1 << 3
 	InitExportSupport InitFlags = 1 << 4
 	InitBigWrites     InitFlags = 1 << 5
-	// Do not mask file access modes with umask. Not supported on OS X.
+
 	InitDontMask        InitFlags = 1 << 6
 	InitSpliceWrite     InitFlags = 1 << 7
 	InitSpliceMove      InitFlags = 1 << 8
@@ -272,9 +220,9 @@ const (
 	InitWritebackCache  InitFlags = 1 << 16
 	InitNoOpenSupport   InitFlags = 1 << 17
 
-	InitCaseSensitive InitFlags = 1 << 29 // OS X only
-	InitVolRename     InitFlags = 1 << 30 // OS X only
-	InitXtimes        InitFlags = 1 << 31 // OS X only
+	InitCaseSensitive InitFlags = 1 << 29 
+	InitVolRename     InitFlags = 1 << 30 
+	InitXtimes        InitFlags = 1 << 31 
 )
 
 type flagName struct {
@@ -330,7 +278,6 @@ func flagString(f uint32, names []flagName) string {
 	return s[1:]
 }
 
-// The ReleaseFlags are used in the Release exchange.
 type ReleaseFlags uint32
 
 const (
@@ -345,10 +292,9 @@ var releaseFlagNames = []flagName{
 	{uint32(ReleaseFlush), "ReleaseFlush"},
 }
 
-// Opcodes
 const (
 	opLookup      = 1
-	opForget      = 2 // no reply
+	opForget      = 2 
 	opGetattr     = 3
 	opSetattr     = 4
 	opReadlink    = 5
@@ -383,20 +329,19 @@ const (
 	opInterrupt   = 36
 	opBmap        = 37
 	opDestroy     = 38
-	opIoctl       = 39 // Linux?
-	opPoll        = 40 // Linux?
+	opIoctl       = 39 
+	opPoll        = 40 
 
-	// OS X
 	opSetvolname = 61
 	opGetxtimes  = 62
 	opExchange   = 63
 )
 
 type entryOut struct {
-	Nodeid         uint64 // Inode ID
-	Generation     uint64 // Inode generation
-	EntryValid     uint64 // Cache timeout for the name
-	AttrValid      uint64 // Cache timeout for the attributes
+	Nodeid         uint64 
+	Generation     uint64 
+	EntryValid     uint64 
+	AttrValid      uint64 
 	EntryValidNsec uint32
 	AttrValidNsec  uint32
 	Attr           attr
@@ -422,7 +367,7 @@ type getattrIn struct {
 }
 
 type attrOut struct {
-	AttrValid     uint64 // Cache timeout for the attributes
+	AttrValid     uint64 
 	AttrValidNsec uint32
 	_             uint32
 	Attr          attr
@@ -437,7 +382,6 @@ func attrOutSize(p Protocol) uintptr {
 	}
 }
 
-// OS X
 type getxtimesOut struct {
 	Bkuptime     uint64
 	Crtime       uint64
@@ -450,7 +394,7 @@ type mknodIn struct {
 	Rdev  uint32
 	Umask uint32
 	_     uint32
-	// "filename\x00" follows.
+
 }
 
 func mknodInSize(p Protocol) uintptr {
@@ -465,7 +409,7 @@ func mknodInSize(p Protocol) uintptr {
 type mkdirIn struct {
 	Mode  uint32
 	Umask uint32
-	// filename follows
+
 }
 
 func mkdirInSize(p Protocol) uintptr {
@@ -479,15 +423,14 @@ func mkdirInSize(p Protocol) uintptr {
 
 type renameIn struct {
 	Newdir uint64
-	// "oldname\x00newname\x00" follows
+
 }
 
-// OS X
 type exchangeIn struct {
 	Olddir  uint64
 	Newdir  uint64
 	Options uint64
-	// "oldname\x00newname\x00" follows
+
 }
 
 type linkIn struct {
@@ -499,7 +442,7 @@ type setattrInCommon struct {
 	_         uint32
 	Fh        uint64
 	Size      uint64
-	LockOwner uint64 // unused on OS X?
+	LockOwner uint64 
 	Atime     uint64
 	Mtime     uint64
 	Unused2   uint64
@@ -573,11 +516,10 @@ func readInSize(p Protocol) uintptr {
 	}
 }
 
-// The ReadFlags are passed in ReadRequest.
 type ReadFlags uint32
 
 const (
-	// LockOwner field is valid.
+
 	ReadLockOwner ReadFlags = 1 << 1
 )
 
@@ -613,12 +555,11 @@ type writeOut struct {
 	_    uint32
 }
 
-// The WriteFlags are passed in WriteRequest.
 type WriteFlags uint32
 
 const (
 	WriteCache WriteFlags = 1 << 0
-	// LockOwner field is valid.
+
 	WriteLockOwner WriteFlags = 1 << 1
 )
 

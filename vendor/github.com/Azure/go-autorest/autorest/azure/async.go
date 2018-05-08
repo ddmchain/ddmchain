@@ -29,10 +29,6 @@ const (
 	operationSucceeded  string = "Succeeded"
 )
 
-// DoPollForAsynchronous returns a SendDecorator that polls if the http.Response is for an Azure
-// long-running operation. It will delay between requests for the duration specified in the
-// RetryAfter header or, if the header is absent, the passed delay. Polling may be canceled by
-// closing the optional channel on the http.Request.
 func DoPollForAsynchronous(delay time.Duration) autorest.SendDecorator {
 	return func(s autorest.Sender) autorest.Sender {
 		return autorest.SenderFunc(func(r *http.Request) (resp *http.Response, err error) {
@@ -101,9 +97,7 @@ type provisioningTracker interface {
 }
 
 type operationResource struct {
-	// Note:
-	// 	The specification states services should return the "id" field. However some return it as
-	// 	"operationId".
+
 	ID              string                 `json:"id"`
 	OperationID     string                 `json:"operationId"`
 	Name            string                 `json:"name"`
@@ -184,17 +178,8 @@ func (ps pollingState) Error() string {
 	return fmt.Sprintf("Long running operation terminated with status '%s': Code=%q Message=%q", ps.state, ps.code, ps.message)
 }
 
-//	updatePollingState maps the operation status -- retrieved from either a provisioningState
-// 	field, the status field of an OperationResource, or inferred from the HTTP status code --
-// 	into a well-known states. Since the process begins from the initial request, the state
-//	always comes from either a the provisioningState returned or is inferred from the HTTP
-//	status code. Subsequent requests will read an Azure OperationResource object if the
-//	service initially returned the Azure-AsyncOperation header. The responseFormat field notes
-//	the expected response format.
 func updatePollingState(resp *http.Response, ps *pollingState) error {
-	// Determine the response shape
-	// -- The first response will always be a provisioningStatus response; only the polling requests,
-	//    depending on the header returned, may be something otherwise.
+
 	var pt provisioningTracker
 	if ps.responseFormat == usesOperationResponse {
 		pt = &operationResource{}
@@ -202,15 +187,12 @@ func updatePollingState(resp *http.Response, ps *pollingState) error {
 		pt = &provisioningStatus{}
 	}
 
-	// If this is the first request (that is, the polling response shape is unknown), determine how
-	// to poll and what to expect
 	if ps.responseFormat == formatIsUnknown {
 		req := resp.Request
 		if req == nil {
 			return autorest.NewError("azure", "updatePollingState", "Azure Polling Error - Original HTTP request is missing")
 		}
 
-		// Prefer the Azure-AsyncOperation header
 		ps.uri = getAsyncOperation(resp)
 		if ps.uri != "" {
 			ps.responseFormat = usesOperationResponse
@@ -218,12 +200,10 @@ func updatePollingState(resp *http.Response, ps *pollingState) error {
 			ps.responseFormat = usesProvisioningStatus
 		}
 
-		// Else, use the Location header
 		if ps.uri == "" {
 			ps.uri = autorest.GetLocation(resp)
 		}
 
-		// Lastly, requests against an existing resource, use the last request URI
 		if ps.uri == "" {
 			m := strings.ToUpper(req.Method)
 			if m == methodPatch || m == methodPut || m == methodGet {
@@ -232,7 +212,6 @@ func updatePollingState(resp *http.Response, ps *pollingState) error {
 		}
 	}
 
-	// Read and interpret the response (saving the Body in case no polling is necessary)
 	b := &bytes.Buffer{}
 	err := autorest.Respond(resp,
 		autorest.ByCopying(b),
@@ -243,10 +222,6 @@ func updatePollingState(resp *http.Response, ps *pollingState) error {
 		return err
 	}
 
-	// Interpret the results
-	// -- Terminal states apply regardless
-	// -- Unknown states are per-service inprogress states
-	// -- Otherwise, infer state from HTTP status code
 	if pt.hasTerminated() {
 		ps.state = pt.state()
 	} else if pt.state() != "" {
@@ -268,10 +243,6 @@ func updatePollingState(resp *http.Response, ps *pollingState) error {
 		return autorest.NewError("azure", "updatePollingState", "Azure Polling Error - Unable to obtain polling URI for %s %s", resp.Request.Method, resp.Request.URL)
 	}
 
-	// For failed operation, check for error code and message in
-	// -- Operation resource
-	// -- Response
-	// -- Otherwise, Unknown
 	if ps.hasFailed() {
 		if ps.responseFormat == usesOperationResponse {
 			or := pt.(*operationResource)

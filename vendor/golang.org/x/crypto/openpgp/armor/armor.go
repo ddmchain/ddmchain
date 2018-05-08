@@ -1,10 +1,5 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Package armor implements OpenPGP ASCII Armor, see RFC 4880. OpenPGP Armor is
-// very similar to PEM except that it has an additional CRC checksum.
-package armor // import "golang.org/x/crypto/openpgp/armor"
+package armor 
 
 import (
 	"bufio"
@@ -14,23 +9,10 @@ import (
 	"io"
 )
 
-// A Block represents an OpenPGP armored structure.
-//
-// The encoded form is:
-//    -----BEGIN Type-----
-//    Headers
-//
-//    base64-encoded Bytes
-//    '=' base64 encoded checksum
-//    -----END Type-----
-// where Headers is a possibly empty sequence of Key: Value lines.
-//
-// Since the armored data can be very large, this package presents a streaming
-// interface.
 type Block struct {
-	Type    string            // The type, taken from the preamble (i.e. "PGP SIGNATURE").
-	Header  map[string]string // Optional headers.
-	Body    io.Reader         // A Reader from which the contents can be read
+	Type    string            
+	Header  map[string]string 
+	Body    io.Reader         
 	lReader lineReader
 	oReader openpgpReader
 }
@@ -41,7 +23,6 @@ const crc24Init = 0xb704ce
 const crc24Poly = 0x1864cfb
 const crc24Mask = 0xffffff
 
-// crc24 calculates the OpenPGP checksum as specified in RFC 4880, section 6.1
 func crc24(crc uint32, d []byte) uint32 {
 	for _, b := range d {
 		crc ^= uint32(b) << 16
@@ -59,8 +40,6 @@ var armorStart = []byte("-----BEGIN ")
 var armorEnd = []byte("-----END ")
 var armorEndOfLine = []byte("-----")
 
-// lineReader wraps a line based reader. It watches for the end of an armor
-// block and records the expected CRC value.
 type lineReader struct {
 	in  *bufio.Reader
 	buf []byte
@@ -88,7 +67,7 @@ func (l *lineReader) Read(p []byte) (n int, err error) {
 	}
 
 	if len(line) == 5 && line[0] == '=' {
-		// This is the checksum line
+
 		var expectedBytes [3]byte
 		var m int
 		m, err = base64.StdEncoding.Decode(expectedBytes[0:], line[1:])
@@ -128,9 +107,6 @@ func (l *lineReader) Read(p []byte) (n int, err error) {
 	return
 }
 
-// openpgpReader passes Read calls to the underlying base64 decoder, but keeps
-// a running CRC of the resulting data and checks the CRC against the value
-// found by the lineReader at EOF.
 type openpgpReader struct {
 	lReader    *lineReader
 	b64Reader  io.Reader
@@ -150,10 +126,6 @@ func (r *openpgpReader) Read(p []byte) (n int, err error) {
 	return
 }
 
-// Decode reads a PGP armored block from the given Reader. It will ignore
-// leading garbage. If it doesn't find a block, it will return nil, io.EOF. The
-// given Reader is not usable after calling this function: an arbitrary amount
-// of data may have been read past the end of the block.
 func Decode(in io.Reader) (p *Block, err error) {
 	r := bufio.NewReaderSize(in, 100)
 	var line []byte
@@ -162,7 +134,6 @@ func Decode(in io.Reader) (p *Block, err error) {
 TryNextBlock:
 	p = nil
 
-	// Skip leading garbage
 	for {
 		ignoreThis := ignoreNext
 		line, ignoreNext, err = r.ReadLine()
@@ -184,7 +155,6 @@ TryNextBlock:
 	nextIsContinuation := false
 	var lastKey string
 
-	// Read headers
 	for {
 		isContinuation := nextIsContinuation
 		line, nextIsContinuation, err = r.ReadLine()

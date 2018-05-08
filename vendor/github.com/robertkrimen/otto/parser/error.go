@@ -14,47 +14,10 @@ const (
 	err_UnexpectedEscape     = "Unexpected escape"
 )
 
-//    UnexpectedNumber:  'Unexpected number',
-//    UnexpectedString:  'Unexpected string',
-//    UnexpectedIdentifier:  'Unexpected identifier',
-//    UnexpectedReserved:  'Unexpected reserved word',
-//    NewlineAfterThrow:  'Illegal newline after throw',
-//    InvalidRegExp: 'Invalid regular expression',
-//    UnterminatedRegExp:  'Invalid regular expression: missing /',
-//    InvalidLHSInAssignment:  'Invalid left-hand side in assignment',
-//    InvalidLHSInForIn:  'Invalid left-hand side in for-in',
-//    MultipleDefaultsInSwitch: 'More than one default clause in switch statement',
-//    NoCatchOrFinally:  'Missing catch or finally after try',
-//    UnknownLabel: 'Undefined label \'%0\'',
-//    Redeclaration: '%0 \'%1\' has already been declared',
-//    IllegalContinue: 'Illegal continue statement',
-//    IllegalBreak: 'Illegal break statement',
-//    IllegalReturn: 'Illegal return statement',
-//    StrictModeWith:  'Strict mode code may not include a with statement',
-//    StrictCatchVariable:  'Catch variable may not be eval or arguments in strict mode',
-//    StrictVarName:  'Variable name may not be eval or arguments in strict mode',
-//    StrictParamName:  'Parameter name eval or arguments is not allowed in strict mode',
-//    StrictParamDupe: 'Strict mode function may not have duplicate parameter names',
-//    StrictFunctionName:  'Function name may not be eval or arguments in strict mode',
-//    StrictOctalLiteral:  'Octal literals are not allowed in strict mode.',
-//    StrictDelete:  'Delete of an unqualified identifier in strict mode.',
-//    StrictDuplicateProperty:  'Duplicate data property in object literal not allowed in strict mode',
-//    AccessorDataProperty:  'Object literal may not have data and accessor property with the same name',
-//    AccessorGetSet:  'Object literal may not have multiple get/set accessors with the same name',
-//    StrictLHSAssignment:  'Assignment to eval or arguments is not allowed in strict mode',
-//    StrictLHSPostfix:  'Postfix increment/decrement may not have eval or arguments operand in strict mode',
-//    StrictLHSPrefix:  'Prefix increment/decrement may not have eval or arguments operand in strict mode',
-//    StrictReservedWord:  'Use of future reserved word in strict mode'
-
-// A SyntaxError is a description of an ECMAScript syntax error.
-
-// An Error represents a parsing error. It includes the position where the error occurred and a message/description.
 type Error struct {
 	Position file.Position
 	Message  string
 }
-
-// FIXME Should this be "SyntaxError"?
 
 func (self Error) Error() string {
 	filename := self.Position.Filename
@@ -109,7 +72,7 @@ func (self *_parser) errorUnexpectedToken(tkn token.Token) error {
 	case token.IDENTIFIER:
 		return self.error(self.idx, "Unexpected identifier")
 	case token.KEYWORD:
-		// TODO Might be a future reserved word
+
 		return self.error(self.idx, "Unexpected reserved word")
 	case token.NUMBER:
 		return self.error(self.idx, "Unexpected number")
@@ -119,16 +82,12 @@ func (self *_parser) errorUnexpectedToken(tkn token.Token) error {
 	return self.error(self.idx, err_UnexpectedToken, value)
 }
 
-// ErrorList is a list of *Errors.
-//
 type ErrorList []*Error
 
-// Add adds an Error with given position and message to an ErrorList.
 func (self *ErrorList) Add(position file.Position, msg string) {
 	*self = append(*self, &Error{position, msg})
 }
 
-// Reset resets an ErrorList to no errors.
 func (self *ErrorList) Reset() { *self = (*self)[0:0] }
 
 func (self ErrorList) Len() int      { return len(self) }
@@ -154,7 +113,6 @@ func (self ErrorList) Sort() {
 	sort.Sort(self)
 }
 
-// Error implements the Error interface.
 func (self ErrorList) Error() string {
 	switch len(self) {
 	case 0:
@@ -165,8 +123,6 @@ func (self ErrorList) Error() string {
 	return fmt.Sprintf("%s (and %d more errors)", self[0].Error(), len(self)-1)
 }
 
-// Err returns an error equivalent to this ErrorList.
-// If the list is empty, Err returns nil.
 func (self ErrorList) Err() error {
 	if len(self) == 0 {
 		return nil

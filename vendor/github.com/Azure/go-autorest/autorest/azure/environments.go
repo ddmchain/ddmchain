@@ -17,7 +17,6 @@ var environments = map[string]Environment{
 	"AZUREUSGOVERNMENTCLOUD": USGovernmentCloud,
 }
 
-// Environment represents a set of endpoints for each of Azure's Clouds.
 type Environment struct {
 	Name                         string `json:"name"`
 	ManagementPortalURL          string `json:"managementPortalURL"`
@@ -39,7 +38,7 @@ type Environment struct {
 }
 
 var (
-	// PublicCloud is the default public Azure cloud environment
+
 	PublicCloud = Environment{
 		Name:                         "AzurePublicCloud",
 		ManagementPortalURL:          "https://manage.windowsazure.com/",
@@ -60,7 +59,6 @@ var (
 		ContainerRegistryDNSSuffix:   "azurecr.io",
 	}
 
-	// USGovernmentCloud is the cloud environment for the US Government
 	USGovernmentCloud = Environment{
 		Name:                         "AzureUSGovernmentCloud",
 		ManagementPortalURL:          "https://manage.windowsazure.us/",
@@ -81,7 +79,6 @@ var (
 		ContainerRegistryDNSSuffix:   "azurecr.io",
 	}
 
-	// ChinaCloud is the cloud environment operated in China
 	ChinaCloud = Environment{
 		Name:                         "AzureChinaCloud",
 		ManagementPortalURL:          "https://manage.chinacloudapi.com/",
@@ -102,7 +99,6 @@ var (
 		ContainerRegistryDNSSuffix:   "azurecr.io",
 	}
 
-	// GermanCloud is the cloud environment operated in Germany
 	GermanCloud = Environment{
 		Name:                         "AzureGermanCloud",
 		ManagementPortalURL:          "http://portal.microsoftazure.de/",
@@ -124,7 +120,6 @@ var (
 	}
 )
 
-// EnvironmentFromName returns an Environment based on the common name specified
 func EnvironmentFromName(name string) (Environment, error) {
 	name = strings.ToUpper(name)
 	env, ok := environments[name]
@@ -134,12 +129,10 @@ func EnvironmentFromName(name string) (Environment, error) {
 	return env, nil
 }
 
-// OAuthConfigForTenant returns an OAuthConfig with tenant specific urls
 func (env Environment) OAuthConfigForTenant(tenantID string) (*OAuthConfig, error) {
 	return OAuthConfigForTenant(env.ActiveDirectoryEndpoint, tenantID)
 }
 
-// OAuthConfigForTenant returns an OAuthConfig with tenant specific urls for target cloud auth endpoint
 func OAuthConfigForTenant(activeDirectoryEndpoint, tenantID string) (*OAuthConfig, error) {
 	template := "%s/oauth2/%s?api-version=%s"
 	u, err := url.Parse(activeDirectoryEndpoint)

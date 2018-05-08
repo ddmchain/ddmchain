@@ -1,4 +1,3 @@
-// Copied and modified from sigar_linux.go.
 
 package gosigar
 
@@ -87,7 +86,6 @@ func (self *ProcFDUsage) Get(pid int) error {
 		return err
 	}
 
-	// linprocfs only provides this information for this process (self).
 	fds, err := ioutil.ReadDir(procFileName(pid, "fd"))
 	if err != nil {
 		return err

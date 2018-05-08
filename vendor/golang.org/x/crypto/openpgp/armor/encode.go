@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package armor
 
 import (
@@ -14,7 +11,6 @@ var blockEnd = []byte("\n=")
 var newline = []byte("\n")
 var armorEndOfLineOut = []byte("-----\n")
 
-// writeSlices writes its arguments to the given Writer.
 func writeSlices(out io.Writer, slices ...[]byte) (err error) {
 	for _, s := range slices {
 		_, err = out.Write(s)
@@ -25,8 +21,6 @@ func writeSlices(out io.Writer, slices ...[]byte) (err error) {
 	return
 }
 
-// lineBreaker breaks data across several lines, all of the same byte length
-// (except possibly the last). Lines are broken with a single '\n'.
 type lineBreaker struct {
 	lineLength  int
 	line        []byte
@@ -91,12 +85,6 @@ func (l *lineBreaker) Close() (err error) {
 	return
 }
 
-// encoding keeps track of a running CRC24 over the data which has been written
-// to it and outputs a OpenPGP checksum when closed, followed by an armor
-// trailer.
-//
-// It's built into a stack of io.Writers:
-//    encoding -> base64 encoder -> lineBreaker -> out
 type encoding struct {
 	out       io.Writer
 	breaker   *lineBreaker
@@ -128,8 +116,6 @@ func (e *encoding) Close() (err error) {
 	return writeSlices(e.out, blockEnd, b64ChecksumBytes[:], newline, armorEnd, e.blockType, armorEndOfLine)
 }
 
-// Encode returns a WriteCloser which will encode the data written to it in
-// OpenPGP armor.
 func Encode(out io.Writer, blockType string, headers map[string]string) (w io.WriteCloser, err error) {
 	bType := []byte(blockType)
 	err = writeSlices(out, armorStart, bType, armorEndOfLineOut)

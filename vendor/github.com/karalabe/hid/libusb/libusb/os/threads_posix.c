@@ -1,20 +1,3 @@
-/*
- * libusb synchronization using POSIX Threads
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #include <config.h>
 
@@ -62,8 +45,7 @@ int usbi_get_tid(void)
 #elif defined(__linux__)
 	ret = syscall(SYS_gettid);
 #elif defined(__OpenBSD__)
-	/* The following only works with OpenBSD > 5.1 as it requires
-	   real thread support. For 5.1 and earlier, -1 is returned. */
+
 	ret = syscall(SYS_getthrid);
 #elif defined(__APPLE__)
 	ret = mach_thread_self();
@@ -71,6 +53,6 @@ int usbi_get_tid(void)
 #elif defined(__CYGWIN__)
 	ret = GetCurrentThreadId();
 #endif
-/* TODO: NetBSD thread ID support */
+
 	return ret;
 }

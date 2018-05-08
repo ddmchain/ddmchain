@@ -11,8 +11,6 @@ var (
 	errArrayMultiType = errors.New("array can't contain multiple types")
 )
 
-// LineError is returned by Unmarshal, UnmarshalTable and Parse
-// if the error is local to a line.
 type LineError struct {
 	Line        int
 	StructField string

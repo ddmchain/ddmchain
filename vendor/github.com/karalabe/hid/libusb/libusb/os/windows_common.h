@@ -1,30 +1,6 @@
-/*
- * Windows backend common header for libusb 1.0
- *
- * This file brings together header code common between
- * the desktop Windows and Windows CE backends.
- * With contributions from Michael Plante, Orin Eman et al.
- * Parts of this code adapted from libusb-win32-v1 by Stephan Meyer
- * Major code testing contribution by Xiaofan Chen
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #pragma once
 
-// Windows API default is uppercase - ugh!
 #if !defined(bool)
 #define bool BOOL
 #endif
@@ -35,12 +11,12 @@
 #define false FALSE
 #endif
 
-#define EPOCH_TIME	UINT64_C(116444736000000000)	// 1970.01.01 00:00:000 in MS Filetime
+#define EPOCH_TIME	UINT64_C(116444736000000000)	
 
 #if defined(__CYGWIN__ )
 #define _stricmp strcasecmp
 #define _strdup strdup
-// _beginthreadex is MSVCRT => unavailable for cygwin. Fallback to using CreateThread
+
 #define _beginthreadex(a, b, c, d, e, f) CreateThread(a, b, (LPTHREAD_START_ROUTINE)c, d, e, (LPDWORD)f)
 #endif
 
@@ -52,9 +28,6 @@
 
 #define ERR_BUFFER_SIZE	256
 
-/*
- * API macros - leveraged from libusb-win32 1.x
- */
 #ifndef _WIN32_WCE
 #define DLL_STRINGIFY(s) #s
 #define DLL_LOAD_LIBRARY(name) LoadLibraryA(DLL_STRINGIFY(name))
@@ -63,9 +36,6 @@
 #define DLL_LOAD_LIBRARY(name) LoadLibrary(DLL_STRINGIFY(name))
 #endif
 
-/*
- * Macros for handling DLL themselves
- */
 #define DLL_DECLARE_HANDLE(name)				\
 	static HMODULE __dll_##name##_handle = NULL
 
@@ -84,10 +54,6 @@
 		}						\
 	} while(0)
 
-
-/*
- * Macros for handling functions within a DLL
- */
 #define DLL_DECLARE_FUNC_PREFIXNAME(api, ret, prefixname, name, args)	\
 	typedef ret (api * __dll_##name##_func_t)args;			\
 	static __dll_##name##_func_t prefixname = NULL

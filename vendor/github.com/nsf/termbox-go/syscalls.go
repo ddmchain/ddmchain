@@ -31,9 +31,6 @@ const (
 	syscall_VMIN   = C.VMIN
 	syscall_VTIME  = C.VTIME
 
-	// on darwin change these to (on *bsd too?):
-	// C.TIOCGETA
-	// C.TIOCSETA
 	syscall_TCGETS = C.TCGETS
 	syscall_TCSETS = C.TCSETS
 )

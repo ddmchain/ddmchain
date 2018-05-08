@@ -1,21 +1,3 @@
-/*
- * Haiku Backend for libusb
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
-
 
 #include <unistd.h>
 #include <string.h>
@@ -195,55 +177,54 @@ haiku_clock_gettime(int clkid, struct timespec *tp)
 }
 
 const struct usbi_os_backend haiku_usb_raw_backend = {
-	/*.name =*/ "Haiku usbfs",
-	/*.caps =*/ 0,
-	/*.init =*/ haiku_init,
-	/*.exit =*/ haiku_exit,
-	/*.get_device_list =*/ NULL,
-	/*.hotplug_poll =*/ NULL,
-	/*.open =*/ haiku_open,
-	/*.close =*/ haiku_close,
-	/*.get_device_descriptor =*/ haiku_get_device_descriptor,
-	/*.get_active_config_descriptor =*/ haiku_get_active_config_descriptor,
-	/*.get_config_descriptor =*/ haiku_get_config_descriptor,
-	/*.get_config_descriptor_by_value =*/ NULL,
+	 "Haiku usbfs",
+	 0,
+	 haiku_init,
+	 haiku_exit,
+	 NULL,
+	 NULL,
+	 haiku_open,
+	 haiku_close,
+	 haiku_get_device_descriptor,
+	 haiku_get_active_config_descriptor,
+	 haiku_get_config_descriptor,
+	 NULL,
 
+	 NULL,
+	 haiku_set_configuration,
+	 haiku_claim_interface,
+	 haiku_release_interface,
 
-	/*.get_configuration =*/ NULL,
-	/*.set_configuration =*/ haiku_set_configuration,
-	/*.claim_interface =*/ haiku_claim_interface,
-	/*.release_interface =*/ haiku_release_interface,
+	 haiku_set_altsetting,
+	 NULL,
+	 NULL,
 
-	/*.set_interface_altsetting =*/ haiku_set_altsetting,
-	/*.clear_halt =*/ NULL,
-	/*.reset_device =*/ NULL,
+	 NULL,
+	 NULL,
 
-	/*.alloc_streams =*/ NULL,
-	/*.free_streams =*/ NULL,
+	 NULL,
+	 NULL,
 
-	/*.dev_mem_alloc =*/ NULL,
-	/*.dev_mem_free =*/ NULL,
+	 NULL,
+	 NULL,
+	 NULL,
 
-	/*.kernel_driver_active =*/ NULL,
-	/*.detach_kernel_driver =*/ NULL,
-	/*.attach_kernel_driver =*/ NULL,
+	 NULL,
 
-	/*.destroy_device =*/ NULL,
+	 haiku_submit_transfer,
+	 haiku_cancel_transfer,
+	 haiku_clear_transfer_priv,
 
-	/*.submit_transfer =*/ haiku_submit_transfer,
-	/*.cancel_transfer =*/ haiku_cancel_transfer,
-	/*.clear_transfer_priv =*/ haiku_clear_transfer_priv,
+	 NULL,
+	 haiku_handle_transfer_completion,
 
-	/*.handle_events =*/ NULL,
-	/*.handle_transfer_completion =*/ haiku_handle_transfer_completion,
-
-	/*.clock_gettime =*/ haiku_clock_gettime,
+	 haiku_clock_gettime,
 
 #ifdef USBI_TIMERFD_AVAILABLE
-	/*.get_timerfd_clockid =*/ NULL,
+	 NULL,
 #endif
 
-	/*.device_priv_size =*/ sizeof(USBDevice *),
-	/*.device_handle_priv_size =*/ sizeof(USBDeviceHandle *),
-	/*.transfer_priv_size =*/ sizeof(USBTransfer *),
+	 sizeof(USBDevice *),
+	 sizeof(USBDeviceHandle *),
+	 sizeof(USBTransfer *),
 };

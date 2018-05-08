@@ -1,11 +1,5 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Package scrypt implements the scrypt key derivation function as defined in
-// Colin Percival's paper "Stronger Key Derivation via Sequential Memory-Hard
-// Functions" (https://www.tarsnap.com/scrypt/scrypt.pdf).
-package scrypt // import "golang.org/x/crypto/scrypt"
+package scrypt 
 
 import (
 	"crypto/sha256"
@@ -16,20 +10,16 @@ import (
 
 const maxInt = int(^uint(0) >> 1)
 
-// blockCopy copies n numbers from src into dst.
 func blockCopy(dst, src []uint32, n int) {
 	copy(dst, src[:n])
 }
 
-// blockXOR XORs numbers from dst with n numbers from src.
 func blockXOR(dst, src []uint32, n int) {
 	for i, v := range src[:n] {
 		dst[i] ^= v
 	}
 }
 
-// salsaXOR applies Salsa20/8 to the XOR of 16 numbers from tmp and in,
-// and puts the result into both both tmp and out.
 func salsaXOR(tmp *[16]uint32, in, out []uint32) {
 	w0 := tmp[0] ^ in[0]
 	w1 := tmp[1] ^ in[1]
@@ -208,21 +198,6 @@ func smix(b []byte, r, N int, v, xy []uint32) {
 	}
 }
 
-// Key derives a key from the password, salt, and cost parameters, returning
-// a byte slice of length keyLen that can be used as cryptographic key.
-//
-// N is a CPU/memory cost parameter, which must be a power of two greater than 1.
-// r and p must satisfy r * p < 2³⁰. If the parameters do not satisfy the
-// limits, the function returns a nil byte slice and an error.
-//
-// For example, you can get a derived key for e.g. AES-256 (which needs a
-// 32-byte key) by doing:
-//
-//      dk, err := scrypt.Key([]byte("some password"), salt, 16384, 8, 1, 32)
-//
-// and p=1. The parameters N, r, and p should be increased as memory latency and
-// CPU parallelism increases; consider setting N to the highest power of 2 you
-// can derive within 100 milliseconds. Remember to get a good random salt.
 func Key(password, salt []byte, N, r, p, keyLen int) ([]byte, error) {
 	if N <= 1 || N&(N-1) != 0 {
 		return nil, errors.New("scrypt: N must be > 1 and a power of 2")

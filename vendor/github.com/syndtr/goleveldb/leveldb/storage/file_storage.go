@@ -1,9 +1,4 @@
 
-// All rights reservefs.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package storage
 
 import (
@@ -42,9 +37,8 @@ func (lock *fileStorageLock) Unlock() {
 	}
 }
 
-const logSizeThreshold = 1024 * 1024 // 1 MiB
+const logSizeThreshold = 1024 * 1024 
 
-// fileStorage is a file-system backed storage.
 type fileStorage struct {
 	path     string
 	readOnly bool
@@ -55,16 +49,11 @@ type fileStorage struct {
 	logw    *os.File
 	logSize int64
 	buf     []byte
-	// Opened file counter; if open < 0 means closed.
+
 	open int
 	day  int
 }
 
-// OpenFile returns a new filesytem-backed storage implementation with the given
-// path. This also acquire a file lock, so any subsequent attempt to open the
-// same path will fail.
-//
-// The storage must be closed after use, by calling Close method.
 func OpenFile(path string, readOnly bool) (Storage, error) {
 	if fi, err := os.Stat(path); err == nil {
 		if !fi.IsDir() {
@@ -138,7 +127,6 @@ func itoa(buf []byte, i int, wid int) []byte {
 		return append(buf, '0')
 	}
 
-	// Assemble decimal in reverse order.
 	var b [32]byte
 	bp := len(b)
 	for ; u > 0 || wid > 0; u /= 10 {
@@ -159,7 +147,7 @@ func (fs *fileStorage) printDay(t time.Time) {
 
 func (fs *fileStorage) doLog(t time.Time, str string) {
 	if fs.logSize > logSizeThreshold {
-		// Rotate log file.
+
 		fs.logw.Close()
 		fs.logw = nil
 		fs.logSize = 0
@@ -171,13 +159,13 @@ func (fs *fileStorage) doLog(t time.Time, str string) {
 		if err != nil {
 			return
 		}
-		// Force printDay on new log file.
+
 		fs.day = 0
 	}
 	fs.printDay(t)
 	hour, min, sec := t.Clock()
 	msec := t.Nanosecond() / 1e3
-	// time
+
 	fs.buf = itoa(fs.buf[:0], hour, 2)
 	fs.buf = append(fs.buf, ':')
 	fs.buf = itoa(fs.buf, min, 2)
@@ -186,7 +174,7 @@ func (fs *fileStorage) doLog(t time.Time, str string) {
 	fs.buf = append(fs.buf, '.')
 	fs.buf = itoa(fs.buf, msec, 6)
 	fs.buf = append(fs.buf, ' ')
-	// write
+
 	fs.buf = append(fs.buf, []byte(str)...)
 	fs.buf = append(fs.buf, '\n')
 	fs.logw.Write(fs.buf)
@@ -253,7 +241,7 @@ func (fs *fileStorage) SetMeta(fd FileDesc) (err error) {
 		fs.log(fmt.Sprintf("rename CURRENT.%d: %v", fd.Num, err))
 		return
 	}
-	// Sync root directory.
+
 	if err = syncDir(fs.path); err != nil {
 		fs.log(fmt.Sprintf("syncDir: %v", err))
 	}
@@ -271,14 +259,14 @@ func (fs *fileStorage) GetMeta() (fd FileDesc, err error) {
 		return
 	}
 	names, err := dir.Readdirnames(0)
-	// Close the dir first before checking for Readdirnames error.
+
 	if ce := dir.Close(); ce != nil {
 		fs.log(fmt.Sprintf("close dir: %v", ce))
 	}
 	if err != nil {
 		return
 	}
-	// Find latest CURRENT file.
+
 	var rem []string
 	var pend bool
 	var cerr error
@@ -286,7 +274,7 @@ func (fs *fileStorage) GetMeta() (fd FileDesc, err error) {
 		if strings.HasPrefix(name, "CURRENT") {
 			pend1 := len(name) > 7
 			var pendNum int64
-			// Make sure it is valid name for a CURRENT file, otherwise skip it.
+
 			if pend1 {
 				if name[7] != '.' || len(name) < 9 {
 					fs.log(fmt.Sprintf("skipping %s: invalid file name", name))
@@ -338,7 +326,7 @@ func (fs *fileStorage) GetMeta() (fd FileDesc, err error) {
 			}
 		}
 	}
-	// Don't remove any files if there is no valid CURRENT file.
+
 	if fd.Zero() {
 		if cerr != nil {
 			err = cerr
@@ -348,14 +336,14 @@ func (fs *fileStorage) GetMeta() (fd FileDesc, err error) {
 		return
 	}
 	if !fs.readOnly {
-		// Rename pending CURRENT file to an effective CURRENT.
+
 		if pend {
 			path := fmt.Sprintf("%s.%d", filepath.Join(fs.path, "CURRENT"), fd.Num)
 			if err := rename(path, filepath.Join(fs.path, "CURRENT")); err != nil {
 				fs.log(fmt.Sprintf("CURRENT.%d -> CURRENT: %v", fd.Num, err))
 			}
 		}
-		// Remove obsolete or incomplete pending CURRENT files.
+
 		for _, name := range rem {
 			path := filepath.Join(fs.path, name)
 			if err := os.Remove(path); err != nil {
@@ -377,7 +365,7 @@ func (fs *fileStorage) List(ft FileType) (fds []FileDesc, err error) {
 		return
 	}
 	names, err := dir.Readdirnames(0)
-	// Close the dir first before checking for Readdirnames error.
+
 	if cerr := dir.Close(); cerr != nil {
 		fs.log(fmt.Sprintf("close dir: %v", cerr))
 	}
@@ -489,7 +477,7 @@ func (fs *fileStorage) Close() error {
 	if fs.open < 0 {
 		return ErrClosed
 	}
-	// Clear the finalizer.
+
 	runtime.SetFinalizer(fs, nil)
 
 	if fs.open > 0 {
@@ -514,8 +502,7 @@ func (fw *fileWrap) Sync() error {
 		return err
 	}
 	if fw.fd.Type == TypeManifest {
-		// Also sync parent directory if file type is manifest.
-		// See: https://code.google.com/p/leveldb/issues/detail?id=190.
+
 		if err := syncDir(fw.fs.path); err != nil {
 			fw.fs.log(fmt.Sprintf("syncDir: %v", err))
 			return err

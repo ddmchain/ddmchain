@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 )
 
-// LoadToken restores a Token object from a file located at 'path'.
 func LoadToken(path string) (*Token, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -25,9 +24,6 @@ func LoadToken(path string) (*Token, error) {
 	return &token, nil
 }
 
-// SaveToken persists an oauth token at the given location on disk.
-// It moves the new file into place so it can safely be used to replace an existing file
-// that maybe accessed by multiple processes.
 func SaveToken(path string, mode os.FileMode, token Token) error {
 	dir := filepath.Dir(path)
 	err := os.MkdirAll(dir, os.ModePerm)
@@ -48,7 +44,6 @@ func SaveToken(path string, mode os.FileMode, token Token) error {
 		return fmt.Errorf("failed to close temp file %s: %v", tempPath, err)
 	}
 
-	// Atomic replace to avoid multi-writer file corruptions
 	if err := os.Rename(tempPath, path); err != nil {
 		return fmt.Errorf("failed to move temporary token to desired output location. src=%s dst=%s: %v", tempPath, path, err)
 	}

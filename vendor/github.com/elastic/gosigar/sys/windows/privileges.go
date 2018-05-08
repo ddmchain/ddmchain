@@ -16,23 +16,20 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// Cache of privilege names to LUIDs.
 var (
 	privNames     = make(map[string]int64)
 	privNameMutex sync.Mutex
 )
 
 const (
-	// SeDebugPrivilege is the name of the privilege used to debug programs.
+
 	SeDebugPrivilege = "SeDebugPrivilege"
 )
 
-// Errors returned by AdjustTokenPrivileges.
 const (
 	ERROR_NOT_ALL_ASSIGNED syscall.Errno = 1300
 )
 
-// Attribute bits for privileges.
 const (
 	_SE_PRIVILEGE_ENABLED_BY_DEFAULT uint32 = 0x00000001
 	_SE_PRIVILEGE_ENABLED            uint32 = 0x00000002
@@ -40,10 +37,8 @@ const (
 	_SE_PRIVILEGE_USED_FOR_ACCESS    uint32 = 0x80000000
 )
 
-// Privilege contains information about a single privilege associated with a
-// Token.
 type Privilege struct {
-	LUID             int64  `json:"-"` // Locally unique identifier (guaranteed only until the system is restarted).
+	LUID             int64  `json:"-"` 
 	Name             string `json:"-"`
 	EnabledByDefault bool   `json:"enabled_by_default,omitempty"`
 	Enabled          bool   `json:"enabled"`
@@ -76,11 +71,9 @@ func (p Privilege) String() string {
 	buf.WriteString(strings.Join(opts, ", "))
 	buf.WriteString(")")
 
-	// Example: SeDebugPrivilege=(Default, Enabled)
 	return buf.String()
 }
 
-// User represent the information about a Windows account.
 type User struct {
 	SID     string
 	Account string
@@ -92,13 +85,12 @@ func (u User) String() string {
 	return fmt.Sprintf(`User:%v\%v, SID:%v, Type:%v`, u.Domain, u.Account, u.SID, u.Type)
 }
 
-// DebugInfo contains general debug info about the current process.
 type DebugInfo struct {
-	OSVersion    Version              // OS version info.
-	Arch         string               // Architecture of the machine.
-	NumCPU       int                  // Number of CPUs.
-	User         User                 // User that this process is running as.
-	ProcessPrivs map[string]Privilege // Privileges held by the process.
+	OSVersion    Version              
+	Arch         string               
+	NumCPU       int                  
+	User         User                 
+	ProcessPrivs map[string]Privilege 
 }
 
 func (d DebugInfo) String() string {
@@ -106,7 +98,6 @@ func (d DebugInfo) String() string {
 	return string(bytes)
 }
 
-// LookupPrivilegeName looks up a privilege name given a LUID value.
 func LookupPrivilegeName(systemName string, luid int64) (string, error) {
 	buf := make([]uint16, 256)
 	bufSize := uint32(len(buf))
@@ -118,7 +109,6 @@ func LookupPrivilegeName(systemName string, luid int64) (string, error) {
 	return syscall.UTF16ToString(buf), nil
 }
 
-// mapPrivileges maps privilege names to LUID values.
 func mapPrivileges(names []string) ([]int64, error) {
 	var privileges []int64
 	privNameMutex.Lock()
@@ -137,9 +127,6 @@ func mapPrivileges(names []string) ([]int64, error) {
 	return privileges, nil
 }
 
-// EnableTokenPrivileges enables the specified privileges in the given
-// Token. The token must have TOKEN_ADJUST_PRIVILEGES access. If the token
-// does not already contain the privilege it cannot be enabled.
 func EnableTokenPrivileges(token syscall.Token, privileges ...string) error {
 	privValues, err := mapPrivileges(privileges)
 	if err != nil {
@@ -164,16 +151,11 @@ func EnableTokenPrivileges(token syscall.Token, privileges ...string) error {
 	return nil
 }
 
-// GetTokenPrivileges returns a list of privileges associated with a token.
-// The provided token must have at a minimum TOKEN_QUERY access. This is a
-// wrapper around the GetTokenInformation function.
-// https://msdn.microsoft.com/en-us/library/windows/desktop/aa446671(v=vs.85).aspx
 func GetTokenPrivileges(token syscall.Token) (map[string]Privilege, error) {
-	// Determine the required buffer size.
+
 	var size uint32
 	syscall.GetTokenInformation(token, syscall.TokenPrivileges, nil, 0, &size)
 
-	// This buffer will receive a TOKEN_PRIVILEGE structure.
 	b := bytes.NewBuffer(make([]byte, size))
 	err := syscall.GetTokenInformation(token, syscall.TokenPrivileges, &b.Bytes()[0], uint32(b.Len()), &size)
 	if err != nil {
@@ -218,7 +200,6 @@ func GetTokenPrivileges(token syscall.Token) (map[string]Privilege, error) {
 	return rtn, nil
 }
 
-// GetTokenUser returns the User associated with the given Token.
 func GetTokenUser(token syscall.Token) (User, error) {
 	tokenUser, err := token.GetTokenUser()
 	if err != nil {
@@ -239,7 +220,6 @@ func GetTokenUser(token syscall.Token) (User, error) {
 	return user, nil
 }
 
-// GetDebugInfo returns general debug info about the current process.
 func GetDebugInfo() (*DebugInfo, error) {
 	h, err := windows.GetCurrentProcess()
 	if err != nil {

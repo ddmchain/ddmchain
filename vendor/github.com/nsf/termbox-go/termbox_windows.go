@@ -373,7 +373,6 @@ var (
 	cancel_done_comm = make(chan bool)
 	alt_mode_esc     = false
 
-	// these ones just to prevent heap allocs at all costs
 	tmp_info   console_screen_buffer_info
 	tmp_arg    dword
 	tmp_coord0 = coord{0, 0}
@@ -425,27 +424,27 @@ func update_size_maybe() {
 }
 
 var color_table_bg = []word{
-	0, // default (black)
-	0, // black
+	0, 
+	0, 
 	background_red,
 	background_green,
-	background_red | background_green, // yellow
+	background_red | background_green, 
 	background_blue,
-	background_red | background_blue,                    // magenta
-	background_green | background_blue,                  // cyan
-	background_red | background_blue | background_green, // white
+	background_red | background_blue,                    
+	background_green | background_blue,                  
+	background_red | background_blue | background_green, 
 }
 
 var color_table_fg = []word{
-	foreground_red | foreground_blue | foreground_green, // default (white)
+	foreground_red | foreground_blue | foreground_green, 
 	0,
 	foreground_red,
 	foreground_green,
-	foreground_red | foreground_green, // yellow
+	foreground_red | foreground_green, 
 	foreground_blue,
-	foreground_red | foreground_blue,                    // magenta
-	foreground_green | foreground_blue,                  // cyan
-	foreground_red | foreground_blue | foreground_green, // white
+	foreground_red | foreground_blue,                    
+	foreground_green | foreground_blue,                  
+	foreground_red | foreground_blue | foreground_green, 
 }
 
 const (
@@ -472,7 +471,7 @@ func append_diff_line(y int) int {
 			w = 1
 		}
 		x += w
-		// If not CJK, fill trailing space with whitespace
+
 		if !is_cjk && w == 2 {
 			charbuf = append(charbuf, char_info{attr: attr, char: ' '})
 		}
@@ -480,10 +479,8 @@ func append_diff_line(y int) int {
 	return n
 }
 
-// compares 'back_buffer' with 'front_buffer' and prepares all changes in the form of
-// 'diff_msg's in the 'diff_buf'
 func prepare_diff_messages() {
-	// clear buffers
+
 	diffbuf = diffbuf[:0]
 	charbuf = charbuf[:0]
 
@@ -690,7 +687,7 @@ func key_event_record_to_event(r *key_event_record) (Event, bool) {
 			}
 		case vk_space:
 			if ctrlpressed {
-				// manual return here, because KeyCtrlSpace is zero
+
 				e.Key = KeyCtrlSpace
 				return e, true
 			} else {
@@ -714,7 +711,7 @@ func key_event_record_to_event(r *key_event_record) (Event, bool) {
 		}
 		switch r.virtual_key_code {
 		case 192, 50:
-			// manual return here, because KeyCtrl2 is zero
+
 			e.Key = KeyCtrl2
 			return e, true
 		case 51:
@@ -795,7 +792,7 @@ func input_event_producer() {
 			ev := Event{Type: EventMouse}
 			switch mr.event_flags {
 			case 0, 2:
-				// single or double click
+
 				cur_state := mr.button_state
 				switch {
 				case last_state&mouse_lmb == 0 && cur_state&mouse_lmb != 0:
@@ -823,7 +820,7 @@ func input_event_producer() {
 				ev.MouseX = last_x
 				ev.MouseY = last_y
 			case 1:
-				// mouse motion
+
 				x, y := int(mr.mouse_pos.x), int(mr.mouse_pos.y)
 				if last_state != 0 && (last_x != x || last_y != y) {
 					ev.Key = last_button_pressed
@@ -835,7 +832,7 @@ func input_event_producer() {
 					ev.Type = EventNone
 				}
 			case 4:
-				// mouse wheel
+
 				n := int16(mr.button_state >> 16)
 				if n > 0 {
 					ev.Key = MouseWheelUp

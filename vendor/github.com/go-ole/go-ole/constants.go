@@ -135,8 +135,6 @@ const (
 	TKIND_MAX       = 9
 )
 
-// Safe Array Feature Flags
-
 const (
 	FADF_AUTO        = 0x0001
 	FADF_STATIC      = 0x0002

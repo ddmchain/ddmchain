@@ -53,7 +53,7 @@ func Parse(mapURL string, b []byte) (*Consumer, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Free memory.
+
 	smap.Mappings = ""
 
 	return &Consumer{
@@ -76,14 +76,12 @@ func (c *Consumer) Source(genLine, genCol int) (source, name string, line, col i
 		return m.genLine >= genLine
 	})
 
-	// Mapping not found.
 	if i == len(c.mappings) {
 		return
 	}
 
 	match := &c.mappings[i]
 
-	// Fuzzy match.
 	if match.genLine > genLine || match.genCol > genCol {
 		if i == 0 {
 			return

@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package language
 
 import (
@@ -15,13 +12,10 @@ import (
 	"golang.org/x/text/internal/tag"
 )
 
-// isAlpha returns true if the byte is not a digit.
-// b must be an ASCII letter or digit.
 func isAlpha(b byte) bool {
 	return b > '9'
 }
 
-// isAlphaNum returns true if the string contains only ASCII letters or digits.
 func isAlphaNum(s []byte) bool {
 	for _, c := range s {
 		if !('a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || '0' <= c && c <= '9') {
@@ -31,14 +25,8 @@ func isAlphaNum(s []byte) bool {
 	return true
 }
 
-// errSyntax is returned by any of the parsing functions when the
-// input is not well-formed, according to BCP 47.
-// TODO: return the position at which the syntax error occurred?
 var errSyntax = errors.New("language: tag is not well-formed")
 
-// ValueError is returned by any of the parsing functions when the
-// input is well-formed but the respective subtag is not recognized
-// as a valid value.
 type ValueError struct {
 	v [8]byte
 }
@@ -57,24 +45,21 @@ func (e ValueError) tag() []byte {
 	return e.v[:n]
 }
 
-// Error implements the error interface.
 func (e ValueError) Error() string {
 	return fmt.Sprintf("language: subtag %q is well-formed but unknown", e.tag())
 }
 
-// Subtag returns the subtag for which the error occurred.
 func (e ValueError) Subtag() string {
 	return string(e.tag())
 }
 
-// scanner is used to scan BCP 47 tokens, which are separated by _ or -.
 type scanner struct {
 	b     []byte
 	bytes [max99thPercentileSize]byte
 	token []byte
-	start int // start position of the current token
-	end   int // end position of the current token
-	next  int // next point for scan
+	start int 
+	end   int 
+	next  int 
 	err   error
 	done  bool
 }
@@ -90,8 +75,6 @@ func makeScannerString(s string) scanner {
 	return scan
 }
 
-// makeScanner returns a scanner using b as the input buffer.
-// b is not copied and may be modified by the scanner routines.
 func makeScanner(b []byte) scanner {
 	scan := scanner{b: b}
 	scan.init()
@@ -107,7 +90,6 @@ func (s *scanner) init() {
 	s.scan()
 }
 
-// restToLower converts the string between start and end to lower case.
 func (s *scanner) toLower(start, end int) {
 	for i := start; i < end; i++ {
 		c := s.b[i]
@@ -123,9 +105,6 @@ func (s *scanner) setError(e error) {
 	}
 }
 
-// resizeRange shrinks or grows the array at position oldStart such that
-// a new string of size newSize can fit between oldStart and oldEnd.
-// Sets the scan point to after the resized range.
 func (s *scanner) resizeRange(oldStart, oldEnd, newSize int) {
 	s.start = oldStart
 	if end := oldStart + newSize; end != oldEnd {
@@ -143,14 +122,11 @@ func (s *scanner) resizeRange(oldStart, oldEnd, newSize int) {
 	}
 }
 
-// replace replaces the current token with repl.
 func (s *scanner) replace(repl string) {
 	s.resizeRange(s.start, s.end, len(repl))
 	copy(s.b[s.start:], repl)
 }
 
-// gobble removes the current token from the input.
-// Caller must call scan after calling gobble.
 func (s *scanner) gobble(e error) {
 	s.setError(e)
 	if s.start == 0 {
@@ -163,7 +139,6 @@ func (s *scanner) gobble(e error) {
 	s.next = s.start
 }
 
-// deleteRange removes the given range from s.b before the current token.
 func (s *scanner) deleteRange(start, end int) {
 	s.setError(errSyntax)
 	s.b = s.b[:start+copy(s.b[start:], s.b[end:])]
@@ -173,10 +148,6 @@ func (s *scanner) deleteRange(start, end int) {
 	s.end -= diff
 }
 
-// scan parses the next token of a BCP 47 string.  Tokens that are larger
-// than 8 characters or include non-alphanumeric characters result in an error
-// and are gobbled and removed from the output.
-// It returns the end position of the last token consumed.
 func (s *scanner) scan() (end int) {
 	end = s.end
 	s.token = nil
@@ -206,8 +177,6 @@ func (s *scanner) scan() (end int) {
 	return end
 }
 
-// acceptMinSize parses multiple tokens of the given size or greater.
-// It returns the end position of the last token consumed.
 func (s *scanner) acceptMinSize(min int) (end int) {
 	end = s.end
 	s.scan()
@@ -217,35 +186,19 @@ func (s *scanner) acceptMinSize(min int) (end int) {
 	return end
 }
 
-// Parse parses the given BCP 47 string and returns a valid Tag. If parsing
-// failed it returns an error and any part of the tag that could be parsed.
-// If parsing succeeded but an unknown value was found, it returns
-// ValueError. The Tag returned in this case is just stripped of the unknown
-// value. All other values are preserved. It accepts tags in the BCP 47 format
-// and extensions to this standard defined in
-// http://www.unicode.org/reports/tr35/#Unicode_Language_and_Locale_Identifiers.
-// The resulting tag is canonicalized using the default canonicalization type.
 func Parse(s string) (t Tag, err error) {
 	return Default.Parse(s)
 }
 
-// Parse parses the given BCP 47 string and returns a valid Tag. If parsing
-// failed it returns an error and any part of the tag that could be parsed.
-// If parsing succeeded but an unknown value was found, it returns
-// ValueError. The Tag returned in this case is just stripped of the unknown
-// value. All other values are preserved. It accepts tags in the BCP 47 format
-// and extensions to this standard defined in
-// http://www.unicode.org/reports/tr35/#Unicode_Language_and_Locale_Identifiers.
-// The resulting tag is canonicalized using the the canonicalization type c.
 func (c CanonType) Parse(s string) (t Tag, err error) {
-	// TODO: consider supporting old-style locale key-value pairs.
+
 	if s == "" {
 		return und, errSyntax
 	}
 	if len(s) <= maxAltTaglen {
 		b := [maxAltTaglen]byte{}
 		for i, c := range s {
-			// Generating invalid UTF-8 is okay as it won't match.
+
 			if 'A' <= c && c <= 'Z' {
 				c += 'a' - 'A'
 			} else if c == '_' {
@@ -277,7 +230,7 @@ func parse(scan *scanner, s string) (t Tag, err error) {
 		end = parseExtensions(scan)
 	} else if n >= 4 {
 		return und, errSyntax
-	} else { // the usual case
+	} else { 
 		t, end = parseTag(scan)
 		if n := len(scan.token); n == 1 {
 			t.pExt = uint16(end)
@@ -302,19 +255,16 @@ func parse(scan *scanner, s string) (t Tag, err error) {
 	return t, scan.err
 }
 
-// parseTag parses language, script, region and variants.
-// It returns a Tag and the end position in the input that was parsed.
 func parseTag(scan *scanner) (t Tag, end int) {
 	var e error
-	// TODO: set an error if an unknown lang, script or region is encountered.
+
 	t.lang, e = getLangID(scan.token)
 	scan.setError(e)
 	scan.replace(t.lang.String())
 	langStart := scan.start
 	end = scan.scan()
 	for len(scan.token) == 3 && isAlpha(scan.token[0]) {
-		// From http://tools.ietf.org/html/bcp47, <lang>-<extlang> tags are equivalent
-		// to a tag of the form <extlang>.
+
 		lang, e := getLangID(scan.token)
 		if lang != 0 {
 			t.lang = lang
@@ -350,8 +300,6 @@ func parseTag(scan *scanner) (t Tag, end int) {
 
 var separator = []byte{'-'}
 
-// parseVariants scans tokens as long as each token is a valid variant string.
-// Duplicate variants are removed.
 func parseVariants(scan *scanner, end int, t Tag) int {
 	start := scan.start
 	varIDBuf := [4]uint8{}
@@ -361,12 +309,10 @@ func parseVariants(scan *scanner, end int, t Tag) int {
 	last := -1
 	needSort := false
 	for ; len(scan.token) >= 4; scan.scan() {
-		// TODO: measure the impact of needing this conversion and redesign
-		// the data structure if there is an issue.
+
 		v, ok := variantIndex[string(scan.token)]
 		if !ok {
-			// unknown variant
-			// TODO: allow user-defined variants?
+
 			scan.gobble(mkErrInvalid(scan.token))
 			continue
 		}
@@ -377,8 +323,7 @@ func parseVariants(scan *scanner, end int, t Tag) int {
 				last = int(v)
 			} else {
 				needSort = true
-				// There is no legal combinations of more than 7 variants
-				// (and this is by no means a useful sequence).
+
 				const maxVariants = 8
 				if len(varID) > maxVariants {
 					break
@@ -393,7 +338,7 @@ func parseVariants(scan *scanner, end int, t Tag) int {
 		for i, v := range varID {
 			w := int(v)
 			if l == w {
-				// Remove duplicates.
+
 				continue
 			}
 			varID[k] = varID[i]
@@ -444,9 +389,6 @@ func (b bytesSort) Less(i, j int) bool {
 	return bytes.Compare(b[i], b[j]) == -1
 }
 
-// parseExtensions parses and normalizes the extensions in the buffer.
-// It returns the last position of scan.b that is part of any extension.
-// It also trims scan.b to remove excess parts accordingly.
 func parseExtensions(scan *scanner) int {
 	start := scan.start
 	exts := [][]byte{}
@@ -478,14 +420,12 @@ func parseExtensions(scan *scanner) int {
 	if len(exts) > 0 {
 		scan.b = append(scan.b, bytes.Join(exts, separator)...)
 	} else if start > 0 {
-		// Strip trailing '-'.
+
 		scan.b = scan.b[:start-1]
 	}
 	return end
 }
 
-// parseExtension parses a single extension and returns the position of
-// the extension end.
 func parseExtension(scan *scanner) int {
 	start, end := scan.start, scan.end
 	switch scan.token[0] {
@@ -494,7 +434,7 @@ func parseExtension(scan *scanner) int {
 		scan.scan()
 		for last := []byte{}; len(scan.token) > 2; scan.scan() {
 			if bytes.Compare(scan.token, last) != -1 {
-				// Attributes are unsorted. Start over from scratch.
+
 				p := attrStart + 1
 				scan.next = p
 				attrs := [][]byte{}
@@ -514,10 +454,9 @@ func parseExtension(scan *scanner) int {
 			key = scan.token
 			keyEnd := scan.end
 			end = scan.acceptMinSize(3)
-			// TODO: check key value validity
+
 			if keyEnd == end || bytes.Compare(key, last) != 1 {
-				// We have an invalid key or the keys are not sorted.
-				// Start scanning keys from scratch and reorder.
+
 				p := attrEnd + 1
 				scan.next = p
 				keys := [][]byte{}
@@ -558,28 +497,10 @@ func parseExtension(scan *scanner) int {
 	return end
 }
 
-// Compose creates a Tag from individual parts, which may be of type Tag, Base,
-// Script, Region, Variant, []Variant, Extension, []Extension or error. If a
-// Base, Script or Region or slice of type Variant or Extension is passed more
-// than once, the latter will overwrite the former. Variants and Extensions are
-// accumulated, but if two extensions of the same type are passed, the latter
-// will replace the former. A Tag overwrites all former values and typically
-// only makes sense as the first argument. The resulting tag is returned after
-// canonicalizing using the Default CanonType. If one or more errors are
-// encountered, one of the errors is returned.
 func Compose(part ...interface{}) (t Tag, err error) {
 	return Default.Compose(part...)
 }
 
-// Compose creates a Tag from individual parts, which may be of type Tag, Base,
-// Script, Region, Variant, []Variant, Extension, []Extension or error. If a
-// Base, Script or Region or slice of type Variant or Extension is passed more
-// than once, the latter will overwrite the former. Variants and Extensions are
-// accumulated, but if two extensions of the same type are passed, the latter
-// will replace the former. A Tag overwrites all former values and typically
-// only makes sense as the first argument. The resulting tag is returned after
-// canonicalizing using CanonType c. If one or more errors are encountered,
-// one of the errors is returned.
 func (c CanonType) Compose(part ...interface{}) (t Tag, err error) {
 	var b builder
 	if err = b.update(part...); err != nil {
@@ -611,7 +532,7 @@ func (c CanonType) Compose(part ...interface{}) (t Tag, err error) {
 type builder struct {
 	tag Tag
 
-	private string // the x extension
+	private string 
 	ext     []string
 	variant []string
 
@@ -685,7 +606,7 @@ func (b *builder) update(part ...interface{}) (err error) {
 			for _, e := range v {
 				b.update(e)
 			}
-		// TODO: support parsing of raw strings based on morphology or just extensions?
+
 		case error:
 			err = v
 		}
@@ -733,7 +654,6 @@ func findExt(list []string, x byte) int {
 	return -1
 }
 
-// getExtension returns the name, body and end position of the extension.
 func getExtension(s string, p int) (end int, ext string) {
 	if s[p] == '-' {
 		p++
@@ -745,10 +665,6 @@ func getExtension(s string, p int) (end int, ext string) {
 	return end, s[p:end]
 }
 
-// nextExtension finds the next extension within the string, searching
-// for the -<char>- pattern from position p.
-// In the fast majority of cases, language tags will have at most
-// one extension and extensions tend to be small.
 func nextExtension(s string, p int) int {
 	for n := len(s) - 3; p < n; {
 		if s[p] == '-' {
@@ -765,13 +681,6 @@ func nextExtension(s string, p int) int {
 
 var errInvalidWeight = errors.New("ParseAcceptLanguage: invalid weight")
 
-// ParseAcceptLanguage parses the contents of a Accept-Language header as
-// defined in http://www.ietf.org/rfc/rfc2616.txt and returns a list of Tags and
-// a list of corresponding quality weights. It is more permissive than RFC 2616
-// and may return non-nil slices even if the input is not valid.
-// The Tags will be sorted by highest weight first and then by first occurrence.
-// Tags with a weight of zero will be dropped. An error will be returned if the
-// input could not be parsed.
 func ParseAcceptLanguage(s string) (tag []Tag, q []float32, err error) {
 	var entry string
 	for s != "" {
@@ -781,7 +690,6 @@ func ParseAcceptLanguage(s string) (tag []Tag, q []float32, err error) {
 
 		entry, weight := split(entry, ';')
 
-		// Scan the language.
 		t, err := Parse(entry)
 		if err != nil {
 			id, ok := acceptFallback[entry]
@@ -791,17 +699,15 @@ func ParseAcceptLanguage(s string) (tag []Tag, q []float32, err error) {
 			t = Tag{lang: id}
 		}
 
-		// Scan the optional weight.
 		w := 1.0
 		if weight != "" {
 			weight = consume(weight, 'q')
 			weight = consume(weight, '=')
-			// consume returns the empty string when a token could not be
-			// consumed, resulting in an error for ParseFloat.
+
 			if w, err = strconv.ParseFloat(weight, 32); err != nil {
 				return nil, nil, errInvalidWeight
 			}
-			// Drop tags with a quality weight of 0.
+
 			if w <= 0 {
 				continue
 			}
@@ -814,8 +720,6 @@ func ParseAcceptLanguage(s string) (tag []Tag, q []float32, err error) {
 	return tag, q, nil
 }
 
-// consume removes a leading token c from s and returns the result or the empty
-// string if there is no such token.
 func consume(s string, c byte) string {
 	if s == "" || s[0] != c {
 		return ""
@@ -830,14 +734,12 @@ func split(s string, c byte) (head, tail string) {
 	return strings.TrimSpace(s), ""
 }
 
-// Add hack mapping to deal with a small number of cases that that occur
-// in Accept-Language (with reasonable frequency).
 var acceptFallback = map[string]langID{
 	"english": _en,
 	"deutsch": _de,
 	"italian": _it,
 	"french":  _fr,
-	"*":       _mul, // defined in the spec to match all languages.
+	"*":       _mul, 
 }
 
 type tagSort struct {

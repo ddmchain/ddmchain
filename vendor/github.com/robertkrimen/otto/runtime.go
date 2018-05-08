@@ -15,16 +15,16 @@ import (
 )
 
 type _global struct {
-	Object         *_object // Object( ... ), new Object( ... ) - 1 (length)
-	Function       *_object // Function( ... ), new Function( ... ) - 1
-	Array          *_object // Array( ... ), new Array( ... ) - 1
-	String         *_object // String( ... ), new String( ... ) - 1
-	Boolean        *_object // Boolean( ... ), new Boolean( ... ) - 1
-	Number         *_object // Number( ... ), new Number( ... ) - 1
+	Object         *_object 
+	Function       *_object 
+	Array          *_object 
+	String         *_object 
+	Boolean        *_object 
+	Number         *_object 
 	Math           *_object
-	Date           *_object // Date( ... ), new Date( ... ) - 7
-	RegExp         *_object // RegExp( ... ), new RegExp( ... ) - 2
-	Error          *_object // Error( ... ), new Error( ... ) - 1
+	Date           *_object 
+	RegExp         *_object 
+	Error          *_object 
 	EvalError      *_object
 	TypeError      *_object
 	RangeError     *_object
@@ -33,15 +33,15 @@ type _global struct {
 	URIError       *_object
 	JSON           *_object
 
-	ObjectPrototype         *_object // Object.prototype
-	FunctionPrototype       *_object // Function.prototype
-	ArrayPrototype          *_object // Array.prototype
-	StringPrototype         *_object // String.prototype
-	BooleanPrototype        *_object // Boolean.prototype
-	NumberPrototype         *_object // Number.prototype
-	DatePrototype           *_object // Date.prototype
-	RegExpPrototype         *_object // RegExp.prototype
-	ErrorPrototype          *_object // Error.prototype
+	ObjectPrototype         *_object 
+	FunctionPrototype       *_object 
+	ArrayPrototype          *_object 
+	StringPrototype         *_object 
+	BooleanPrototype        *_object 
+	NumberPrototype         *_object 
+	DatePrototype           *_object 
+	RegExpPrototype         *_object 
+	ErrorPrototype          *_object 
 	EvalErrorPrototype      *_object
 	TypeErrorPrototype      *_object
 	RangeErrorPrototype     *_object
@@ -56,13 +56,13 @@ type _runtime struct {
 	globalStash  *_objectStash
 	scope        *_scope
 	otto         *Otto
-	eval         *_object // The builtin eval, for determine indirect versus direct invocation
+	eval         *_object 
 	debugger     func(*Otto)
 	random       func() float64
 	stackLimit   int
 	traceLimit   int
 
-	labels []string // FIXME
+	labels []string 
 	lck    sync.Mutex
 }
 
@@ -83,7 +83,6 @@ func (self *_runtime) leaveScope() {
 	self.scope = self.scope.outer
 }
 
-// FIXME This is used in two places (cloning)
 func (self *_runtime) enterGlobalScope() {
 	self.enterScope(newScope(self.globalStash, self.globalStash, self.globalObject))
 }
@@ -107,18 +106,13 @@ func (self *_runtime) enterFunctionScope(outer _stash, this Value) *_fnStash {
 func (self *_runtime) putValue(reference _reference, value Value) {
 	name := reference.putValue(value)
 	if name != "" {
-		// Why? -- If reference.base == nil
-		// strict = false
+
 		self.globalObject.defineProperty(name, value, 0111, false)
 	}
 }
 
 func (self *_runtime) tryCatchEvaluate(inner func() Value) (tryValue Value, exception bool) {
-	// resultValue = The value of the block (e.g. the last statement)
-	// throw = Something was thrown
-	// throwValue = The value of what was thrown
-	// other = Something that changes flow (return, break, continue) that is not a throw
-	// Otherwise, some sort of unknown panic happened, we'll just propagate it
+
 	defer func() {
 		if caught := recover(); caught != nil {
 			if exception, ok := caught.(*_exception); ok {
@@ -140,8 +134,6 @@ func (self *_runtime) tryCatchEvaluate(inner func() Value) (tryValue Value, exce
 	tryValue = inner()
 	return
 }
-
-// toObject
 
 func (self *_runtime) toObject(value Value) *_object {
 	switch value.kind {
@@ -184,8 +176,6 @@ func checkObjectCoercible(rt *_runtime, value Value) {
 	}
 }
 
-// testObjectCoercible
-
 func testObjectCoercible(value Value) (isObject bool, mustCoerce bool) {
 	switch value.kind {
 	case valueReference, valueEmpty, valueNull, valueUndefined:
@@ -207,8 +197,6 @@ func (self *_runtime) safeToValue(value interface{}) (Value, error) {
 	return result, err
 }
 
-// convertNumeric converts numeric parameter val from js to that of type t if it is safe to do so, otherwise it panics.
-// This allows literals (int64), bitwise values (int32) and the general form (float64) of javascript numerics to be passed as parameters to go functions easily.
 func (self *_runtime) convertNumeric(v Value, t reflect.Type) reflect.Value {
 	val := reflect.ValueOf(v.export())
 
@@ -238,7 +226,6 @@ func (self *_runtime) convertNumeric(v Value, t reflect.Type) reflect.Value {
 				panic(self.panicRangeError(fmt.Sprintf("converting %v to %v would cause loss of precision", val.Type(), t)))
 			}
 
-			// The float represents an integer
 			val = reflect.ValueOf(i64)
 		default:
 			panic(self.panicTypeError(fmt.Sprintf("cannot convert %v to %v", val.Type(), t)))
@@ -285,9 +272,6 @@ func (self *_runtime) convertNumeric(v Value, t reflect.Type) reflect.Value {
 
 var typeOfValue = reflect.TypeOf(Value{})
 
-// convertCallParameter converts request val to type t if possible.
-// If the conversion fails due to overflow or type miss-match then it panics.
-// If no conversion is known then the original value is returned.
 func (self *_runtime) convertCallParameter(v Value, t reflect.Type) reflect.Value {
 	if t == typeOfValue {
 		return reflect.ValueOf(v)
@@ -506,9 +490,7 @@ func (self *_runtime) toValue(value interface{}) Value {
 		}
 		return toValue_object(self.newNativeFunction(name, file, line, value))
 	case Object, *Object, _object, *_object:
-		// Nothing happens.
-		// FIXME We should really figure out what can come here.
-		// This catch-all is ugly.
+
 	default:
 		{
 			value := reflect.ValueOf(value)
@@ -575,11 +557,6 @@ func (self *_runtime) toValue(value interface{}) Value {
 							t = typ.In(n)
 						}
 
-						// if this is a variadic Go function, and the caller has supplied
-						// exactly the number of JavaScript arguments required, and this
-						// is the last JavaScript argument, try treating the it as the
-						// actual set of variadic Go arguments. if that succeeds, break
-						// out of the loop.
 						if typ.IsVariadic() && len(c.ArgumentList) == nargs && i == nargs-1 {
 							var v reflect.Value
 							if err := catchPanic(func() { v = self.convertCallParameter(a, typ.In(n)) }); err == nil {
@@ -706,6 +683,6 @@ func (self *_runtime) parseThrow(err error) {
 
 func (self *_runtime) cmpl_parseOrThrow(src, sm interface{}) *_nodeProgram {
 	program, err := self.cmpl_parse("", src, sm)
-	self.parseThrow(err) // Will panic/throw appropriately
+	self.parseThrow(err) 
 	return program
 }

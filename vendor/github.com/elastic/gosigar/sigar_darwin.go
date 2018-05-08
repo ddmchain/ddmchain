@@ -1,5 +1,4 @@
 
-
 package gosigar
 
 /*
@@ -127,18 +126,12 @@ func (self *CpuList) Get() error {
 		return fmt.Errorf("host_processor_info error=%d", status)
 	}
 
-	// jump through some cgo casting hoops and ensure we properly free
-	// the memory that cpuload points to
 	target := C.vm_map_t(C.mach_task_self_)
 	address := C.vm_address_t(uintptr(unsafe.Pointer(cpuload)))
 	defer C.vm_deallocate(target, address, C.vm_size_t(ncpu))
 
-	// the body of struct processor_cpu_load_info
-	// aka processor_cpu_load_info_data_t
 	var cpu_ticks [C.CPU_STATE_MAX]uint32
 
-	// copy the cpuload array to a []byte buffer
-	// where we can binary.Read the data
 	size := int(ncpu) * binary.Size(cpu_ticks)
 	buf := C.GoBytes(unsafe.Pointer(cpuload), C.int(size))
 
@@ -265,7 +258,6 @@ func (self *ProcState) Get(pid int) error {
 
 	self.Nice = int(info.pbsd.pbi_nice)
 
-	// Get process username. Fallback to UID if username is not available.
 	uid := strconv.Itoa(int(info.pbsd.pbi_uid))
 	user, err := user.LookupId(uid)
 	if err == nil && user.Username != "" {
@@ -350,9 +342,6 @@ func (self *ProcFDUsage) Get(pid int) error {
 	return ErrNotImplemented{runtime.GOOS}
 }
 
-// wrapper around sysctl KERN_PROCARGS2
-// callbacks params are optional,
-// up to the caller as to which pieces of data they want
 func kern_procargs(pid int,
 	exe func(string),
 	argv func(string),
@@ -380,7 +369,6 @@ func kern_procargs(pid int,
 		exe(string(chop(path)))
 	}
 
-	// skip trailing \0's
 	for {
 		c, err := bbuf.ReadByte()
 		if err != nil {
@@ -388,7 +376,7 @@ func kern_procargs(pid int,
 		}
 		if c != 0 {
 			bbuf.UnreadByte()
-			break // start of argv[0]
+			break 
 		}
 	}
 
@@ -409,7 +397,7 @@ func kern_procargs(pid int,
 		return nil
 	}
 
-	delim := []byte{61} // "="
+	delim := []byte{61} 
 
 	for {
 		line, err := bbuf.ReadBytes(0)
@@ -431,7 +419,6 @@ func kern_procargs(pid int,
 	return nil
 }
 
-// XXX copied from zsyscall_darwin_amd64.go
 func sysctl(mib []C.int, old *byte, oldlen *uintptr,
 	new *byte, newlen uintptr) (err error) {
 	var p0 unsafe.Pointer
@@ -462,7 +449,6 @@ func vm_info(vmstat *C.vm_statistics_data_t) error {
 	return nil
 }
 
-// generic Sysctl buffer unmarshalling
 func sysctlbyname(name string, data interface{}) (err error) {
 	val, err := syscall.Sysctl(name)
 	if err != nil {

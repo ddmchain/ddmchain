@@ -1,10 +1,5 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Package cast5 implements CAST5, as defined in RFC 2144. CAST5 is a common
-// OpenPGP cipher.
-package cast5 // import "golang.org/x/crypto/cast5"
+package cast5 
 
 import "errors"
 
@@ -100,25 +95,6 @@ func (c *Cipher) Decrypt(dst, src []byte) {
 
 type keyScheduleA [4][7]uint8
 type keyScheduleB [4][5]uint8
-
-// keyScheduleRound contains the magic values for a round of the key schedule.
-// The keyScheduleA deals with the lines like:
-//   z0z1z2z3 = x0x1x2x3 ^ S5[xD] ^ S6[xF] ^ S7[xC] ^ S8[xE] ^ S7[x8]
-// Conceptually, both x and z are in the same array, x first. The first
-// element describes which word of this array gets written to and the
-// second, which word gets read. So, for the line above, it's "4, 0", because
-// it's writing to the first word of z, which, being after x, is word 4, and
-// reading from the first word of x: word 0.
-//
-// Next are the indexes into the S-boxes. Now the array is treated as bytes. So
-// "xD" is 0xd. The first byte of z is written as "16 + 0", just to be clear
-// that it's z that we're indexing.
-//
-// keyScheduleB deals with lines like:
-//   K1 = S5[z8] ^ S6[z9] ^ S7[z7] ^ S8[z6] ^ S5[z2]
-// "K1" is ignored because key words are always written in order. So the five
-// elements are the S-box indexes. They use the same form as in keyScheduleA,
-// above.
 
 type keyScheduleRound struct{}
 type keySchedule []keyScheduleRound
@@ -231,7 +207,6 @@ func (c *Cipher) keySchedule(in []byte) {
 	}
 }
 
-// These are the three 'f' functions. See RFC 2144, section 2.2.
 func f1(d, m uint32, r uint8) uint32 {
 	t := m + d
 	I := (t << r) | (t >> (32 - r))

@@ -1,8 +1,4 @@
-/*
-Package registry is an expirmental package to facillitate altering the otto runtime via import.
 
-This interface can change at any time.
-*/
 package registry
 
 var registry []*Entry = make([]*Entry, 0)

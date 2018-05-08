@@ -1,5 +1,3 @@
-// Created by cgo -godefs - DO NOT EDIT
-// cgo -godefs -- -DUNICODE syscalls.go
 
 package termbox
 

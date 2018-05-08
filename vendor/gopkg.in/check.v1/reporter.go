@@ -6,9 +6,6 @@ import (
 	"sync"
 )
 
-// -----------------------------------------------------------------------
-// Output writer manages atomic output writing according to settings.
-
 type outputWriter struct {
 	m                    sync.Mutex
 	writer               io.Writer
@@ -55,7 +52,7 @@ func (ow *outputWriter) WriteCallProblem(label string, c *C) {
 
 func (ow *outputWriter) WriteCallSuccess(label string, c *C) {
 	if ow.Stream || (ow.Verbose && c.kind == testKd) {
-		// TODO Use a buffer here.
+
 		var suffix string
 		if c.reason != "" {
 			suffix = " (" + c.reason + ")"
@@ -69,7 +66,7 @@ func (ow *outputWriter) WriteCallSuccess(label string, c *C) {
 		}
 		header := renderCallHeader(label, c, "", suffix)
 		ow.m.Lock()
-		// Resist temptation of using line as prefix above due to race.
+
 		if !ow.Stream && ow.wroteCallProblemLast {
 			header = "\n-----------------------------------" +
 				"-----------------------------------\n" +

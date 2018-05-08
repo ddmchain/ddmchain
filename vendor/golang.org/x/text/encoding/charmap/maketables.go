@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build ignore
 
 package main
@@ -74,7 +71,7 @@ var encodings = []struct {
 		"http://source.icu-project.org/repos/icu/data/trunk/charset/data/ucm/glibc-IBM855-2.1.2.ucm",
 	},
 	{
-		"Windows Code Page 858", // PC latin1 with Euro
+		"Windows Code Page 858", 
 		"IBM00858",
 		"",
 		"CodePage858",
@@ -413,8 +410,7 @@ func getWHATWG(url string) string {
 			log.Fatalf("code %d is out of range", x)
 		}
 		if 0x80 <= y && y < 0xa0 {
-			// We diverge from the WHATWG spec by mapping control characters
-			// in the range [0x80, 0xa0) to U+FFFD.
+
 			continue
 		}
 		mapping[x] = rune(y)
@@ -540,12 +536,9 @@ func main() {
 		}
 		printf("},\n}\n")
 
-		// Add an estimate of the size of a single charmap{} struct value, which
-		// includes two 256 elem arrays of 4 bytes and some extra fields, which
-		// align to 3 uint64s on 64-bit architectures.
 		w.Size += 2*4*256 + 3*8
 	}
-	// TODO: add proper line breaking.
+
 	printf("var listAll = []encoding.Encoding{\n%s,\n}\n\n", strings.Join(all, ",\n"))
 }
 

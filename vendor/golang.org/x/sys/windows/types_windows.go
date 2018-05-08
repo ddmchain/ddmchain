@@ -1,13 +1,10 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package windows
 
 import "syscall"
 
 const (
-	// Windows errors.
+
 	ERROR_FILE_NOT_FOUND         syscall.Errno = 2
 	ERROR_PATH_NOT_FOUND         syscall.Errno = 3
 	ERROR_ACCESS_DENIED          syscall.Errno = 5
@@ -34,7 +31,7 @@ const (
 )
 
 const (
-	// Invented values to support what package os expects.
+
 	O_RDONLY   = 0x00000
 	O_WRONLY   = 0x00001
 	O_RDWR     = 0x00002
@@ -50,7 +47,7 @@ const (
 )
 
 const (
-	// More invented values for signals
+
 	SIGHUP  = Signal(0x1)
 	SIGINT  = Signal(0x2)
 	SIGQUIT = Signal(0x3)
@@ -174,12 +171,11 @@ const (
 	CTRL_C_EVENT     = 0
 	CTRL_BREAK_EVENT = 1
 
-	// Windows reserves errors >= 1<<29 for application use.
 	APPLICATION_ERROR = 1 << 29
 )
 
 const (
-	// flags for CreateToolhelp32Snapshot
+
 	TH32CS_SNAPHEAPLIST = 0x01
 	TH32CS_SNAPPROCESS  = 0x02
 	TH32CS_SNAPTHREAD   = 0x04
@@ -190,7 +186,7 @@ const (
 )
 
 const (
-	// filters for ReadDirectoryChangesW
+
 	FILE_NOTIFY_CHANGE_FILE_NAME   = 0x001
 	FILE_NOTIFY_CHANGE_DIR_NAME    = 0x002
 	FILE_NOTIFY_CHANGE_ATTRIBUTES  = 0x004
@@ -202,7 +198,7 @@ const (
 )
 
 const (
-	// do not reorder
+
 	FILE_ACTION_ADDED = iota + 1
 	FILE_ACTION_REMOVED
 	FILE_ACTION_MODIFIED
@@ -211,7 +207,7 @@ const (
 )
 
 const (
-	// wincrypt.h
+
 	PROV_RSA_FULL                    = 1
 	PROV_RSA_SIG                     = 2
 	PROV_DSS                         = 3
@@ -295,7 +291,6 @@ var (
 	OID_SGC_NETSCAPE        = []byte("2.16.840.1.113730.4.1\x00")
 )
 
-// Invented values to support what package os expects.
 type Timeval struct {
 	Sec  int32
 	Usec int32
@@ -337,24 +332,22 @@ type Filetime struct {
 	HighDateTime uint32
 }
 
-// Nanoseconds returns Filetime ft in nanoseconds
-// since Epoch (00:00:00 UTC, January 1, 1970).
 func (ft *Filetime) Nanoseconds() int64 {
-	// 100-nanosecond intervals since January 1, 1601
+
 	nsec := int64(ft.HighDateTime)<<32 + int64(ft.LowDateTime)
-	// change starting time to the Epoch (00:00:00 UTC, January 1, 1970)
+
 	nsec -= 116444736000000000
-	// convert into nanoseconds
+
 	nsec *= 100
 	return nsec
 }
 
 func NsecToFiletime(nsec int64) (ft Filetime) {
-	// convert into 100-nanosecond
+
 	nsec /= 100
-	// change starting time to January 1, 1601
+
 	nsec += 116444736000000000
-	// split into high / low
+
 	ft.LowDateTime = uint32(nsec & 0xffffffff)
 	ft.HighDateTime = uint32(nsec >> 32 & 0xffffffff)
 	return ft
@@ -373,8 +366,6 @@ type Win32finddata struct {
 	AlternateFileName [13]uint16
 }
 
-// This is the actual system call structure.
-// Win32finddata is what we committed to in Go 1.
 type win32finddata1 struct {
 	FileAttributes    uint32
 	CreationTime      Filetime
@@ -398,7 +389,6 @@ func copyFindData(dst *Win32finddata, src *win32finddata1) {
 	dst.Reserved0 = src.Reserved0
 	dst.Reserved1 = src.Reserved1
 
-	// The src is 1 element bigger than dst, but it must be NUL.
 	copy(dst.FileName[:], src.FileName[:])
 	copy(dst.AlternateFileName[:], src.AlternateFileName[:])
 }
@@ -430,9 +420,8 @@ type Win32FileAttributeData struct {
 	FileSizeLow    uint32
 }
 
-// ShowWindow constants
 const (
-	// winuser.h
+
 	SW_HIDE            = 0
 	SW_NORMAL          = 1
 	SW_SHOWNORMAL      = 1
@@ -511,8 +500,6 @@ type Timezoneinformation struct {
 	DaylightBias int32
 }
 
-// Socket related.
-
 const (
 	AF_UNSPEC  = 0
 	AF_UNIX    = 1
@@ -549,8 +536,6 @@ const (
 	SIO_GET_EXTENSION_FUNCTION_POINTER = IOC_INOUT | IOC_WS2 | 6
 	SIO_KEEPALIVE_VALS                 = IOC_IN | IOC_VENDOR | 4
 	SIO_UDP_CONNRESET                  = IOC_IN | IOC_VENDOR | 12
-
-	// cf. http://support.microsoft.com/default.aspx?scid=kb;en-us;257460
 
 	IP_TOS             = 0x3
 	IP_TTL             = 0x4
@@ -604,7 +589,6 @@ type WSAMsg struct {
 	Flags       uint32
 }
 
-// Invented values to support what package os expects.
 const (
 	S_IFMT   = 0x1f000
 	S_IFIFO  = 0x1000
@@ -715,7 +699,7 @@ const (
 )
 
 const (
-	// flags inside DNSRecord.Dw
+
 	DnsSectionQuestion   = 0x0000
 	DnsSectionAnswer     = 0x0001
 	DnsSectionAuthority  = 0x0002
@@ -781,9 +765,6 @@ const (
 )
 
 const SIO_GET_INTERFACE_LIST = 0x4004747F
-
-// TODO(mattn): SockaddrGen is union of sockaddr/sockaddr_in/sockaddr_in6_old.
-// will be fixed to change variable type as suitable.
 
 type SockaddrGen [24]byte
 
@@ -909,7 +890,7 @@ type CertRevocationInfo struct {
 	OidSpecificInfo  uintptr
 	HasFreshnessTime uint32
 	FreshnessTime    uint32
-	CrlInfo          uintptr // *CertRevocationCrlInfo
+	CrlInfo          uintptr 
 }
 
 type CertTrustStatus struct {
@@ -959,7 +940,7 @@ type CertChainPolicyStatus struct {
 }
 
 const (
-	// do not reorder
+
 	HKEY_CLASSES_ROOT = 0x80000000 + iota
 	HKEY_CURRENT_USER
 	HKEY_LOCAL_MACHINE
@@ -983,7 +964,7 @@ const (
 )
 
 const (
-	// do not reorder
+
 	REG_NONE = iota
 	REG_SZ
 	REG_EXPAND_SZ
@@ -1139,7 +1120,6 @@ type reparseDataBuffer struct {
 	ReparseDataLength uint16
 	Reserved          uint16
 
-	// GenericReparseBuffer
 	reparseBuffer byte
 }
 
@@ -1255,7 +1235,7 @@ type IpAdapterAddresses struct {
 	Ipv6IfIndex           uint32
 	ZoneIndices           [16]uint32
 	FirstPrefix           *IpAdapterPrefix
-	/* more fields might be present here. */
+
 }
 
 const (
@@ -1267,9 +1247,6 @@ const (
 	IfOperStatusNotPresent     = 6
 	IfOperStatusLowerLayerDown = 7
 )
-
-// Console related constants used for the mode parameter to SetConsoleMode. See
-// https://docs.microsoft.com/en-us/windows/console/setconsolemode for details.
 
 const (
 	ENABLE_PROCESSED_INPUT        = 0x1
@@ -1301,11 +1278,6 @@ type SmallRect struct {
 	Right  int16
 	Bottom int16
 }
-
-// Used with GetConsoleScreenBuffer to retreive information about a console
-// screen buffer. See
-// https://docs.microsoft.com/en-us/windows/console/console-screen-buffer-info-str
-// for details.
 
 type ConsoleScreenBufferInfo struct {
 	Size              Coord

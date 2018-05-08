@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-// AzureTable is the typedef of the Azure Table name
 type AzureTable string
 
 const (
@@ -23,7 +22,6 @@ type createTableRequest struct {
 	TableName string `json:"TableName"`
 }
 
-// TableAccessPolicy are used for SETTING table policies
 type TableAccessPolicy struct {
 	ID         string
 	StartTime  time.Time
@@ -47,8 +45,6 @@ func (c *TableServiceClient) getStandardHeaders() map[string]string {
 	}
 }
 
-// QueryTables returns the tables created in the
-// *TableServiceClient storage account.
 func (c *TableServiceClient) QueryTables() ([]AzureTable, error) {
 	uri := c.client.getEndpoint(tableServiceName, tablesURIPath, url.Values{})
 
@@ -84,9 +80,6 @@ func (c *TableServiceClient) QueryTables() ([]AzureTable, error) {
 	return s, nil
 }
 
-// CreateTable creates the table given the specific
-// name. This function fails if the name is not compliant
-// with the specification or the tables already exists.
 func (c *TableServiceClient) CreateTable(table AzureTable) error {
 	uri := c.client.getEndpoint(tableServiceName, tablesURIPath, url.Values{})
 
@@ -115,10 +108,6 @@ func (c *TableServiceClient) CreateTable(table AzureTable) error {
 	return nil
 }
 
-// DeleteTable deletes the table given the specific
-// name. This function fails if the table is not present.
-// Be advised: DeleteTable deletes all the entries
-// that may be present.
 func (c *TableServiceClient) DeleteTable(table AzureTable) error {
 	uri := c.client.getEndpoint(tableServiceName, tablesURIPath, url.Values{})
 	uri += fmt.Sprintf("('%s')", string(table))
@@ -141,7 +130,6 @@ func (c *TableServiceClient) DeleteTable(table AzureTable) error {
 	return nil
 }
 
-// SetTablePermissions sets up table ACL permissions as per REST details https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/Set-Table-ACL
 func (c *TableServiceClient) SetTablePermissions(table AzureTable, policies []TableAccessPolicy, timeout uint) (err error) {
 	params := url.Values{"comp": {"acl"}}
 
@@ -182,7 +170,6 @@ func generateTableACLPayload(policies []TableAccessPolicy) (io.Reader, int, erro
 	return xmlMarshal(sil)
 }
 
-// GetTablePermissions gets the table ACL permissions, as per REST details https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/get-table-acl
 func (c *TableServiceClient) GetTablePermissions(table AzureTable, timeout int) (permissionResponse []TableAccessPolicy, err error) {
 	params := url.Values{"comp": {"acl"}}
 
@@ -231,8 +218,7 @@ func updateTableAccessPolicy(ap AccessPolicy) []TableAccessPolicy {
 }
 
 func generateTablePermissions(tap *TableAccessPolicy) (permissions string) {
-	// generate the permissions string (raud).
-	// still want the end user API to have bool flags.
+
 	permissions = ""
 
 	if tap.CanRead {

@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package openpgp
 
 import (
@@ -17,32 +14,18 @@ import (
 	"golang.org/x/crypto/openpgp/s2k"
 )
 
-// DetachSign signs message with the private key from signer (which must
-// already have been decrypted) and writes the signature to w.
-// If config is nil, sensible defaults will be used.
 func DetachSign(w io.Writer, signer *Entity, message io.Reader, config *packet.Config) error {
 	return detachSign(w, signer, message, packet.SigTypeBinary, config)
 }
 
-// ArmoredDetachSign signs message with the private key from signer (which
-// must already have been decrypted) and writes an armored signature to w.
-// If config is nil, sensible defaults will be used.
 func ArmoredDetachSign(w io.Writer, signer *Entity, message io.Reader, config *packet.Config) (err error) {
 	return armoredDetachSign(w, signer, message, packet.SigTypeBinary, config)
 }
 
-// DetachSignText signs message (after canonicalising the line endings) with
-// the private key from signer (which must already have been decrypted) and
-// writes the signature to w.
-// If config is nil, sensible defaults will be used.
 func DetachSignText(w io.Writer, signer *Entity, message io.Reader, config *packet.Config) error {
 	return detachSign(w, signer, message, packet.SigTypeText, config)
 }
 
-// ArmoredDetachSignText signs message (after canonicalising the line endings)
-// with the private key from signer (which must already have been decrypted)
-// and writes an armored signature to w.
-// If config is nil, sensible defaults will be used.
 func ArmoredDetachSignText(w io.Writer, signer *Entity, message io.Reader, config *packet.Config) error {
 	return armoredDetachSign(w, signer, message, packet.SigTypeText, config)
 }
@@ -88,24 +71,15 @@ func detachSign(w io.Writer, signer *Entity, message io.Reader, sigType packet.S
 	return sig.Serialize(w)
 }
 
-// FileHints contains metadata about encrypted files. This metadata is, itself,
-// encrypted.
 type FileHints struct {
-	// IsBinary can be set to hint that the contents are binary data.
+
 	IsBinary bool
-	// FileName hints at the name of the file that should be written. It's
-	// truncated to 255 bytes if longer. It may be empty to suggest that the
-	// file should not be written to disk. It may be equal to "_CONSOLE" to
-	// suggest the data should not be written to disk.
+
 	FileName string
-	// ModTime contains the modification time of the file, or the zero time if not applicable.
+
 	ModTime time.Time
 }
 
-// SymmetricallyEncrypt acts like gpg -c: it encrypts a file with a passphrase.
-// The resulting WriteCloser must be closed after the contents of the file have
-// been written.
-// If config is nil, sensible defaults will be used.
 func SymmetricallyEncrypt(ciphertext io.Writer, passphrase []byte, hints *FileHints, config *packet.Config) (plaintext io.WriteCloser, err error) {
 	if hints == nil {
 		hints = &FileHints{}
@@ -139,8 +113,6 @@ func SymmetricallyEncrypt(ciphertext io.Writer, passphrase []byte, hints *FileHi
 	return packet.SerializeLiteral(literaldata, hints.IsBinary, hints.FileName, epochSeconds)
 }
 
-// intersectPreferences mutates and returns a prefix of a that contains only
-// the values in the intersection of a and b. The order of a is preserved.
 func intersectPreferences(a []uint8, b []uint8) (intersection []uint8) {
 	var j int
 	for _, v := range a {
@@ -164,11 +136,6 @@ func hashToHashId(h crypto.Hash) uint8 {
 	return v
 }
 
-// Encrypt encrypts a message to a number of recipients and, optionally, signs
-// it. hints contains optional information, that is also encrypted, that aids
-// the recipients in processing the message. The resulting WriteCloser must
-// be closed after the contents of the file have been written.
-// If config is nil, sensible defaults will be used.
 func Encrypt(ciphertext io.Writer, to []*Entity, signed *Entity, hints *FileHints, config *packet.Config) (plaintext io.WriteCloser, err error) {
 	var signer *packet.PrivateKey
 	if signed != nil {
@@ -185,22 +152,19 @@ func Encrypt(ciphertext io.Writer, to []*Entity, signed *Entity, hints *FileHint
 		}
 	}
 
-	// These are the possible ciphers that we'll use for the message.
 	candidateCiphers := []uint8{
 		uint8(packet.CipherAES128),
 		uint8(packet.CipherAES256),
 		uint8(packet.CipherCAST5),
 	}
-	// These are the possible hash functions that we'll use for the signature.
+
 	candidateHashes := []uint8{
 		hashToHashId(crypto.SHA256),
 		hashToHashId(crypto.SHA512),
 		hashToHashId(crypto.SHA1),
 		hashToHashId(crypto.RIPEMD160),
 	}
-	// In the event that a recipient doesn't specify any supported ciphers
-	// or hash functions, these are the ones that we assume that every
-	// implementation supports.
+
 	defaultCiphers := candidateCiphers[len(candidateCiphers)-1:]
 	defaultHashes := candidateHashes[len(candidateHashes)-1:]
 
@@ -231,7 +195,7 @@ func Encrypt(ciphertext io.Writer, to []*Entity, signed *Entity, hints *FileHint
 	}
 
 	cipher := packet.CipherFunction(candidateCiphers[0])
-	// If the cipher specified by config is a candidate, we'll use that.
+
 	configuredCipher := config.Cipher()
 	for _, c := range candidateCiphers {
 		cipherFunc := packet.CipherFunction(c)
@@ -249,7 +213,6 @@ func Encrypt(ciphertext io.Writer, to []*Entity, signed *Entity, hints *FileHint
 		}
 	}
 
-	// If the hash specified by config is a candidate, we'll use that.
 	if configuredHash := config.Hash(); configuredHash.Available() {
 		for _, hashId := range candidateHashes {
 			if h, ok := s2k.HashIdToHash(hashId); ok && h == configuredHash {
@@ -303,9 +266,7 @@ func Encrypt(ciphertext io.Writer, to []*Entity, signed *Entity, hints *FileHint
 
 	w := encryptedData
 	if signer != nil {
-		// If we need to write a signature packet after the literal
-		// data then we need to stop literalData from closing
-		// encryptedData.
+
 		w = noOpCloser{encryptedData}
 
 	}
@@ -324,9 +285,6 @@ func Encrypt(ciphertext io.Writer, to []*Entity, signed *Entity, hints *FileHint
 	return literalData, nil
 }
 
-// signatureWriter hashes the contents of a message while passing it along to
-// literalData. When closed, it closes literalData, writes a signature packet
-// to encryptedData and then also closes encryptedData.
 type signatureWriter struct {
 	encryptedData io.WriteCloser
 	literalData   io.WriteCloser
@@ -362,9 +320,6 @@ func (s signatureWriter) Close() error {
 	return s.encryptedData.Close()
 }
 
-// noOpCloser is like an ioutil.NopCloser, but for an io.Writer.
-// TODO: we have two of these in OpenPGP packages alone. This probably needs
-// to be promoted somewhere more common.
 type noOpCloser struct {
 	w io.Writer
 }

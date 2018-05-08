@@ -1,5 +1,4 @@
 
-
 package gosigar
 
 import (
@@ -17,39 +16,27 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Win32_Process represents a process on the Windows operating system. If
-// additional fields are added here (that match the Windows struct) they will
-// automatically be populated when calling getWin32Process.
-// https://msdn.microsoft.com/en-us/library/windows/desktop/aa394372(v=vs.85).aspx
 type Win32_Process struct {
 	CommandLine string
 }
 
-// Win32_OperatingSystem WMI class represents a Windows-based operating system
-// installed on a computer.
-// https://msdn.microsoft.com/en-us/library/windows/desktop/aa394239(v=vs.85).aspx
 type Win32_OperatingSystem struct {
 	LastBootUpTime time.Time
 }
 
 var (
-	// version is Windows version of the host OS.
+
 	version = windows.GetWindowsVersion()
 
-	// processQueryLimitedInfoAccess is set to PROCESS_QUERY_INFORMATION for Windows
-	// 2003 and XP where PROCESS_QUERY_LIMITED_INFORMATION is unknown. For all newer
-	// OS versions it is set to PROCESS_QUERY_LIMITED_INFORMATION.
 	processQueryLimitedInfoAccess = windows.PROCESS_QUERY_LIMITED_INFORMATION
 
-	// bootTime is the time when the OS was last booted. This value may be nil
-	// on operating systems that do not support the WMI query used to obtain it.
 	bootTime     *time.Time
 	bootTimeLock sync.Mutex
 )
 
 func init() {
 	if !version.IsWindowsVistaOrGreater() {
-		// PROCESS_QUERY_LIMITED_INFORMATION cannot be used on 2003 or XP.
+
 		processQueryLimitedInfoAccess = syscall.PROCESS_QUERY_INFORMATION
 	}
 }
@@ -75,7 +62,7 @@ func (self *ProcFDUsage) Get(pid int) error {
 }
 
 func (self *Uptime) Get() error {
-	// Minimum supported OS is Windows Vista.
+
 	if !version.IsWindowsVistaOrGreater() {
 		return ErrNotImplemented{runtime.GOOS}
 	}
@@ -126,7 +113,6 @@ func (self *Cpu) Get() error {
 		return errors.Wrap(err, "GetSystemTimes failed")
 	}
 
-	// CPU times are reported in milliseconds by gosigar.
 	self.Idle = uint64(idle / time.Millisecond)
 	self.Sys = uint64(kernel / time.Millisecond)
 	self.User = uint64(user / time.Millisecond)
@@ -171,14 +157,12 @@ func (self *FileSystemList) Get() error {
 	return nil
 }
 
-// Get retrieves a list of all process identifiers (PIDs) in the system.
 func (self *ProcList) Get() error {
 	pids, err := windows.EnumProcesses()
 	if err != nil {
 		return errors.Wrap(err, "EnumProcesses failed")
 	}
 
-	// Convert uint32 PIDs to int.
 	self.List = make([]int, 0, len(pids))
 	for _, pid := range pids {
 		self.List = append(self.List, int(pid))
@@ -220,7 +204,6 @@ func (self *ProcState) Get(pid int) error {
 	return nil
 }
 
-// getProcName returns the process name associated with the PID.
 func getProcName(pid int) (string, error) {
 	handle, err := syscall.OpenProcess(processQueryLimitedInfoAccess, false, uint32(pid))
 	if err != nil {
@@ -236,7 +219,6 @@ func getProcName(pid int) (string, error) {
 	return filepath.Base(filename), nil
 }
 
-// getProcStatus returns the status of a process.
 func getProcStatus(pid int) (RunState, error) {
 	handle, err := syscall.OpenProcess(processQueryLimitedInfoAccess, false, uint32(pid))
 	if err != nil {
@@ -250,13 +232,12 @@ func getProcStatus(pid int) (RunState, error) {
 		return RunStateUnknown, errors.Wrapf(err, "GetExitCodeProcess failed for pid=%v")
 	}
 
-	if exitCode == 259 { //still active
+	if exitCode == 259 { 
 		return RunStateRun, nil
 	}
 	return RunStateSleep, nil
 }
 
-// getParentPid returns the parent process ID of a process.
 func getParentPid(pid int) (int, error) {
 	handle, err := syscall.OpenProcess(processQueryLimitedInfoAccess, false, uint32(pid))
 	if err != nil {
@@ -279,26 +260,22 @@ func getProcCredName(pid int) (string, error) {
 	}
 	defer syscall.CloseHandle(handle)
 
-	// Find process token via win32.
 	var token syscall.Token
 	err = syscall.OpenProcessToken(handle, syscall.TOKEN_QUERY, &token)
 	if err != nil {
 		return "", errors.Wrapf(err, "OpenProcessToken failed for pid=%v", pid)
 	}
 
-	// Find the token user.
 	tokenUser, err := token.GetTokenUser()
 	if err != nil {
 		return "", errors.Wrapf(err, "GetTokenInformation failed for pid=%v", pid)
 	}
 
-	// Close token to prevent handle leaks.
 	err = token.Close()
 	if err != nil {
 		return "", errors.Wrapf(err, "failed while closing process token handle for pid=%v", pid)
 	}
 
-	// Look up domain account by SID.
 	account, domain, _, err := tokenUser.User.Sid.LookupAccount("")
 	if err != nil {
 		sid, sidErr := tokenUser.User.Sid.String()
@@ -334,12 +311,8 @@ func (self *ProcTime) Get(pid int) error {
 		return err
 	}
 
-	// Windows epoch times are expressed as time elapsed since midnight on
-	// January 1, 1601 at Greenwich, England. This converts the Filetime to
-	// unix epoch in milliseconds.
 	self.StartTime = uint64(cpu.CreationTime.Nanoseconds() / 1e6)
 
-	// Convert to millis.
 	self.User = uint64(windows.FiletimeToDuration(&cpu.UserTime).Nanoseconds() / 1e6)
 	self.Sys = uint64(windows.FiletimeToDuration(&cpu.KernelTime).Nanoseconds() / 1e6)
 	self.Total = self.User + self.Sys
@@ -363,7 +336,7 @@ func getProcTimes(pid int) (*syscall.Rusage, error) {
 }
 
 func (self *ProcArgs) Get(pid int) error {
-	// The minimum supported client for Win32_Process is Windows Vista.
+
 	if !version.IsWindowsVistaOrGreater() {
 		return ErrNotImplemented{runtime.GOOS}
 	}
@@ -390,8 +363,6 @@ func (self *FileSystemUsage) Get(path string) error {
 	return nil
 }
 
-// getWin32Process gets information about the process with the given process ID.
-// It uses a WMI query to get the information from the local system.
 func getWin32Process(pid int32) (Win32_Process, error) {
 	var dst []Win32_Process
 	query := fmt.Sprintf("WHERE ProcessId = %d", pid)

@@ -120,9 +120,9 @@ func (self *_parser) parsePrimaryExpression() ast.Expression {
 
 func (self *_parser) parseRegExpLiteral() *ast.RegExpLiteral {
 
-	offset := self.chrOffset - 1 // Opening slash already gotten
+	offset := self.chrOffset - 1 
 	if self.token == token.QUOTIENT_ASSIGN {
-		offset -= 1 // =
+		offset -= 1 
 	}
 	idx := self.idxOf(offset)
 
@@ -135,7 +135,7 @@ func (self *_parser) parseRegExpLiteral() *ast.RegExpLiteral {
 	}
 
 	flags := ""
-	if self.token == token.IDENTIFIER { // gim
+	if self.token == token.IDENTIFIER { 
 
 		flags = self.literal
 		self.next()
@@ -143,10 +143,9 @@ func (self *_parser) parseRegExpLiteral() *ast.RegExpLiteral {
 	}
 
 	var value string
-	// TODO 15.10
+
 	{
-		// Test during parsing that this is a valid regular expression
-		// Sorry, (?=) and (?!) are invalid (for now)
+
 		pattern, err := TransformRegExp(pattern)
 		if err != nil {
 			if pattern == "" || self.mode&IgnoreRegExpErrors == 0 {
@@ -155,8 +154,8 @@ func (self *_parser) parseRegExpLiteral() *ast.RegExpLiteral {
 		} else {
 			_, err = regexp.Compile(pattern)
 			if err != nil {
-				// We should not get here, ParseRegExp should catch any errors
-				self.error(idx, "Invalid regular expression: %s", err.Error()[22:]) // Skip redundant "parse regexp error"
+
+				self.error(idx, "Invalid regular expression: %s", err.Error()[22:]) 
 			} else {
 				value = pattern
 			}
@@ -210,7 +209,7 @@ func (self *_parser) parseVariableDeclaration(declarationList *[]*ast.VariableEx
 
 func (self *_parser) parseVariableDeclarationList(var_ file.Idx) []ast.Expression {
 
-	var declarationList []*ast.VariableExpression // Avoid bad expressions
+	var declarationList []*ast.VariableExpression 
 	var list []ast.Expression
 
 	for {
@@ -262,7 +261,7 @@ func (self *_parser) parseObjectPropertyKey() (string, string) {
 			self.error(idx, err.Error())
 		}
 	default:
-		// null, false, class, etc.
+
 		if matchIdentifier.MatchString(literal) {
 			value = literal
 		}
@@ -351,7 +350,7 @@ func (self *_parser) parseArrayLiteral() ast.Expression {
 	var value []ast.Expression
 	for self.token != token.RIGHT_BRACKET && self.token != token.EOF {
 		if self.token == token.COMMA {
-			// This kind of comment requires a special empty expression node.
+
 			empty := &ast.EmptyExpression{self.idx, self.idx}
 
 			if self.mode&StoreComments != 0 {
@@ -566,7 +565,7 @@ func (self *_parser) parsePostfixExpression() ast.Expression {
 
 	switch self.token {
 	case token.INCREMENT, token.DECREMENT:
-		// Make sure there is no line terminator here
+
 		if self.implicitSemicolon {
 			break
 		}

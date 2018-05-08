@@ -1,4 +1,4 @@
-// Package storage provides clients for Microsoft Azure Storage Services.
+
 package storage
 
 import (
@@ -9,8 +9,6 @@ import (
 	"strings"
 )
 
-// See: https://docs.microsoft.com/rest/api/storageservices/fileservices/authentication-for-the-azure-storage-services
-
 type authentication string
 
 const (
@@ -19,7 +17,6 @@ const (
 	sharedKeyLite         authentication = "sharedKeyLite"
 	sharedKeyLiteForTable authentication = "sharedKeyLiteTable"
 
-	// headers
 	headerAuthorization     = "Authorization"
 	headerContentLength     = "Content-Length"
 	headerDate              = "Date"
@@ -69,9 +66,7 @@ func (c *Client) buildCanonicalizedResource(uri string, auth authentication) (st
 	cr.WriteString(c.getCanonicalizedAccountName())
 
 	if len(u.Path) > 0 {
-		// Any portion of the CanonicalizedResource string that is derived from
-		// the resource's URI should be encoded exactly as it is in the URI.
-		// -- https://msdn.microsoft.com/en-gb/library/azure/dd179428.aspx
+
 		cr.WriteString(u.EscapedPath())
 	}
 
@@ -80,7 +75,6 @@ func (c *Client) buildCanonicalizedResource(uri string, auth authentication) (st
 		return "", fmt.Errorf(errMsg, err.Error())
 	}
 
-	// See https://github.com/Azure/azure-storage-net/blob/master/Lib/Common/Core/Util/AuthenticationUtility.cs#L277
 	if auth == sharedKey {
 		if len(params) > 0 {
 			cr.WriteString("\n")
@@ -102,7 +96,7 @@ func (c *Client) buildCanonicalizedResource(uri string, auth authentication) (st
 			cr.WriteString(strings.Join(completeParams, "\n"))
 		}
 	} else {
-		// search for "comp" parameter, if exists then add it to canonicalizedresource
+
 		if v, ok := params["comp"]; ok {
 			cr.WriteString("?comp=" + v[0])
 		}
@@ -112,8 +106,7 @@ func (c *Client) buildCanonicalizedResource(uri string, auth authentication) (st
 }
 
 func (c *Client) getCanonicalizedAccountName() string {
-	// since we may be trying to access a secondary storage account, we need to
-	// remove the -secondary part of the storage name
+
 	return strings.TrimSuffix(c.accountName, "-secondary")
 }
 

@@ -75,7 +75,6 @@ type Writer struct {
 	oldpos  coord
 }
 
-// NewColorable return new instance of Writer which handle escape sequence from File.
 func NewColorable(file *os.File) io.Writer {
 	if file == nil {
 		panic("nil passed instead of *os.File to NewColorable()")
@@ -91,12 +90,10 @@ func NewColorable(file *os.File) io.Writer {
 	}
 }
 
-// NewColorableStdout return new instance of Writer which handle escape sequence for stdout.
 func NewColorableStdout() io.Writer {
 	return NewColorable(os.Stdout)
 }
 
-// NewColorableStderr return new instance of Writer which handle escape sequence for stderr.
 func NewColorableStderr() io.Writer {
 	return NewColorable(os.Stderr)
 }
@@ -360,7 +357,6 @@ var color256 = map[int]int{
 	255: 0xeeeeee,
 }
 
-// Write write data on console
 func (w *Writer) Write(data []byte) (n int, err error) {
 	var csbi consoleScreenBufferInfo
 	procGetConsoleScreenBufferInfo.Call(uintptr(w.handle), uintptr(unsafe.Pointer(&csbi)))
@@ -562,7 +558,7 @@ loop:
 						if (n-30)&4 != 0 {
 							attr |= foregroundBlue
 						}
-					case n == 38: // set foreground color.
+					case n == 38: 
 						if i < len(token)-2 && (token[i+1] == "5" || token[i+1] == "05") {
 							if n256, err := strconv.Atoi(token[i+2]); err == nil {
 								if n256foreAttr == nil {
@@ -575,7 +571,7 @@ loop:
 						} else {
 							attr = attr & (w.oldattr & backgroundMask)
 						}
-					case n == 39: // reset foreground color.
+					case n == 39: 
 						attr &= backgroundMask
 						attr |= w.oldattr & foregroundMask
 					case 40 <= n && n <= 47:
@@ -589,7 +585,7 @@ loop:
 						if (n-40)&4 != 0 {
 							attr |= backgroundBlue
 						}
-					case n == 48: // set background color.
+					case n == 48: 
 						if i < len(token)-2 && token[i+1] == "5" {
 							if n256, err := strconv.Atoi(token[i+2]); err == nil {
 								if n256backAttr == nil {
@@ -602,7 +598,7 @@ loop:
 						} else {
 							attr = attr & (w.oldattr & foregroundMask)
 						}
-					case n == 49: // reset foreground color.
+					case n == 49: 
 						attr &= foregroundMask
 						attr |= w.oldattr & backgroundMask
 					case 90 <= n && n <= 97:

@@ -1,17 +1,6 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
-// Sparkline is like: ▅▆▂▂▅▇▂▂▃▆▆▆▅▃. The data points should be non-negative integers.
-/*
-  data := []int{4, 2, 1, 6, 3, 9, 1, 4, 2, 15, 14, 9, 8, 6, 10, 13, 15, 12, 10, 5, 3, 6, 1}
-  spl := termui.NewSparkline()
-  spl.Data = data
-  spl.Title = "Sparkline 0"
-  spl.LineColor = termui.ColorGreen
-*/
 type Sparkline struct {
 	Data          []int
 	Height        int
@@ -23,12 +12,6 @@ type Sparkline struct {
 	max           int
 }
 
-// Sparklines is a renderable widget which groups together the given sparklines.
-/*
-  spls := termui.NewSparklines(spl0,spl1,spl2) //...
-  spls.Height = 2
-  spls.Width = 20
-*/
 type Sparklines struct {
 	Block
 	Lines        []Sparkline
@@ -38,12 +21,10 @@ type Sparklines struct {
 
 var sparks = []rune{'▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}
 
-// Add appends a given Sparkline to s *Sparklines.
 func (s *Sparklines) Add(sl Sparkline) {
 	s.Lines = append(s.Lines, sl)
 }
 
-// NewSparkline returns a unrenderable single sparkline that intended to be added into Sparklines.
 func NewSparkline() Sparkline {
 	return Sparkline{
 		Height:     1,
@@ -51,7 +32,6 @@ func NewSparkline() Sparkline {
 		LineColor:  ThemeAttr("sparkline.line.fg")}
 }
 
-// NewSparklines return a new *Spaklines with given Sparkline(s), you can always add a new Sparkline later.
 func NewSparklines(ss ...Sparkline) *Sparklines {
 	s := &Sparklines{Block: *NewBlock(), Lines: ss}
 	return s
@@ -67,7 +47,6 @@ func (sl *Sparklines) update() {
 	}
 	sl.displayWidth = sl.innerArea.Dx()
 
-	// get how many lines gotta display
 	h := 0
 	sl.displayLines = 0
 	for _, v := range sl.Lines {
@@ -91,13 +70,12 @@ func (sl *Sparklines) update() {
 		sl.Lines[i].max = max
 		if max != 0 {
 			sl.Lines[i].scale = float32(8*sl.Lines[i].Height) / float32(max)
-		} else { // when all negative
+		} else { 
 			sl.Lines[i].scale = 0
 		}
 	}
 }
 
-// Buffer implements Bufferer interface.
 func (sl *Sparklines) Buffer() Buffer {
 	buf := sl.Block.Buffer()
 	sl.update()
@@ -129,7 +107,7 @@ func (sl *Sparklines) Buffer() Buffer {
 		}
 
 		for j, v := range data {
-			// display height of the data point, zero when data is negative
+
 			h := int(float32(v)*l.scale + 0.5)
 			if v < 0 {
 				h = 0
@@ -139,13 +117,12 @@ func (sl *Sparklines) Buffer() Buffer {
 			barMod := h % 8
 			for jj := 0; jj < barCnt; jj++ {
 				c := Cell{
-					Ch: ' ', // => sparks[7]
+					Ch: ' ', 
 					Bg: l.LineColor,
 				}
 				x := sl.innerArea.Min.X + j
 				y := sl.innerArea.Min.Y + oftY + l.Height - jj
 
-				//p.Bg = sl.BgColor
 				buf.Set(x, y, c)
 			}
 			if barMod != 0 {

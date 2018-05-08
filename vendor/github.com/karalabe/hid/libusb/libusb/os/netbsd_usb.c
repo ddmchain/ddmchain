@@ -1,19 +1,3 @@
-/*
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #include <config.h>
 
@@ -35,17 +19,14 @@ struct device_priv {
 	char devnode[16];
 	int fd;
 
-	unsigned char *cdesc;			/* active config descriptor */
-	usb_device_descriptor_t ddesc;		/* usb device descriptor */
+	unsigned char *cdesc;			
+	usb_device_descriptor_t ddesc;		
 };
 
 struct handle_priv {
 	int endpoints[USB_MAX_ENDPOINTS];
 };
 
-/*
- * Backend functions
- */
 static int netbsd_get_device_list(struct libusb_context *,
     struct discovered_devs **);
 static int netbsd_open(struct libusb_device_handle *);
@@ -76,9 +57,6 @@ static void netbsd_clear_transfer_priv(struct usbi_transfer *);
 static int netbsd_handle_transfer_completion(struct usbi_transfer *);
 static int netbsd_clock_gettime(int, struct timespec *);
 
-/*
- * Private functions
- */
 static int _errno_to_libusb(int);
 static int _cache_active_config_descriptor(struct libusb_device *, int);
 static int _sync_control_transfer(struct usbi_transfer *);
@@ -88,17 +66,17 @@ static int _access_endpoint(struct libusb_transfer *);
 const struct usbi_os_backend netbsd_backend = {
 	"Synchronous NetBSD backend",
 	0,
-	NULL,				/* init() */
-	NULL,				/* exit() */
+	NULL,				
+	NULL,				
 	netbsd_get_device_list,
-	NULL,				/* hotplug_poll */
+	NULL,				
 	netbsd_open,
 	netbsd_close,
 
 	netbsd_get_device_descriptor,
 	netbsd_get_active_config_descriptor,
 	netbsd_get_config_descriptor,
-	NULL,				/* get_config_descriptor_by_value() */
+	NULL,				
 
 	netbsd_get_configuration,
 	netbsd_set_configuration,
@@ -110,15 +88,15 @@ const struct usbi_os_backend netbsd_backend = {
 	netbsd_clear_halt,
 	netbsd_reset_device,
 
-	NULL,				/* alloc_streams */
-	NULL,				/* free_streams */
+	NULL,				
+	NULL,				
 
-	NULL,				/* dev_mem_alloc() */
-	NULL,				/* dev_mem_free() */
+	NULL,				
+	NULL,				
 
-	NULL,				/* kernel_driver_active() */
-	NULL,				/* detach_kernel_driver() */
-	NULL,				/* attach_kernel_driver() */
+	NULL,				
+	NULL,				
+	NULL,				
 
 	netbsd_destroy_device,
 
@@ -126,13 +104,13 @@ const struct usbi_os_backend netbsd_backend = {
 	netbsd_cancel_transfer,
 	netbsd_clear_transfer_priv,
 
-	NULL,				/* handle_events() */
+	NULL,				
 	netbsd_handle_transfer_completion,
 
 	netbsd_clock_gettime,
 	sizeof(struct device_priv),
 	sizeof(struct handle_priv),
-	0,				/* transfer_priv_size */
+	0,				
 };
 
 int
@@ -148,9 +126,8 @@ netbsd_get_device_list(struct libusb_context * ctx,
 
 	usbi_dbg("");
 
-	/* Only ugen(4) is supported */
 	for (i = 0; i < USB_MAX_DEVICES; i++) {
-		/* Control endpoint is always .00 */
+
 		snprintf(devnode, sizeof(devnode), "/dev/ugen%d.00", i);
 
 		if ((fd = open(devnode, O_RDONLY)) < 0) {
@@ -282,7 +259,6 @@ netbsd_get_config_descriptor(struct libusb_device *dev, uint8_t idx,
 
 	usbi_dbg("index %d, len %d", idx, len);
 
-	/* A config descriptor may be requested before opening the device */
 	if (dpriv->fd >= 0) {
 		fd = dpriv->fd;
 	} else {
@@ -439,7 +415,7 @@ netbsd_submit_transfer(struct usbi_transfer *itransfer)
 		break;
 	case LIBUSB_TRANSFER_TYPE_ISOCHRONOUS:
 		if (IS_XFEROUT(transfer)) {
-			/* Isochronous write is not supported */
+
 			err = LIBUSB_ERROR_NOT_SUPPORTED;
 			break;
 		}
@@ -480,7 +456,6 @@ netbsd_clear_transfer_priv(struct usbi_transfer *itransfer)
 {
 	usbi_dbg("");
 
-	/* Nothing to do */
 }
 
 int
@@ -583,7 +558,7 @@ _sync_control_transfer(struct usbi_transfer *itransfer)
 
 	req.ucr_request.bmRequestType = setup->bmRequestType;
 	req.ucr_request.bRequest = setup->bRequest;
-	/* Don't use USETW, libusb already deals with the endianness */
+
 	(*(uint16_t *)req.ucr_request.wValue) = setup->wValue;
 	(*(uint16_t *)req.ucr_request.wIndex) = setup->wIndex;
 	(*(uint16_t *)req.ucr_request.wLength) = setup->wLength;
@@ -623,12 +598,11 @@ _access_endpoint(struct libusb_transfer *transfer)
 	usbi_dbg("endpoint %d mode %d", endpt, mode);
 
 	if (hpriv->endpoints[endpt] < 0) {
-		/* Pick the right node given the control one */
+
 		strlcpy(devnode, dpriv->devnode, sizeof(devnode));
 		s = strchr(devnode, '.');
 		snprintf(s, 4, ".%02d", endpt);
 
-		/* We may need to read/write to the same endpoint later. */
 		if (((fd = open(devnode, O_RDWR)) < 0) && (errno == ENXIO))
 			if ((fd = open(devnode, mode)) < 0)
 				return (-1);
@@ -647,10 +621,6 @@ _sync_gen_transfer(struct usbi_transfer *itransfer)
 
 	transfer = USBI_TRANSFER_TO_LIBUSB_TRANSFER(itransfer);
 
-	/*
-	 * Bulk, Interrupt or Isochronous transfer depends on the
-	 * endpoint and thus the node to open.
-	 */
 	if ((fd = _access_endpoint(transfer)) < 0)
 		return _errno_to_libusb(errno);
 

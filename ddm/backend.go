@@ -1,20 +1,4 @@
-//
-// This file is part of the go-ddmchain library.
-//
-// The go-ddmchain library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ddmchain library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ddmchain library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package ddm implements the DDMchain protocol.
 package ddm
 
 import (
@@ -25,29 +9,29 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ddmchain/go-ddmchain/accounts"
-	"github.com/ddmchain/go-ddmchain/common"
-	"github.com/ddmchain/go-ddmchain/common/hexutil"
-	"github.com/ddmchain/go-ddmchain/consensus"
-	"github.com/ddmchain/go-ddmchain/consensus/ddmdpos"
-	"github.com/ddmchain/go-ddmchain/consensus/ddmhash"
-	"github.com/ddmchain/go-ddmchain/core"
-	"github.com/ddmchain/go-ddmchain/core/bloombits"
-	"github.com/ddmchain/go-ddmchain/core/types"
-	"github.com/ddmchain/go-ddmchain/core/vm"
+	"github.com/ddmchain/go-ddmchain/user"
+	"github.com/ddmchain/go-ddmchain/general"
+	"github.com/ddmchain/go-ddmchain/general/hexutil"
+	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/algorithm/ddmdpos"
+	"github.com/ddmchain/go-ddmchain/algorithm/ddmhash"
+	"github.com/ddmchain/go-ddmchain/major"
+	"github.com/ddmchain/go-ddmchain/major/bloombits"
+	"github.com/ddmchain/go-ddmchain/major/types"
+	"github.com/ddmchain/go-ddmchain/major/vm"
 	"github.com/ddmchain/go-ddmchain/ddm/downloader"
 	"github.com/ddmchain/go-ddmchain/ddm/filters"
 	"github.com/ddmchain/go-ddmchain/ddm/gasprice"
-	"github.com/ddmchain/go-ddmchain/ddmdb"
-	"github.com/ddmchain/go-ddmchain/event"
-	"github.com/ddmchain/go-ddmchain/internal/ddmapi"
-	"github.com/ddmchain/go-ddmchain/log"
-	"github.com/ddmchain/go-ddmchain/miner"
-	"github.com/ddmchain/go-ddmchain/node"
-	"github.com/ddmchain/go-ddmchain/p2p"
-	"github.com/ddmchain/go-ddmchain/params"
-	"github.com/ddmchain/go-ddmchain/rlp"
-	"github.com/ddmchain/go-ddmchain/rpc"
+	"github.com/ddmchain/go-ddmchain/ddmpv"
+	"github.com/ddmchain/go-ddmchain/signal"
+	"github.com/ddmchain/go-ddmchain/ddmin/ddmapi"
+	"github.com/ddmchain/go-ddmchain/sign"
+	"github.com/ddmchain/go-ddmchain/pack"
+	"github.com/ddmchain/go-ddmchain/pitch"
+	"github.com/ddmchain/go-ddmchain/discover"
+	"github.com/ddmchain/go-ddmchain/part"
+	"github.com/ddmchain/go-ddmchain/ptl"
+	"github.com/ddmchain/go-ddmchain/control"
 )
 
 type LesServer interface {
@@ -57,30 +41,26 @@ type LesServer interface {
 	SetBloomBitsIndexer(bbIndexer *core.ChainIndexer)
 }
 
-// DDMchain implements the DDMchain full node service.
 type DDMchain struct {
 	config      *Config
 	chainConfig *params.ChainConfig
 
-	// Channel for shutting down the service
-	shutdownChan  chan bool    // Channel for shutting down the ddmchain
-	stopDbUpgrade func() error // stop chain db sequential key upgrade
+	shutdownChan  chan bool    
+	stopDbUpgrade func() error 
 
-	// Handlers
 	txPool          *core.TxPool
 	blockchain      *core.BlockChain
 	protocolManager *ProtocolManager
 	lesServer       LesServer
 
-	// DB interfaces
-	chainDb ddmdb.Database // Block chain database
+	chainDb ddmdb.Database 
 
 	eventMux       *event.TypeMux
 	engine         consensus.Engine
 	accountManager *accounts.Manager
 
-	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
-	bloomIndexer  *core.ChainIndexer             // Bloom indexer operating during block imports
+	bloomRequests chan chan *bloombits.Retrieval 
+	bloomIndexer  *core.ChainIndexer             
 
 	ApiBackend *DDMApiBackend
 
@@ -91,7 +71,7 @@ type DDMchain struct {
 	networkId     uint64
 	netRPCService *ddmapi.PublicNetAPI
 
-	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and ddmxbase)
+	lock sync.RWMutex 
 }
 
 func (s *DDMchain) AddLesServer(ls LesServer) {
@@ -99,8 +79,6 @@ func (s *DDMchain) AddLesServer(ls LesServer) {
 	ls.SetBloomBitsIndexer(s.bloomIndexer)
 }
 
-// New creates a new DDMchain object (including the
-// initialisation of the common DDMchain object)
 func New(ctx *node.ServiceContext, config *Config) (*DDMchain, error) {
 	if config.SyncMode == downloader.LightSync {
 		return nil, errors.New("can't run ddm.DDMchain in light sync mode, use les.LightDDMchain")
@@ -152,7 +130,7 @@ func New(ctx *node.ServiceContext, config *Config) (*DDMchain, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Rewind the chain in case of an incompatible config upgrade.
+
 	if compat, ok := genesisErr.(*params.ConfigCompatError); ok {
 		log.Warn("Rewinding chain to upgrade configuration", "err", compat)
 		ddm.blockchain.SetHead(compat.RewindTo)
@@ -183,7 +161,7 @@ func New(ctx *node.ServiceContext, config *Config) (*DDMchain, error) {
 
 func makeExtraData(extra []byte) []byte {
 	if len(extra) == 0 {
-		// create default extradata
+
 		extra, _ = rlp.EncodeToBytes([]interface{}{
 			uint(params.VersionMajor<<16 | params.VersionMinor<<8 | params.VersionPatch),
 			"gddm",
@@ -198,7 +176,6 @@ func makeExtraData(extra []byte) []byte {
 	return extra
 }
 
-// CreateDB creates the chain database.
 func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ddmdb.Database, error) {
 	db, err := ctx.OpenDatabase(name, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {
@@ -210,12 +187,11 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ddmdb.Data
 	return db, nil
 }
 
-// CreateConsensusEngine creates the required type of consensus engine instance for an DDMchain service
 func CreateConsensusEngine(ctx *node.ServiceContext, config *ddmhash.Config, chainConfig *params.ChainConfig, db ddmdb.Database) consensus.Engine {
 	if chainConfig.DPos != nil {
 		return ddmdpos.New(chainConfig.DPos, db)
 	}
-	// Otherwise assume proof-of-work
+
 	switch {
 	case config.PowMode == ddmhash.ModeFake:
 		log.Warn("DDMhash used in fake mode")
@@ -235,20 +211,16 @@ func CreateConsensusEngine(ctx *node.ServiceContext, config *ddmhash.Config, cha
 			DatasetsInMem:  config.DatasetsInMem,
 			DatasetsOnDisk: config.DatasetsOnDisk,
 		})
-		engine.SetThreads(-1) // Disable CPU mining
+		engine.SetThreads(-1) 
 		return engine
 	}
 }
 
-// APIs returns the collection of RPC services the ddmchain package offers.
-// NOTE, some of these services probably need to be moved to somewhere else.
 func (s *DDMchain) APIs() []rpc.API {
 	apis := ddmapi.GetAPIs(s.ApiBackend)
 
-	// Append any APIs exposed explicitly by the consensus engine
 	apis = append(apis, s.engine.APIs(s.BlockChain())...)
 
-	// Append all the local APIs and return
 	return append(apis, []rpc.API{
 		{
 			Namespace: "ddm",
@@ -324,7 +296,6 @@ func (s *DDMchain) DDMXbase() (eb common.Address, err error) {
 	return common.Address{}, fmt.Errorf("ddmxbase must be explicitly specified")
 }
 
-// set in js console via admin interface or wrapper from cli flags
 func (self *DDMchain) SetDDMXbase(ddmxbase common.Address) {
 	self.lock.Lock()
 	self.ddmxbase = ddmxbase
@@ -348,10 +319,7 @@ func (s *DDMchain) StartMining(local bool) error {
 		dpos.Authorize(eb, wallet.SignHash)
 	}
 	if local {
-		// If local (CPU) mining is started, we can disable the transaction rejection
-		// mechanism introduced to speed sync times. CPU mining on mainnet is ludicrous
-		// so noone will ever hit this path, whereas marking sync done on CPU mining
-		// will ensure that private networks work in single miner mode too.
+
 		atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)
 	}
 	go s.miner.Start(eb)
@@ -368,13 +336,11 @@ func (s *DDMchain) TxPool() *core.TxPool               { return s.txPool }
 func (s *DDMchain) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *DDMchain) Engine() consensus.Engine           { return s.engine }
 func (s *DDMchain) ChainDb() ddmdb.Database            { return s.chainDb }
-func (s *DDMchain) IsListening() bool                  { return true } // Always listening
+func (s *DDMchain) IsListening() bool                  { return true } 
 func (s *DDMchain) DDMVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *DDMchain) NetVersion() uint64                 { return s.networkId }
 func (s *DDMchain) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
 
-// Protocols implements node.Service, returning all the currently configured
-// network protocols to start.
 func (s *DDMchain) Protocols() []p2p.Protocol {
 	if s.lesServer == nil {
 		return s.protocolManager.SubProtocols
@@ -382,16 +348,12 @@ func (s *DDMchain) Protocols() []p2p.Protocol {
 	return append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
 }
 
-// Start implements node.Service, starting all internal goroutines needed by the
-// DDMchain protocol implementation.
 func (s *DDMchain) Start(srvr *p2p.Server) error {
-	// Start the bloom bits servicing goroutines
+
 	s.startBloomHandlers()
 
-	// Start the RPC service
 	s.netRPCService = ddmapi.NewPublicNetAPI(srvr, s.NetVersion())
 
-	// Figure out a max peers count based on the server limits
 	maxPeers := srvr.MaxPeers
 	if s.config.LightServ > 0 {
 		if s.config.LightPeers >= srvr.MaxPeers {
@@ -399,7 +361,7 @@ func (s *DDMchain) Start(srvr *p2p.Server) error {
 		}
 		maxPeers -= s.config.LightPeers
 	}
-	// Start the networking layer and the light server if requested
+
 	s.protocolManager.Start(maxPeers)
 	if s.lesServer != nil {
 		s.lesServer.Start(srvr)
@@ -407,8 +369,6 @@ func (s *DDMchain) Start(srvr *p2p.Server) error {
 	return nil
 }
 
-// Stop implements node.Service, terminating all internal goroutines used by the
-// DDMchain protocol.
 func (s *DDMchain) Stop() error {
 	if s.stopDbUpgrade != nil {
 		s.stopDbUpgrade()

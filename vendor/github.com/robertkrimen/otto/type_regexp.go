@@ -26,8 +26,6 @@ func (runtime *_runtime) newRegExpObject(pattern string, flags string) *_object 
 	multiline := false
 	re2flags := ""
 
-	// TODO Maybe clean up the panicking here... TypeError, SyntaxError, ?
-
 	for _, chr := range flags {
 		switch chr {
 		case 'g':
@@ -99,23 +97,22 @@ func execRegExp(this *_object, target string) (match bool, result []int) {
 		result = this.regExpValue().regularExpression.FindStringSubmatchIndex(target[index:])
 	}
 	if result == nil {
-		//this.defineProperty("lastIndex", toValue_(0), 0111, true)
+
 		this.put("lastIndex", toValue_int(0), true)
-		return // !match
+		return 
 	}
 	match = true
 	startIndex := index
 	endIndex := int(lastIndex) + result[1]
-	// We do this shift here because the .FindStringSubmatchIndex above
-	// was done on a local subordinate slice of the string, not the whole string
+
 	for index, _ := range result {
 		result[index] += int(startIndex)
 	}
 	if global {
-		//this.defineProperty("lastIndex", toValue_(endIndex), 0111, true)
+
 		this.put("lastIndex", toValue_int(endIndex), true)
 	}
-	return // match
+	return 
 }
 
 func execResultToArray(runtime *_runtime, target string, result []int) *_object {
@@ -132,7 +129,7 @@ func execResultToArray(runtime *_runtime, target string, result []int) *_object 
 	matchIndex := result[0]
 	if matchIndex != 0 {
 		matchIndex = 0
-		// Find the rune index in the string, not the byte index
+
 		for index := 0; index < result[0]; {
 			_, size := utf8.DecodeRuneInString(target[index:])
 			matchIndex += 1

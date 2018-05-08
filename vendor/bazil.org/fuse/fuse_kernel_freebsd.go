@@ -26,11 +26,11 @@ func (a *attr) Crtime() time.Time {
 }
 
 func (a *attr) SetCrtime(s uint64, ns uint32) {
-	// ignored on freebsd
+
 }
 
 func (a *attr) SetFlags(f uint32) {
-	// ignored on freebsd
+
 }
 
 type setattrIn struct {

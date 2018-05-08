@@ -1,9 +1,4 @@
 
-// All rights reserved.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package leveldb
 
 import (
@@ -14,7 +9,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/storage"
 )
 
-// ErrInternalKeyCorrupted records internal key corruption.
 type ErrInternalKeyCorrupted struct {
 	Ikey   []byte
 	Reason string
@@ -40,30 +34,20 @@ func (kt keyType) String() string {
 	return fmt.Sprintf("<invalid:%#x>", uint(kt))
 }
 
-// Value types encoded as the last component of internal keys.
-// Don't modify; this value are saved to disk.
 const (
 	keyTypeDel = keyType(0)
 	keyTypeVal = keyType(1)
 )
 
-// keyTypeSeek defines the keyType that should be passed when constructing an
-// internal key for seeking to a particular sequence number (since we
-// sort sequence numbers in decreasing order and the value type is
-// embedded as the low 8 bits in the sequence number in internal keys,
-// we need to use the highest-numbered ValueType, not the lowest).
 const keyTypeSeek = keyTypeVal
 
 const (
-	// Maximum value possible for sequence number; the 8-bits are
-	// used by value type, so its can packed together in single
-	// 64-bit integer.
+
 	keyMaxSeq = (uint64(1) << 56) - 1
-	// Maximum value possible for packed sequence number and type.
+
 	keyMaxNum = (keyMaxSeq << 8) | uint64(keyTypeSeek)
 )
 
-// Maximum number encoded in bytes.
 var keyMaxNumBytes = make([]byte, 8)
 
 func init() {

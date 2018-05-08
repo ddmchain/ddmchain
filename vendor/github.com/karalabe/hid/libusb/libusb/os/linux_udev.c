@@ -1,19 +1,3 @@
-/* -*- Mode: C; c-basic-offset:8 ; indent-tabs-mode:t -*- */
-/*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #include <config.h>
 
@@ -37,7 +21,6 @@
 #include "libusbi.h"
 #include "linux_usbfs.h"
 
-/* udev context */
 static struct udev *udev_ctx = NULL;
 static int udev_monitor_fd = -1;
 static int udev_control_pipe[2] = {-1, -1};
@@ -77,8 +60,6 @@ int linux_udev_start_event_monitor(void)
 
 	udev_monitor_fd = udev_monitor_get_fd(udev_monitor);
 
-	/* Some older versions of udev are not non-blocking by default,
-	 * so make sure this is set */
 	r = fcntl(udev_monitor_fd, F_GETFL);
 	if (r == -1) {
 		usbi_err(NULL, "getting udev monitor fd flags (%d)", errno);
@@ -127,24 +108,19 @@ int linux_udev_stop_event_monitor(void)
 	assert(udev_monitor != NULL);
 	assert(udev_monitor_fd != -1);
 
-	/* Write some dummy data to the control pipe and
-	 * wait for the thread to exit */
 	r = usbi_write(udev_control_pipe[1], &dummy, sizeof(dummy));
 	if (r <= 0) {
 		usbi_warn(NULL, "udev control pipe signal failed");
 	}
 	pthread_join(linux_event_thread, NULL);
 
-	/* Release the udev monitor */
 	udev_monitor_unref(udev_monitor);
 	udev_monitor = NULL;
 	udev_monitor_fd = -1;
 
-	/* Clean up the udev context */
 	udev_unref(udev_ctx);
 	udev_ctx = NULL;
 
-	/* close and reset control pipe */
 	close(udev_control_pipe[0]);
 	close(udev_control_pipe[1]);
 	udev_control_pipe[0] = -1;
@@ -169,11 +145,11 @@ static void *linux_udev_event_thread_main(void *arg)
 
 	while ((r = poll(fds, 2, -1)) >= 0 || errno == EINTR) {
 		if (r < 0) {
-			/* temporary failure */
+
 			continue;
 		}
 		if (fds[0].revents & POLLIN) {
-			/* activity on control pipe, read the byte and exit */
+
 			r = usbi_read(udev_control_pipe[0], &dummy, sizeof(dummy));
 			if (r <= 0) {
 				usbi_warn(NULL, "udev control pipe read failed");

@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build ignore
 
 package main
@@ -85,7 +82,6 @@ func main() {
 	gen.WriteGoFile("tables.go", "htmlindex", w.Bytes())
 }
 
-// consts maps canonical encoding name to internal constant.
 var consts = map[string]string{
 	"utf-8":          "utf8",
 	"ibm866":         "ibm866",
@@ -118,7 +114,7 @@ var consts = map[string]string{
 	"x-mac-cyrillic": "macintoshCyrillic",
 	"gbk":            "gbk",
 	"gb18030":        "gb18030",
-	// "hz-gb-2312":     "hzgb2312", // Was removed from WhatWG
+
 	"big5":           "big5",
 	"euc-jp":         "eucjp",
 	"iso-2022-jp":    "iso2022jp",
@@ -130,10 +126,8 @@ var consts = map[string]string{
 	"x-user-defined": "xUserDefined",
 }
 
-// locales is taken from
-// https://html.spec.whatwg.org/multipage/syntax.html#encoding-sniffing-algorithm.
 var locales = []struct{ tag, name string }{
-	{"und", "windows-1252"}, // The default value.
+	{"und", "windows-1252"}, 
 	{"ar", "windows-1256"},
 	{"ba", "windows-1251"},
 	{"be", "windows-1251"},

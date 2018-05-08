@@ -5,14 +5,8 @@ import (
 	"unicode"
 )
 
-// WrapString wraps the given string within lim width in characters.
-//
-// Wrapping is currently naive and only happens at white-space. A future
-// version of the library will implement smarter wrapping. This means that
-// pathological cases can dramatically reach past the limit, such as a very
-// long word.
 func WrapString(s string, lim uint) string {
-	// Initialize a buffer with a slightly larger size to account for breaks
+
 	init := make([]byte, 0, len(s))
 	buf := bytes.NewBuffer(init)
 

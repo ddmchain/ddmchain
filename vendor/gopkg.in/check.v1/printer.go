@@ -40,7 +40,7 @@ func printLine(filename string, line int) (string, error) {
 	lp := &linePrinter{fset: fset, fnode: fnode, line: line, config: config}
 	ast.Walk(lp, fnode)
 	result := lp.output.Bytes()
-	// Comments leave \n at the end.
+
 	n := len(result)
 	for n > 0 && result[n-1] == '\n' {
 		n--
@@ -80,9 +80,7 @@ func (lp *linePrinter) printWithComments(n ast.Node) {
 			}
 		}
 		if cfirst >= nfirst && cfirst <= nlast && n.End() <= g.List[0].Slash {
-			// The printer will not include the comment if it starts past
-			// the node itself. Trick it into printing by overlapping the
-			// slash with the end of the statement.
+
 			g.List[0].Slash = n.End() - 1
 		}
 	}
@@ -100,7 +98,7 @@ func (lp *linePrinter) Visit(n ast.Node) (w ast.Visitor) {
 	first := lp.fset.Position(n.Pos()).Line
 	last := lp.fset.Position(n.End()).Line
 	if first <= lp.line && last >= lp.line {
-		// Print the innermost statement containing the line.
+
 		if stmt, ok := n.(ast.Stmt); ok {
 			if _, ok := n.(*ast.BlockStmt); !ok {
 				lp.stmt = stmt

@@ -33,7 +33,7 @@ type doubleArray struct {
 func newDoubleArray(keys []string) (*doubleArray, error) {
 	da := &doubleArray{
 		bc:   []baseCheck{0},
-		node: []int{-1}, // A start index is adjusting to 1 because 0 will be used as a mark of non-existent node.
+		node: []int{-1}, 
 	}
 	if err := da.Build(keys); err != nil {
 		return nil, err
@@ -41,12 +41,6 @@ func newDoubleArray(keys []string) (*doubleArray, error) {
 	return da, nil
 }
 
-// baseCheck contains BASE, CHECK and Extra flags.
-// From the top, 22bits of BASE, 2bits of Extra flags and 8bits of CHECK.
-//
-//  BASE (22bit) | Extra flags (2bit) | CHECK (8bit)
-// |----------------------|--|--------|
-// 32                    10  8         0
 type baseCheck uint32
 
 func (bc baseCheck) Base() int {
@@ -142,7 +136,6 @@ func (da *doubleArray) findEmptyIndex(start int) int {
 	return i
 }
 
-// findBase returns good BASE.
 func (da *doubleArray) findBase(siblings []sibling, start int, usedBase map[int]struct{}) (base int) {
 	for idx, firstChar := start+1, siblings[0].c; ; idx = da.findEmptyIndex(idx + 1) {
 		base = da.nextIndex(idx, firstChar)

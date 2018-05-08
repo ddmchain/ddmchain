@@ -1,19 +1,3 @@
-/* -*- Mode: C; c-basic-offset:8 ; indent-tabs-mode:t -*- */
-/*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #include <config.h>
 
@@ -154,8 +138,6 @@ int linux_netlink_stop_event_monitor(void)
 
 	assert(linux_netlink_socket != -1);
 
-	/* Write some dummy data to the control pipe and
-	 * wait for the thread to exit */
 	r = usbi_write(netlink_control_pipe[1], &dummy, sizeof(dummy));
 	if (r <= 0)
 		usbi_warn(NULL, "netlink control pipe signal failed");
@@ -165,7 +147,6 @@ int linux_netlink_stop_event_monitor(void)
 	close(linux_netlink_socket);
 	linux_netlink_socket = -1;
 
-	/* close and reset control pipe */
 	close(netlink_control_pipe[0]);
 	close(netlink_control_pipe[1]);
 	netlink_control_pipe[0] = -1;
@@ -188,7 +169,6 @@ static const char *netlink_message_parse(const char *buffer, size_t len, const c
 	return NULL;
 }
 
-/* parse parts of netlink message common to both libudev and the kernel */
 static int linux_netlink_parse(const char *buffer, size_t len, int *detached,
 	const char **sys_name, uint8_t *busnum, uint8_t *devaddr)
 {
@@ -211,17 +191,15 @@ static int linux_netlink_parse(const char *buffer, size_t len, int *detached,
 		return -1;
 	}
 
-	/* check that this is a usb message */
 	tmp = netlink_message_parse(buffer, len, "SUBSYSTEM");
 	if (!tmp || strcmp(tmp, "usb") != 0) {
-		/* not usb. ignore */
+
 		return -1;
 	}
 
-	/* check that this is an actual usb device */
 	tmp = netlink_message_parse(buffer, len, "DEVTYPE");
 	if (!tmp || strcmp(tmp, "usb_device") != 0) {
-		/* not usb. ignore */
+
 		return -1;
 	}
 
@@ -243,14 +221,13 @@ static int linux_netlink_parse(const char *buffer, size_t len, int *detached,
 			return -1;
 		}
 	} else {
-		/* no bus number. try "DEVICE" */
+
 		tmp = netlink_message_parse(buffer, len, "DEVICE");
 		if (!tmp) {
-			/* not usb. ignore */
+
 			return -1;
 		}
 
-		/* Parse a device path such as /dev/bus/usb/003/004 */
 		slash = strrchr(tmp, '/');
 		if (!slash)
 			return -1;
@@ -278,7 +255,6 @@ static int linux_netlink_parse(const char *buffer, size_t len, int *detached,
 	if (slash)
 		*sys_name = slash + 1;
 
-	/* found a usb device */
 	return 0;
 }
 
@@ -300,7 +276,6 @@ static int linux_netlink_read_message(void)
 		.msg_name = &sa_nl, .msg_namelen = sizeof(sa_nl)
 	};
 
-	/* read netlink message */
 	len = recvmsg(linux_netlink_socket, &msg, 0);
 	if (len == -1) {
 		if (errno != EAGAIN && errno != EINTR)
@@ -338,7 +313,6 @@ static int linux_netlink_read_message(void)
 	usbi_dbg("netlink hotplug found device busnum: %hhu, devaddr: %hhu, sys_name: %s, removed: %s",
 		 busnum, devaddr, sys_name, detached ? "yes" : "no");
 
-	/* signal device is available (or not) to all contexts */
 	if (detached)
 		linux_device_disconnected(busnum, devaddr);
 	else
@@ -364,7 +338,7 @@ static void *linux_netlink_event_thread_main(void *arg)
 
 	while (poll(fds, 2, -1) >= 0) {
 		if (fds[0].revents & POLLIN) {
-			/* activity on control pipe, read the byte and exit */
+
 			r = usbi_read(netlink_control_pipe[0], &dummy, sizeof(dummy));
 			if (r <= 0)
 				usbi_warn(NULL, "netlink control pipe read failed");

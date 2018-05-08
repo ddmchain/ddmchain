@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package websocket
 
 import (
@@ -12,7 +9,6 @@ import (
 	"net/url"
 )
 
-// DialError is an error that occurs while dialling a websocket server.
 type DialError struct {
 	*Config
 	Err error
@@ -22,7 +18,6 @@ func (e *DialError) Error() string {
 	return "websocket.Dial " + e.Config.Location.String() + ": " + e.Err.Error()
 }
 
-// NewConfig creates a new WebSocket config for client connection.
 func NewConfig(server, origin string) (config *Config, err error) {
 	config = new(Config)
 	config.Version = ProtocolVersionHybi13
@@ -38,7 +33,6 @@ func NewConfig(server, origin string) (config *Config, err error) {
 	return
 }
 
-// NewClient creates a new WebSocket client connection over rwc.
 func NewClient(config *Config, rwc io.ReadWriteCloser) (ws *Conn, err error) {
 	br := bufio.NewReader(rwc)
 	bw := bufio.NewWriter(rwc)
@@ -51,7 +45,6 @@ func NewClient(config *Config, rwc io.ReadWriteCloser) (ws *Conn, err error) {
 	return
 }
 
-// Dial opens a new client connection to a WebSocket.
 func Dial(url_, protocol, origin string) (ws *Conn, err error) {
 	config, err := NewConfig(url_, origin)
 	if err != nil {
@@ -77,7 +70,6 @@ func parseAuthority(location *url.URL) string {
 	return location.Host
 }
 
-// DialConfig opens a new client connection to a WebSocket with a config.
 func DialConfig(config *Config) (ws *Conn, err error) {
 	var client net.Conn
 	if config.Location == nil {

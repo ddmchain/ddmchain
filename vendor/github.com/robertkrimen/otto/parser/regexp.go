@@ -10,43 +10,28 @@ type _RegExp_parser struct {
 	str    string
 	length int
 
-	chr       rune // The current character
-	chrOffset int  // The offset of current character
-	offset    int  // The offset after current character (may be greater than 1)
+	chr       rune 
+	chrOffset int  
+	offset    int  
 
 	errors  []error
-	invalid bool // The input is an invalid JavaScript RegExp
+	invalid bool 
 
 	goRegexp *bytes.Buffer
 }
 
-// TransformRegExp transforms a JavaScript pattern into  a Go "regexp" pattern.
-//
-// re2 (Go) cannot do backtracking, so the presence of a lookahead (?=) (?!) or
-// backreference (\1, \2, ...) will cause an error.
-//
-// re2 (Go) has a different definition for \s: [\t\n\f\r ].
-// The JavaScript definition, on the other hand, also includes \v, Unicode "Separator, Space", etc.
-//
-// If the pattern is invalid (not valid even in JavaScript), then this function
-// returns the empty string and an error.
-//
-// If the pattern is valid, but incompatible (contains a lookahead or backreference),
-// then this function returns the transformation (a non-empty string) AND an error.
 func TransformRegExp(pattern string) (string, error) {
 
 	if pattern == "" {
 		return "", nil
 	}
 
-	// TODO If without \, if without (?=, (?!, then another shortcut
-
 	parser := _RegExp_parser{
 		str:      pattern,
 		length:   len(pattern),
 		goRegexp: bytes.NewBuffer(make([]byte, 0, 3*len(pattern)/2)),
 	}
-	parser.read() // Pull in the first character
+	parser.read() 
 	parser.scan()
 	var err error
 	if len(parser.errors) > 0 {
@@ -56,7 +41,6 @@ func TransformRegExp(pattern string) (string, error) {
 		return "", err
 	}
 
-	// Might not be re2 compatible, but is still a valid JavaScript RegExp
 	return parser.goRegexp.String(), err
 }
 
@@ -82,10 +66,9 @@ func (self *_RegExp_parser) scan() {
 	}
 }
 
-// (...)
 func (self *_RegExp_parser) scanGroup() {
 	str := self.str[self.chrOffset:]
-	if len(str) > 1 { // A possibility of (?= or (?!
+	if len(str) > 1 { 
 		if str[0] == '?' {
 			if str[1] == '=' || str[1] == '!' {
 				self.error(-1, "re2: Invalid (%s) <lookahead>", self.str[self.chrOffset:self.chrOffset+2])
@@ -116,7 +99,6 @@ func (self *_RegExp_parser) scanGroup() {
 	self.pass()
 }
 
-// [...]
 func (self *_RegExp_parser) scanBracket() {
 	for self.chr != -1 {
 		if self.chr == ']' {
@@ -136,7 +118,6 @@ func (self *_RegExp_parser) scanBracket() {
 	self.pass()
 }
 
-// \...
 func (self *_RegExp_parser) scanEscape(inClass bool) {
 	offset := self.chrOffset
 
@@ -149,20 +130,20 @@ func (self *_RegExp_parser) scanEscape(inClass bool) {
 		for {
 			digit := int64(digitValue(self.chr))
 			if digit >= 8 {
-				// Not a valid digit
+
 				break
 			}
 			value = value*8 + digit
 			self.read()
 			size += 1
 		}
-		if size == 1 { // The number of characters read
+		if size == 1 { 
 			_, err := self.goRegexp.Write([]byte{'\\', byte(value) + '0'})
 			if err != nil {
 				self.errors = append(self.errors, err)
 			}
 			if value != 0 {
-				// An invalid backreference
+
 				self.error(-1, "re2: Invalid \\%d <backreference>", value)
 			}
 			return
@@ -185,7 +166,7 @@ func (self *_RegExp_parser) scanEscape(inClass bool) {
 		for {
 			digit := digitValue(self.chr)
 			if digit >= 10 {
-				// Not a valid digit
+
 				break
 			}
 			self.read()
@@ -225,8 +206,7 @@ func (self *_RegExp_parser) scanEscape(inClass bool) {
 		fallthrough
 
 	case 'd', 'D', 's', 'S', 'w', 'W':
-		// This is slightly broken, because ECMAScript
-		// includes \v in \s, \S, while re2 does not
+
 		fallthrough
 
 	case '\\':
@@ -269,22 +249,20 @@ func (self *_RegExp_parser) scanEscape(inClass bool) {
 		return
 
 	default:
-		// $ is an identifier character, so we have to have
-		// a special case for it here
+
 		if self.chr == '$' || !isIdentifierPart(self.chr) {
-			// A non-identifier character needs escaping
+
 			err := self.goRegexp.WriteByte('\\')
 			if err != nil {
 				self.errors = append(self.errors, err)
 			}
 		} else {
-			// Unescape the character for re2
+
 		}
 		self.pass()
 		return
 	}
 
-	// Otherwise, we're a \u.... or \x...
 	valueOffset := self.chrOffset
 
 	var value uint32
@@ -293,7 +271,7 @@ func (self *_RegExp_parser) scanEscape(inClass bool) {
 		for ; length > 0; length-- {
 			digit := uint32(digitValue(self.chr))
 			if digit >= base {
-				// Not a valid digit
+
 				goto skip
 			}
 			value = value*base + digit
@@ -326,7 +304,7 @@ func (self *_RegExp_parser) scanEscape(inClass bool) {
 			self.errors = append(self.errors, err)
 		}
 	} else {
-		// Should never, ever get here...
+
 		self.error(-1, "re2: Illegal branch in scanEscape")
 		goto skip
 	}
@@ -350,7 +328,6 @@ func (self *_RegExp_parser) pass() {
 	self.read()
 }
 
-// TODO Better error reporting, use the offset, etc.
 func (self *_RegExp_parser) error(offset int, msg string, msgValues ...interface{}) error {
 	err := fmt.Errorf(msg, msgValues...)
 	self.errors = append(self.errors, err)

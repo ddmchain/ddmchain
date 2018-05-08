@@ -1,14 +1,6 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// RIPEMD-160 block step.
-// In its own file so that a faster assembly or C version
-// can be substituted easily.
-
 package ripemd160
 
-// work buffer indices and roll amounts for one line
 var _n = [80]uint{
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	7, 4, 13, 1, 10, 6, 15, 3, 12, 0, 9, 5, 2, 14, 11, 8,
@@ -25,7 +17,6 @@ var _r = [80]uint{
 	9, 15, 5, 11, 6, 8, 13, 12, 5, 12, 13, 14, 11, 8, 5, 6,
 }
 
-// same for the other parallel one
 var n_ = [80]uint{
 	5, 14, 7, 0, 9, 2, 11, 4, 13, 6, 15, 8, 1, 10, 3, 12,
 	6, 11, 3, 7, 0, 13, 5, 10, 14, 15, 8, 12, 4, 9, 1, 2,
@@ -55,7 +46,6 @@ func _Block(md *digest, p []byte) int {
 			j += 4
 		}
 
-		// round 1
 		i := 0
 		for i < 16 {
 			alpha = a + (b ^ c ^ d) + x[_n[i]]
@@ -64,7 +54,6 @@ func _Block(md *digest, p []byte) int {
 			beta = c<<10 | c>>22
 			a, b, c, d, e = e, alpha, b, beta, d
 
-			// parallel line
 			alpha = aa + (bb ^ (cc | ^dd)) + x[n_[i]] + 0x50a28be6
 			s = r_[i]
 			alpha = (alpha<<s | alpha>>(32-s)) + ee
@@ -74,7 +63,6 @@ func _Block(md *digest, p []byte) int {
 			i++
 		}
 
-		// round 2
 		for i < 32 {
 			alpha = a + (b&c | ^b&d) + x[_n[i]] + 0x5a827999
 			s := _r[i]
@@ -82,7 +70,6 @@ func _Block(md *digest, p []byte) int {
 			beta = c<<10 | c>>22
 			a, b, c, d, e = e, alpha, b, beta, d
 
-			// parallel line
 			alpha = aa + (bb&dd | cc&^dd) + x[n_[i]] + 0x5c4dd124
 			s = r_[i]
 			alpha = (alpha<<s | alpha>>(32-s)) + ee
@@ -92,7 +79,6 @@ func _Block(md *digest, p []byte) int {
 			i++
 		}
 
-		// round 3
 		for i < 48 {
 			alpha = a + (b | ^c ^ d) + x[_n[i]] + 0x6ed9eba1
 			s := _r[i]
@@ -100,7 +86,6 @@ func _Block(md *digest, p []byte) int {
 			beta = c<<10 | c>>22
 			a, b, c, d, e = e, alpha, b, beta, d
 
-			// parallel line
 			alpha = aa + (bb | ^cc ^ dd) + x[n_[i]] + 0x6d703ef3
 			s = r_[i]
 			alpha = (alpha<<s | alpha>>(32-s)) + ee
@@ -110,7 +95,6 @@ func _Block(md *digest, p []byte) int {
 			i++
 		}
 
-		// round 4
 		for i < 64 {
 			alpha = a + (b&d | c&^d) + x[_n[i]] + 0x8f1bbcdc
 			s := _r[i]
@@ -118,7 +102,6 @@ func _Block(md *digest, p []byte) int {
 			beta = c<<10 | c>>22
 			a, b, c, d, e = e, alpha, b, beta, d
 
-			// parallel line
 			alpha = aa + (bb&cc | ^bb&dd) + x[n_[i]] + 0x7a6d76e9
 			s = r_[i]
 			alpha = (alpha<<s | alpha>>(32-s)) + ee
@@ -128,7 +111,6 @@ func _Block(md *digest, p []byte) int {
 			i++
 		}
 
-		// round 5
 		for i < 80 {
 			alpha = a + (b ^ (c | ^d)) + x[_n[i]] + 0xa953fd4e
 			s := _r[i]
@@ -136,7 +118,6 @@ func _Block(md *digest, p []byte) int {
 			beta = c<<10 | c>>22
 			a, b, c, d, e = e, alpha, b, beta, d
 
-			// parallel line
 			alpha = aa + (bb ^ cc ^ dd) + x[n_[i]]
 			s = r_[i]
 			alpha = (alpha<<s | alpha>>(32-s)) + ee
@@ -146,7 +127,6 @@ func _Block(md *digest, p []byte) int {
 			i++
 		}
 
-		// combine results
 		dd += c + md.s[1]
 		md.s[1] = md.s[2] + d + ee
 		md.s[2] = md.s[3] + e + aa

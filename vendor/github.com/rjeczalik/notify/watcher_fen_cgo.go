@@ -1,18 +1,8 @@
 
-// Use of this source code is governed by the MIT license that can be
-// found in the LICENSE file.
-
 // +build solaris
 
 package notify
 
-// #include <port.h>
-// #include <stdio.h>
-// #include <stdlib.h>
-// struct file_obj* newFo() { return (struct file_obj*) malloc(sizeof(struct file_obj)); }
-// port_event_t* newPe() { return (port_event_t*) malloc(sizeof(port_event_t)); }
-// uintptr_t conv(struct file_obj* fo) { return (uintptr_t) fo; }
-// struct file_obj* dconv(uintptr_t fo) { return (struct file_obj*) fo; }
 import "C"
 
 import (
@@ -33,22 +23,20 @@ const (
 	mountedOver    = Event(C.MOUNTEDOVER)
 )
 
-// PortEvent is a notify's equivalent of port_event_t.
 type PortEvent struct {
-	PortevEvents int         // PortevEvents is an equivalent of portev_events.
-	PortevSource uint8       // PortevSource is an equivalent of portev_source.
-	PortevPad    uint8       // Portevpad is an equivalent of portev_pad.
-	PortevObject interface{} // PortevObject is an equivalent of portev_object.
-	PortevUser   uintptr     // PortevUser is an equivalent of portev_user.
+	PortevEvents int         
+	PortevSource uint8       
+	PortevPad    uint8       
+	PortevObject interface{} 
+	PortevUser   uintptr     
 }
 
-// FileObj is a notify's equivalent of file_obj.
 type FileObj struct {
-	Atim syscall.Timespec // Atim is an equivalent of fo_atime.
-	Mtim syscall.Timespec // Mtim is an equivalent of fo_mtime.
-	Ctim syscall.Timespec // Ctim is an equivalent of fo_ctime.
-	Pad  [3]uintptr       // Pad is an equivalent of fo_pad.
-	Name string           // Name is an equivalent of fo_name.
+	Atim syscall.Timespec 
+	Mtim syscall.Timespec 
+	Ctim syscall.Timespec 
+	Pad  [3]uintptr       
+	Name string           
 }
 
 type cfen struct {
@@ -95,7 +83,7 @@ const srcFile = C.PORT_SOURCE_FILE
 const alertSet = C.PORT_ALERT_SET
 
 func cfo2fo(cfo *C.struct_file_obj) *FileObj {
-	// Currently remaining attributes are not used.
+
 	if cfo == nil {
 		return nil
 	}

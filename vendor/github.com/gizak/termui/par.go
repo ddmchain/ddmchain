@@ -1,25 +1,14 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
-// Par displays a paragraph.
-/*
-  par := termui.NewPar("Simple Text")
-  par.Height = 3
-  par.Width = 17
-  par.BorderLabel = "Label"
-*/
 type Par struct {
 	Block
 	Text        string
 	TextFgColor Attribute
 	TextBgColor Attribute
-	WrapLength  int // words wrap limit. Note it may not work properly with multi-width char
+	WrapLength  int 
 }
 
-// NewPar returns a new *Par with given text as its content.
 func NewPar(s string) *Par {
 	return &Par{
 		Block:       *NewBlock(),
@@ -30,14 +19,12 @@ func NewPar(s string) *Par {
 	}
 }
 
-// Buffer implements Bufferer interface.
 func (p *Par) Buffer() Buffer {
 	buf := p.Block.Buffer()
 
 	fg, bg := p.TextFgColor, p.TextBgColor
 	cs := DefaultTxBuilder.Build(p.Text, fg, bg)
 
-	// wrap if WrapLength set
 	if p.WrapLength < 0 {
 		cs = wrapTx(cs, p.Width-2)
 	} else if p.WrapLength > 0 {
@@ -49,7 +36,7 @@ func (p *Par) Buffer() Buffer {
 		w := cs[n].Width()
 		if cs[n].Ch == '\n' || x+w > p.innerArea.Dx() {
 			y++
-			x = 0 // set x = 0
+			x = 0 
 			if cs[n].Ch == '\n' {
 				n++
 			}

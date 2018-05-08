@@ -40,8 +40,7 @@ func stringToArrayIndex(name string) int64 {
 		return -1
 	}
 	if index >= maxUint32 {
-		// The value 2^32 (or above) is not a valid index because
-		// you cannot store a uint32 length for an index of uint32
+
 		return -1
 	}
 	return index
@@ -70,15 +69,13 @@ func getValueOfArrayIndex(array []Value, index int) (Value, bool) {
 	return Value{}, false
 }
 
-// A range index can be anything from 0 up to length. It is NOT safe to use as an index
-// to an array, but is useful for slicing and in some ECMA algorithms.
 func valueToRangeIndex(indexValue Value, length int64, negativeIsZero bool) int64 {
 	index := indexValue.number().int64
 	if negativeIsZero {
 		if index < 0 {
 			index = 0
 		}
-		// minimum(index, length)
+
 		if index >= length {
 			index = length
 		}
@@ -101,16 +98,15 @@ func valueToRangeIndex(indexValue Value, length int64, negativeIsZero bool) int6
 func rangeStartEnd(array []Value, size int64, negativeIsZero bool) (start, end int64) {
 	start = valueToRangeIndex(valueOfArrayIndex(array, 0), size, negativeIsZero)
 	if len(array) == 1 {
-		// If there is only the start argument, then end = size
+
 		end = size
 		return
 	}
 
-	// Assuming the argument is undefined...
 	end = size
 	endValue := valueOfArrayIndex(array, 1)
 	if !endValue.IsUndefined() {
-		// Which it is not, so get the value as an array index
+
 		end = valueToRangeIndex(endValue, size, negativeIsZero)
 	}
 	return
@@ -119,16 +115,15 @@ func rangeStartEnd(array []Value, size int64, negativeIsZero bool) (start, end i
 func rangeStartLength(source []Value, size int64) (start, length int64) {
 	start = valueToRangeIndex(valueOfArrayIndex(source, 0), size, false)
 
-	// Assume the second argument is missing or undefined
 	length = int64(size)
 	if len(source) == 1 {
-		// If there is only the start argument, then length = size
+
 		return
 	}
 
 	lengthValue := valueOfArrayIndex(source, 1)
 	if !lengthValue.IsUndefined() {
-		// Which it is not, so get the value as an array index
+
 		length = lengthValue.number().int64
 	}
 	return
@@ -168,10 +163,10 @@ func eachPair(list []interface{}, fn func(_0, _1 interface{})) {
 	for len(list) > 0 {
 		var _0, _1 interface{}
 		_0 = list[0]
-		list = list[1:] // Pop off first
+		list = list[1:] 
 		if len(list) > 0 {
 			_1 = list[0]
-			list = list[1:] // Pop off second
+			list = list[1:] 
 		}
 		fn(_0, _1)
 	}

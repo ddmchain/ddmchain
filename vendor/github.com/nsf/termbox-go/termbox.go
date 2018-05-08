@@ -11,8 +11,6 @@ import "strconv"
 import "os"
 import "io"
 
-// private API
-
 const (
 	t_enter_ca = iota
 	t_exit_ca
@@ -42,11 +40,10 @@ type input_event struct {
 }
 
 var (
-	// term specific sequences
+
 	keys  []string
 	funcs []string
 
-	// termbox inner state
 	orig_tios      syscall_Termios
 	back_buffer    cellbuf
 	front_buffer   cellbuf
@@ -73,7 +70,6 @@ var (
 	interrupt_comm = make(chan struct{})
 	intbuf         = make([]byte, 0, 16)
 
-	// grayscale indexes
 	grayscale = []Attribute{
 		0, 17, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244,
 		245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 232,
@@ -243,11 +239,6 @@ func send_clear() error {
 		write_cursor(cursor_x, cursor_y)
 	}
 
-	// we need to invalidate cursor position too and these two vars are
-	// used only for simple cursor positioning optimization, cursor
-	// actually may be in the correct place, but we simply discard
-	// optimization once and it gives us simple solution for the case when
-	// cursor moved
 	lastx = coord_invalid
 	lasty = coord_invalid
 
@@ -286,8 +277,7 @@ func tcgetattr(fd uintptr, termios *syscall_Termios) error {
 
 func parse_mouse_event(event *Event, buf string) (int, bool) {
 	if strings.HasPrefix(buf, "\033[M") && len(buf) >= 6 {
-		// X10 mouse encoding, the simplest one
-		// \033 [ M Cb Cx Cy
+
 		b := buf[3] - 32
 		switch b & 3 {
 		case 0:
@@ -309,34 +299,25 @@ func parse_mouse_event(event *Event, buf string) (int, bool) {
 		default:
 			return 6, false
 		}
-		event.Type = EventMouse // KeyEvent by default
+		event.Type = EventMouse 
 		if b&32 != 0 {
 			event.Mod |= ModMotion
 		}
 
-		// the coord is 1,1 for upper left
 		event.MouseX = int(buf[4]) - 1 - 32
 		event.MouseY = int(buf[5]) - 1 - 32
 		return 6, true
 	} else if strings.HasPrefix(buf, "\033[<") || strings.HasPrefix(buf, "\033[") {
-		// xterm 1006 extended mode or urxvt 1015 extended mode
-		// xterm: \033 [ < Cb ; Cx ; Cy (M or m)
-		// urxvt: \033 [ Cb ; Cx ; Cy M
 
-		// find the first M or m, that's where we stop
 		mi := strings.IndexAny(buf, "Mm")
 		if mi == -1 {
 			return 0, false
 		}
 
-		// whether it's a capital M or not
 		isM := buf[mi] == 'M'
 
-		// whether it's urxvt or not
 		isU := false
 
-		// buf[2] is safe here, because having M or m found means we have at
-		// least 3 bytes in a string
 		if buf[2] == '<' {
 			buf = buf[3:mi]
 		} else {
@@ -346,7 +327,7 @@ func parse_mouse_event(event *Event, buf string) (int, bool) {
 
 		s1 := strings.Index(buf, ";")
 		s2 := strings.LastIndex(buf, ";")
-		// not found or only one ';'
+
 		if s1 == -1 || s2 == -1 || s1 == s2 {
 			return 0, false
 		}
@@ -364,8 +345,6 @@ func parse_mouse_event(event *Event, buf string) (int, bool) {
 			return 0, false
 		}
 
-		// on urxvt, first number is encoded exactly as in X10, but we need to
-		// make it zero-based, on xterm it is zero-based already
 		if isU {
 			n1 -= 32
 		}
@@ -390,11 +369,11 @@ func parse_mouse_event(event *Event, buf string) (int, bool) {
 			return mi + 1, false
 		}
 		if !isM {
-			// on xterm mouse release is signaled by lowercase m
+
 			event.Key = MouseRelease
 		}
 
-		event.Type = EventMouse // KeyEvent by default
+		event.Type = EventMouse 
 		if n1&32 != 0 {
 			event.Mod |= ModMotion
 		}
@@ -417,7 +396,6 @@ func parse_escape_sequence(event *Event, buf []byte) (int, bool) {
 		}
 	}
 
-	// if none of the keys match, let's try mouse seqences
 	return parse_mouse_event(event, bufstr)
 }
 
@@ -447,23 +425,22 @@ func extract_event(inbuf []byte, event *Event) bool {
 	}
 
 	if inbuf[0] == '\033' {
-		// possible escape sequence
+
 		if n, ok := parse_escape_sequence(event, inbuf); n != 0 {
 			event.N = n
 			return ok
 		}
 
-		// it's not escape sequence, then it's Alt or Esc, check input_mode
 		switch {
 		case input_mode&InputEsc != 0:
-			// if we're in escape mode, fill Esc event, pop buffer, return success
+
 			event.Ch = 0
 			event.Key = KeyEsc
 			event.Mod = 0
 			event.N = 1
 			return true
 		case input_mode&InputAlt != 0:
-			// if we're in alt mode, set Alt modifier to event and redo parsing
+
 			event.Mod = ModAlt
 			ok := extract_event(inbuf[1:], event)
 			if ok {
@@ -477,19 +454,14 @@ func extract_event(inbuf []byte, event *Event) bool {
 		}
 	}
 
-	// if we're here, this is not an escape sequence and not an alt sequence
-	// so, it's a FUNCTIONAL KEY or a UNICODE character
-
-	// first of all check if it's a functional key
 	if Key(inbuf[0]) <= KeySpace || Key(inbuf[0]) == KeyBackspace2 {
-		// fill event, pop buffer, return success
+
 		event.Ch = 0
 		event.Key = Key(inbuf[0])
 		event.N = 1
 		return true
 	}
 
-	// the only possible option is utf8 rune
 	if r, n := utf8.DecodeRune(inbuf); r != utf8.RuneError {
 		event.Ch = r
 		event.Key = 0

@@ -9,21 +9,12 @@ import (
 	"time"
 )
 
-// -----------------------------------------------------------------------
-// Test suite registry.
-
 var allSuites []interface{}
 
-// Suite registers the given value as a test suite to be run. Any methods
-// starting with the Test prefix in the given value will be considered as
-// a test method.
 func Suite(suite interface{}) interface{} {
 	allSuites = append(allSuites, suite)
 	return suite
 }
-
-// -----------------------------------------------------------------------
-// Public running interface.
 
 var (
 	oldFilterFlag  = flag.String("gocheck.f", "", "Regular expression selecting which tests and/or suites to run")
@@ -44,9 +35,6 @@ var (
 	newWorkFlag    = flag.Bool("check.work", false, "Display and do not remove the test working directory")
 )
 
-// TestingT runs all test suites registered with the Suite function,
-// printing results to stdout, and reporting any failures back to
-// the "testing" package.
 func TestingT(testingT *testing.T) {
 	benchTime := *newBenchTime
 	if benchTime == 1*time.Second {
@@ -76,8 +64,6 @@ func TestingT(testingT *testing.T) {
 	}
 }
 
-// RunAll runs all test suites registered with the Suite function, using the
-// provided run configuration.
 func RunAll(runConf *RunConf) *Result {
 	result := Result{}
 	for _, suite := range allSuites {
@@ -86,14 +72,11 @@ func RunAll(runConf *RunConf) *Result {
 	return &result
 }
 
-// Run runs the provided test suite using the provided run configuration.
 func Run(suite interface{}, runConf *RunConf) *Result {
 	runner := newSuiteRunner(suite, runConf)
 	return runner.run()
 }
 
-// ListAll returns the names of all the test functions registered with the
-// Suite function that will be run with the provided run configuration.
 func ListAll(runConf *RunConf) []string {
 	var names []string
 	for _, suite := range allSuites {
@@ -102,8 +85,6 @@ func ListAll(runConf *RunConf) []string {
 	return names
 }
 
-// List returns the names of the test functions in the given
-// suite that will be run with the provided run configuration.
 func List(suite interface{}, runConf *RunConf) []string {
 	var names []string
 	runner := newSuiteRunner(suite, runConf)
@@ -112,9 +93,6 @@ func List(suite interface{}, runConf *RunConf) []string {
 	}
 	return names
 }
-
-// -----------------------------------------------------------------------
-// Result methods.
 
 func (r *Result) Add(other *Result) {
 	r.Succeeded += other.Succeeded

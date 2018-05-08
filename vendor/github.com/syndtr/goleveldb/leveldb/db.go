@@ -1,9 +1,4 @@
 
-// All rights reserved.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package leveldb
 
 import (
@@ -27,20 +22,16 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
-// DB is a LevelDB database.
 type DB struct {
-	// Need 64-bit alignment.
+
 	seq uint64
 
-	// Stats. Need 64-bit alignment.
-	cWriteDelay            int64 // The cumulative duration of write delays
-	cWriteDelayN           int32 // The cumulative number of write delays
+	cWriteDelay            int64 
+	cWriteDelayN           int32 
 	aliveSnaps, aliveIters int32
 
-	// Session.
 	s *session
 
-	// MemDB.
 	memMu           sync.RWMutex
 	memPool         chan *memdb.DB
 	mem, frozenMem  *memDB
@@ -50,11 +41,9 @@ type DB struct {
 	frozenJournalFd storage.FileDesc
 	frozenSeq       uint64
 
-	// Snapshot.
 	snapsMu   sync.Mutex
 	snapsList *list.List
 
-	// Write.
 	batchPool    sync.Pool
 	writeMergeC  chan writeMerge
 	writeMergedC chan bool
@@ -64,7 +53,6 @@ type DB struct {
 	writeDelayN  int
 	tr           *Transaction
 
-	// Compaction.
 	compCommitLk     sync.Mutex
 	tcompCmdC        chan cCmd
 	tcompPauseC      chan chan<- struct{}
@@ -74,9 +62,8 @@ type DB struct {
 	compErrSetC      chan error
 	compWriteLocking bool
 	compStats        cStats
-	memdbMaxLevel    int // For testing.
+	memdbMaxLevel    int 
 
-	// Close.
 	closeW sync.WaitGroup
 	closeC chan struct{}
 	closed uint32
@@ -88,46 +75,44 @@ func openDB(s *session) (*DB, error) {
 	start := time.Now()
 	db := &DB{
 		s: s,
-		// Initial sequence
+
 		seq: s.stSeqNum,
-		// MemDB
+
 		memPool: make(chan *memdb.DB, 1),
-		// Snapshot
+
 		snapsList: list.New(),
-		// Write
+
 		batchPool:    sync.Pool{New: newBatch},
 		writeMergeC:  make(chan writeMerge),
 		writeMergedC: make(chan bool),
 		writeLockC:   make(chan struct{}, 1),
 		writeAckC:    make(chan error),
-		// Compaction
+
 		tcompCmdC:   make(chan cCmd),
 		tcompPauseC: make(chan chan<- struct{}),
 		mcompCmdC:   make(chan cCmd),
 		compErrC:    make(chan error),
 		compPerErrC: make(chan error),
 		compErrSetC: make(chan error),
-		// Close
+
 		closeC: make(chan struct{}),
 	}
 
-	// Read-only mode.
 	readOnly := s.o.GetReadOnly()
 
 	if readOnly {
-		// Recover journals (read-only mode).
+
 		if err := db.recoverJournalRO(); err != nil {
 			return nil, err
 		}
 	} else {
-		// Recover journals.
+
 		if err := db.recoverJournal(); err != nil {
 			return nil, err
 		}
 
-		// Remove any obsolete files.
 		if err := db.checkAndCleanFiles(); err != nil {
-			// Close journal.
+
 			if db.journal != nil {
 				db.journal.Close()
 				db.journalWriter.Close()
@@ -137,7 +122,6 @@ func openDB(s *session) (*DB, error) {
 
 	}
 
-	// Doesn't need to be included in the wait group.
 	go db.compactionError()
 	go db.mpoolDrain()
 
@@ -147,7 +131,7 @@ func openDB(s *session) (*DB, error) {
 		db.closeW.Add(2)
 		go db.tCompaction()
 		go db.mCompaction()
-		// go db.jWriter()
+
 	}
 
 	s.logf("db@open done T·%v", time.Since(start))
@@ -156,17 +140,6 @@ func openDB(s *session) (*DB, error) {
 	return db, nil
 }
 
-// Open opens or creates a DB for the given storage.
-// The DB will be created if not exist, unless ErrorIfMissing is true.
-// Also, if ErrorIfExist is true and the DB exist Open will returns
-// os.ErrExist error.
-//
-// Open will return an error with type of ErrCorrupted if corruption
-// detected in the DB. Use errors.IsCorrupted to test whether an error is
-// due to corruption. Corrupted DB can be recovered with Recover function.
-//
-// The returned DB instance is safe for concurrent use.
-// The DB must be closed after use, by calling Close method.
 func Open(stor storage.Storage, o *opt.Options) (db *DB, err error) {
 	s, err := newSession(stor, o)
 	if err != nil {
@@ -196,20 +169,6 @@ func Open(stor storage.Storage, o *opt.Options) (db *DB, err error) {
 	return openDB(s)
 }
 
-// OpenFile opens or creates a DB for the given path.
-// The DB will be created if not exist, unless ErrorIfMissing is true.
-// Also, if ErrorIfExist is true and the DB exist OpenFile will returns
-// os.ErrExist error.
-//
-// OpenFile uses standard file-system backed storage implementation as
-// described in the leveldb/storage package.
-//
-// OpenFile will return an error with type of ErrCorrupted if corruption
-// detected in the DB. Use errors.IsCorrupted to test whether an error is
-// due to corruption. Corrupted DB can be recovered with Recover function.
-//
-// The returned DB instance is safe for concurrent use.
-// The DB must be closed after use, by calling Close method.
 func OpenFile(path string, o *opt.Options) (db *DB, err error) {
 	stor, err := storage.OpenFile(path, o.GetReadOnly())
 	if err != nil {
@@ -224,13 +183,6 @@ func OpenFile(path string, o *opt.Options) (db *DB, err error) {
 	return
 }
 
-// Recover recovers and opens a DB with missing or corrupted manifest files
-// for the given storage. It will ignore any manifest files, valid or not.
-// The DB must already exist or it will returns an error.
-// Also, Recover will ignore ErrorIfMissing and ErrorIfExist options.
-//
-// The returned DB instance is safe for concurrent use.
-// The DB must be closed after use, by calling Close method.
 func Recover(stor storage.Storage, o *opt.Options) (db *DB, err error) {
 	s, err := newSession(stor, o)
 	if err != nil {
@@ -250,16 +202,6 @@ func Recover(stor storage.Storage, o *opt.Options) (db *DB, err error) {
 	return openDB(s)
 }
 
-// RecoverFile recovers and opens a DB with missing or corrupted manifest files
-// for the given path. It will ignore any manifest files, valid or not.
-// The DB must already exist or it will returns an error.
-// Also, Recover will ignore ErrorIfMissing and ErrorIfExist options.
-//
-// RecoverFile uses standard file-system backed storage implementation as described
-// in the leveldb/storage package.
-//
-// The returned DB instance is safe for concurrent use.
-// The DB must be closed after use, by calling Close method.
 func RecoverFile(path string, o *opt.Options) (db *DB, err error) {
 	stor, err := storage.OpenFile(path, false)
 	if err != nil {
@@ -276,10 +218,9 @@ func RecoverFile(path string, o *opt.Options) (db *DB, err error) {
 
 func recoverTable(s *session, o *opt.Options) error {
 	o = dupOptions(o)
-	// Mask StrictReader, lets StrictRecovery doing its job.
+
 	o.Strict &= ^opt.StrictReader
 
-	// Get all tables and sort it by file number.
 	fds, err := s.stor.List(storage.TypeTable)
 	if err != nil {
 		return err
@@ -290,7 +231,6 @@ func recoverTable(s *session, o *opt.Options) error {
 		maxSeq                                                            uint64
 		recoveredKey, goodKey, corruptedKey, corruptedBlock, droppedTable int
 
-		// We will drop corrupted table.
 		strict = o.GetStrict(opt.StrictRecovery)
 		noSync = o.GetNoSync()
 
@@ -311,7 +251,6 @@ func recoverTable(s *session, o *opt.Options) error {
 			}
 		}()
 
-		// Copy entries.
 		tw := table.NewWriter(writer, o)
 		for iter.Next() {
 			key := iter.Key()
@@ -352,7 +291,6 @@ func recoverTable(s *session, o *opt.Options) error {
 			}
 		}()
 
-		// Get file size.
 		size, err := reader.Seek(0, 2)
 		if err != nil {
 			return err
@@ -377,7 +315,6 @@ func recoverTable(s *session, o *opt.Options) error {
 			})
 		}
 
-		// Scan the table.
 		for iter.Next() {
 			key := iter.Key()
 			_, seq, _, kerr := parseInternalKey(key)
@@ -412,7 +349,7 @@ func recoverTable(s *session, o *opt.Options) error {
 
 		if tgoodKey > 0 {
 			if tcorruptedKey > 0 || tcorruptedBlock > 0 {
-				// Rebuild the table.
+
 				s.logf("table@recovery rebuilding @%d", fd.Num)
 				iter := tr.NewIterator(nil, nil)
 				tmpFd, newSize, err := buildTable(iter)
@@ -431,7 +368,7 @@ func recoverTable(s *session, o *opt.Options) error {
 				maxSeq = tSeq
 			}
 			recoveredKey += tgoodKey
-			// Add table to level 0.
+
 			rec.addTable(0, fd.Num, size, imin, imax)
 			s.logf("table@recovery recovered @%d Gk·%d Ck·%d Cb·%d S·%d Q·%d", fd.Num, tgoodKey, tcorruptedKey, tcorruptedBlock, size, tSeq)
 		} else {
@@ -442,11 +379,9 @@ func recoverTable(s *session, o *opt.Options) error {
 		return nil
 	}
 
-	// Recover all tables.
 	if len(fds) > 0 {
 		s.logf("table@recovery F·%d", len(fds))
 
-		// Mark file number as used.
 		s.markFileNum(fds[len(fds)-1].Num)
 
 		for _, fd := range fds {
@@ -458,27 +393,23 @@ func recoverTable(s *session, o *opt.Options) error {
 		s.logf("table@recovery recovered F·%d N·%d Gk·%d Ck·%d Q·%d", len(fds), recoveredKey, goodKey, corruptedKey, maxSeq)
 	}
 
-	// Set sequence number.
 	rec.setSeqNum(maxSeq)
 
-	// Create new manifest.
 	if err := s.create(); err != nil {
 		return err
 	}
 
-	// Commit.
 	return s.commit(rec)
 }
 
 func (db *DB) recoverJournal() error {
-	// Get all journals and sort it by file number.
+
 	rawFds, err := db.s.stor.List(storage.TypeJournal)
 	if err != nil {
 		return err
 	}
 	sortFds(rawFds)
 
-	// Journals that will be recovered.
 	var fds []storage.FileDesc
 	for _, fd := range rawFds {
 		if fd.Num >= db.s.stJournalNum || fd.Num == db.s.stPrevJournalNum {
@@ -487,19 +418,17 @@ func (db *DB) recoverJournal() error {
 	}
 
 	var (
-		ofd storage.FileDesc // Obsolete file.
+		ofd storage.FileDesc 
 		rec = &sessionRecord{}
 	)
 
-	// Recover journals.
 	if len(fds) > 0 {
 		db.logf("journal@recovery F·%d", len(fds))
 
-		// Mark file number as used.
 		db.s.markFileNum(fds[len(fds)-1].Num)
 
 		var (
-			// Options.
+
 			strict      = db.s.o.GetStrict(opt.StrictJournal)
 			checksum    = db.s.o.GetStrict(opt.StrictJournalChecksum)
 			writeBuffer = db.s.o.GetWriteBuffer()
@@ -519,14 +448,12 @@ func (db *DB) recoverJournal() error {
 				return err
 			}
 
-			// Create or reset journal reader instance.
 			if jr == nil {
 				jr = journal.NewReader(fr, dropper{db.s, fd}, strict, checksum)
 			} else {
 				jr.Reset(fr, dropper{db.s, fd}, strict, checksum)
 			}
 
-			// Flush memdb and remove obsolete journal file.
 			if !ofd.Zero() {
 				if mdb.Len() > 0 {
 					if _, err := db.s.flushMemdb(rec, mdb, 0); err != nil {
@@ -547,7 +474,6 @@ func (db *DB) recoverJournal() error {
 				ofd = storage.FileDesc{}
 			}
 
-			// Replay journal to memdb.
 			mdb.Reset()
 			for {
 				r, err := jr.Next()
@@ -563,7 +489,7 @@ func (db *DB) recoverJournal() error {
 				buf.Reset()
 				if _, err := buf.ReadFrom(r); err != nil {
 					if err == io.ErrUnexpectedEOF {
-						// This is error returned due to corruption, with strict == false.
+
 						continue
 					}
 
@@ -574,7 +500,7 @@ func (db *DB) recoverJournal() error {
 				if err != nil {
 					if !strict && errors.IsCorrupted(err) {
 						db.s.logf("journal error: %v (skipped)", err)
-						// We won't apply sequence number as it might be corrupted.
+
 						continue
 					}
 
@@ -582,10 +508,8 @@ func (db *DB) recoverJournal() error {
 					return errors.SetFd(err, fd)
 				}
 
-				// Save sequence number.
 				db.seq = batchSeq + uint64(batchLen)
 
-				// Flush it if large enough.
 				if mdb.Size() >= writeBuffer {
 					if _, err := db.s.flushMemdb(rec, mdb, 0); err != nil {
 						fr.Close()
@@ -600,7 +524,6 @@ func (db *DB) recoverJournal() error {
 			ofd = fd
 		}
 
-		// Flush the last memdb.
 		if mdb.Len() > 0 {
 			if _, err := db.s.flushMemdb(rec, mdb, 0); err != nil {
 				return err
@@ -608,16 +531,14 @@ func (db *DB) recoverJournal() error {
 		}
 	}
 
-	// Create a new journal.
 	if _, err := db.newMem(0); err != nil {
 		return err
 	}
 
-	// Commit.
 	rec.setJournalNum(db.journalFd.Num)
 	rec.setSeqNum(db.seq)
 	if err := db.s.commit(rec); err != nil {
-		// Close journal on error.
+
 		if db.journal != nil {
 			db.journal.Close()
 			db.journalWriter.Close()
@@ -625,7 +546,6 @@ func (db *DB) recoverJournal() error {
 		return err
 	}
 
-	// Remove the last obsolete journal file.
 	if !ofd.Zero() {
 		db.s.stor.Remove(ofd)
 	}
@@ -634,14 +554,13 @@ func (db *DB) recoverJournal() error {
 }
 
 func (db *DB) recoverJournalRO() error {
-	// Get all journals and sort it by file number.
+
 	rawFds, err := db.s.stor.List(storage.TypeJournal)
 	if err != nil {
 		return err
 	}
 	sortFds(rawFds)
 
-	// Journals that will be recovered.
 	var fds []storage.FileDesc
 	for _, fd := range rawFds {
 		if fd.Num >= db.s.stJournalNum || fd.Num == db.s.stPrevJournalNum {
@@ -650,7 +569,7 @@ func (db *DB) recoverJournalRO() error {
 	}
 
 	var (
-		// Options.
+
 		strict      = db.s.o.GetStrict(opt.StrictJournal)
 		checksum    = db.s.o.GetStrict(opt.StrictJournalChecksum)
 		writeBuffer = db.s.o.GetWriteBuffer()
@@ -658,7 +577,6 @@ func (db *DB) recoverJournalRO() error {
 		mdb = memdb.New(db.s.icmp, writeBuffer)
 	)
 
-	// Recover journals.
 	if len(fds) > 0 {
 		db.logf("journal@recovery RO·Mode F·%d", len(fds))
 
@@ -677,14 +595,12 @@ func (db *DB) recoverJournalRO() error {
 				return err
 			}
 
-			// Create or reset journal reader instance.
 			if jr == nil {
 				jr = journal.NewReader(fr, dropper{db.s, fd}, strict, checksum)
 			} else {
 				jr.Reset(fr, dropper{db.s, fd}, strict, checksum)
 			}
 
-			// Replay journal to memdb.
 			for {
 				r, err := jr.Next()
 				if err != nil {
@@ -699,7 +615,7 @@ func (db *DB) recoverJournalRO() error {
 				buf.Reset()
 				if _, err := buf.ReadFrom(r); err != nil {
 					if err == io.ErrUnexpectedEOF {
-						// This is error returned due to corruption, with strict == false.
+
 						continue
 					}
 
@@ -710,7 +626,7 @@ func (db *DB) recoverJournalRO() error {
 				if err != nil {
 					if !strict && errors.IsCorrupted(err) {
 						db.s.logf("journal error: %v (skipped)", err)
-						// We won't apply sequence number as it might be corrupted.
+
 						continue
 					}
 
@@ -718,7 +634,6 @@ func (db *DB) recoverJournalRO() error {
 					return errors.SetFd(err, fd)
 				}
 
-				// Save sequence number.
 				db.seq = batchSeq + uint64(batchLen)
 			}
 
@@ -726,7 +641,6 @@ func (db *DB) recoverJournalRO() error {
 		}
 	}
 
-	// Set memDB.
 	db.mem = &memDB{db: db, DB: mdb, ref: 1}
 
 	return nil
@@ -737,7 +651,7 @@ func memGet(mdb *memdb.DB, ikey internalKey, icmp *iComparer) (ok bool, mv []byt
 	if err == nil {
 		ukey, _, kt, kerr := parseInternalKey(mk)
 		if kerr != nil {
-			// Shouldn't have had happen.
+
 			panic(kerr)
 		}
 		if icmp.uCompare(ukey, ikey.ukey()) == 0 {
@@ -778,7 +692,7 @@ func (db *DB) get(auxm *memdb.DB, auxt tFiles, key []byte, seq uint64, ro *opt.R
 	value, cSched, err := v.get(auxt, ikey, ro, false)
 	v.release()
 	if cSched {
-		// Trigger table compaction.
+
 		db.compTrigger(db.tcompCmdC)
 	}
 	return
@@ -816,7 +730,7 @@ func (db *DB) has(auxm *memdb.DB, auxt tFiles, key []byte, seq uint64, ro *opt.R
 	_, cSched, err := v.get(auxt, ikey, ro, true)
 	v.release()
 	if cSched {
-		// Trigger table compaction.
+
 		db.compTrigger(db.tcompCmdC)
 	}
 	if err == nil {
@@ -827,12 +741,6 @@ func (db *DB) has(auxm *memdb.DB, auxt tFiles, key []byte, seq uint64, ro *opt.R
 	return
 }
 
-// Get gets the value for the given key. It returns ErrNotFound if the
-// DB does not contains the key.
-//
-// The returned slice is its own copy, it is safe to modify the contents
-// of the returned slice.
-// It is safe to modify the contents of the argument after Get returns.
 func (db *DB) Get(key []byte, ro *opt.ReadOptions) (value []byte, err error) {
 	err = db.ok()
 	if err != nil {
@@ -844,9 +752,6 @@ func (db *DB) Get(key []byte, ro *opt.ReadOptions) (value []byte, err error) {
 	return db.get(nil, nil, key, se.seq, ro)
 }
 
-// Has returns true if the DB does contains the given key.
-//
-// It is safe to modify the contents of the argument after Has returns.
 func (db *DB) Has(key []byte, ro *opt.ReadOptions) (ret bool, err error) {
 	err = db.ok()
 	if err != nil {
@@ -858,22 +763,6 @@ func (db *DB) Has(key []byte, ro *opt.ReadOptions) (ret bool, err error) {
 	return db.has(nil, nil, key, se.seq, ro)
 }
 
-// NewIterator returns an iterator for the latest snapshot of the
-// underlying DB.
-// The returned iterator is not safe for concurrent use, but it is safe to use
-// multiple iterators concurrently, with each in a dedicated goroutine.
-// It is also safe to use an iterator concurrently with modifying its
-// underlying DB. The resultant key/value pairs are guaranteed to be
-// consistent.
-//
-// Slice allows slicing the iterator to only contains keys in the given
-// range. A nil Range.Start is treated as a key before all keys in the
-// DB. And a nil Range.Limit is treated as a key after all keys in
-// the DB.
-//
-// The iterator must be released after use, by calling Release method.
-//
-// Also read Iterator documentation of the leveldb/iterator package.
 func (db *DB) NewIterator(slice *util.Range, ro *opt.ReadOptions) iterator.Iterator {
 	if err := db.ok(); err != nil {
 		return iterator.NewEmptyIterator(err)
@@ -881,16 +770,10 @@ func (db *DB) NewIterator(slice *util.Range, ro *opt.ReadOptions) iterator.Itera
 
 	se := db.acquireSnapshot()
 	defer db.releaseSnapshot(se)
-	// Iterator holds 'version' lock, 'version' is immutable so snapshot
-	// can be released after iterator created.
+
 	return db.newIterator(nil, nil, se.seq, slice, ro)
 }
 
-// GetSnapshot returns a latest snapshot of the underlying DB. A snapshot
-// is a frozen snapshot of a DB state at a particular point in time. The
-// content of snapshot are guaranteed to be consistent.
-//
-// The snapshot must be released after use, by calling Release method.
 func (db *DB) GetSnapshot() (*Snapshot, error) {
 	if err := db.ok(); err != nil {
 		return nil, err
@@ -899,27 +782,6 @@ func (db *DB) GetSnapshot() (*Snapshot, error) {
 	return db.newSnapshot(), nil
 }
 
-// GetProperty returns value of the given property name.
-//
-// Property names:
-//	leveldb.num-files-at-level{n}
-//		Returns the number of files at level 'n'.
-//	leveldb.stats
-//		Returns statistics of the underlying DB.
-//	leveldb.writedelay
-//		Returns cumulative write delay caused by compaction.
-//	leveldb.sstables
-//		Returns sstables list for each level.
-//	leveldb.blockpool
-//		Returns block pool stats.
-//	leveldb.cachedblock
-//		Returns size of cached block.
-//	leveldb.openedtables
-//		Returns number of opened tables.
-//	leveldb.alivesnaps
-//		Returns number of alive snapshots.
-//	leveldb.aliveiters
-//		Returns number of alive iterators.
 func (db *DB) GetProperty(name string) (value string, err error) {
 	err = db.ok()
 	if err != nil {
@@ -990,12 +852,6 @@ func (db *DB) GetProperty(name string) (value string, err error) {
 	return
 }
 
-// SizeOf calculates approximate sizes of the given key ranges.
-// The length of the returned sizes are equal with the length of the given
-// ranges. The returned sizes measure storage space usage, so if the user
-// data compresses by a factor of ten, the returned sizes will be one-tenth
-// the size of the corresponding user data size.
-// The results may not include the sizes of recently written data.
 func (db *DB) SizeOf(ranges []util.Range) (Sizes, error) {
 	if err := db.ok(); err != nil {
 		return nil, err
@@ -1026,12 +882,6 @@ func (db *DB) SizeOf(ranges []util.Range) (Sizes, error) {
 	return sizes, nil
 }
 
-// Close closes the DB. This will also releases any outstanding snapshot,
-// abort any in-flight compaction and discard open transaction.
-//
-// It is not safe to close a DB until all outstanding iterators are released.
-// It is valid to call Close multiple times. Other methods should not be
-// called after the DB has been closed.
 func (db *DB) Close() error {
 	if !db.setClosed() {
 		return ErrClosed
@@ -1040,10 +890,8 @@ func (db *DB) Close() error {
 	start := time.Now()
 	db.log("db@close closing")
 
-	// Clear the finalizer.
 	runtime.SetFinalizer(db, nil)
 
-	// Get compaction error.
 	var err error
 	select {
 	case err = <-db.compErrC:
@@ -1053,21 +901,16 @@ func (db *DB) Close() error {
 	default:
 	}
 
-	// Signal all goroutines.
 	close(db.closeC)
 
-	// Discard open transaction.
 	if db.tr != nil {
 		db.tr.Discard()
 	}
 
-	// Acquire writer lock.
 	db.writeLockC <- struct{}{}
 
-	// Wait for all gorotines to exit.
 	db.closeW.Wait()
 
-	// Closes journal.
 	if db.journal != nil {
 		db.journal.Close()
 		db.journalWriter.Close()
@@ -1079,7 +922,6 @@ func (db *DB) Close() error {
 		db.logf("db@write was delayed N·%d T·%v", db.writeDelayN, db.writeDelay)
 	}
 
-	// Close session.
 	db.s.close()
 	db.logf("db@close done T·%v", time.Since(start))
 	db.s.release()
@@ -1091,7 +933,6 @@ func (db *DB) Close() error {
 		db.closer = nil
 	}
 
-	// Clear memdbs.
 	db.clearMems()
 
 	return err

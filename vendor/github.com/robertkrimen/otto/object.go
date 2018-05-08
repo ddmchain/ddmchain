@@ -25,34 +25,26 @@ func newObject(runtime *_runtime, class string) *_object {
 	return self
 }
 
-// 8.12
-
-// 8.12.1
 func (self *_object) getOwnProperty(name string) *_property {
 	return self.objectClass.getOwnProperty(self, name)
 }
 
-// 8.12.2
 func (self *_object) getProperty(name string) *_property {
 	return self.objectClass.getProperty(self, name)
 }
 
-// 8.12.3
 func (self *_object) get(name string) Value {
 	return self.objectClass.get(self, name)
 }
 
-// 8.12.4
 func (self *_object) canPut(name string) bool {
 	return self.objectClass.canPut(self, name)
 }
 
-// 8.12.5
 func (self *_object) put(name string, value Value, throw bool) {
 	self.objectClass.put(self, name, value, throw)
 }
 
-// 8.12.6
 func (self *_object) hasProperty(name string) bool {
 	return self.objectClass.hasProperty(self, name)
 }
@@ -69,11 +61,10 @@ const (
 	defaultValueHintNumber
 )
 
-// 8.12.8
 func (self *_object) DefaultValue(hint _defaultValueHint) Value {
 	if hint == defaultValueNoHint {
 		if self.class == "Date" {
-			// Date exception
+
 			hint = defaultValueHintString
 		} else {
 			hint = defaultValueHintNumber
@@ -85,7 +76,7 @@ func (self *_object) DefaultValue(hint _defaultValueHint) Value {
 	}
 	for _, methodName := range methodSequence {
 		method := self.get(methodName)
-		// FIXME This is redundant...
+
 		if method.isCallable() {
 			result := method._object().call(toValue_object(self), nil, false, nativeFrame)
 			if result.IsPrimitive() {
@@ -105,7 +96,6 @@ func (self *_object) defineProperty(name string, value Value, mode _propertyMode
 	return self.defineOwnProperty(name, _property{value, mode}, throw)
 }
 
-// 8.12.9
 func (self *_object) defineOwnProperty(name string, descriptor _property, throw bool) bool {
 	return self.objectClass.defineOwnProperty(self, name, descriptor, throw)
 }

@@ -11,17 +11,17 @@ type attr struct {
 	Atime      uint64
 	Mtime      uint64
 	Ctime      uint64
-	Crtime_    uint64 // OS X only
+	Crtime_    uint64 
 	AtimeNsec  uint32
 	MtimeNsec  uint32
 	CtimeNsec  uint32
-	CrtimeNsec uint32 // OS X only
+	CrtimeNsec uint32 
 	Mode       uint32
 	Nlink      uint32
 	Uid        uint32
 	Gid        uint32
 	Rdev       uint32
-	Flags_     uint32 // OS X only; see chflags(2)
+	Flags_     uint32 
 	Blksize    uint32
 	padding    uint32
 }
@@ -37,14 +37,13 @@ func (a *attr) SetFlags(f uint32) {
 type setattrIn struct {
 	setattrInCommon
 
-	// OS X only
 	Bkuptime_    uint64
 	Chgtime_     uint64
 	Crtime       uint64
 	BkuptimeNsec uint32
 	ChgtimeNsec  uint32
 	CrtimeNsec   uint32
-	Flags_       uint32 // see chflags(2)
+	Flags_       uint32 
 }
 
 func (in *setattrIn) BkupTime() time.Time {
@@ -66,7 +65,6 @@ func openFlags(flags uint32) OpenFlags {
 type getxattrIn struct {
 	getxattrInCommon
 
-	// OS X only
 	Position uint32
 	Padding  uint32
 }
@@ -78,7 +76,6 @@ func (g *getxattrIn) position() uint32 {
 type setxattrIn struct {
 	setxattrInCommon
 
-	// OS X only
 	Position uint32
 	Padding  uint32
 }

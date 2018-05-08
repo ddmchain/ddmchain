@@ -1,10 +1,3 @@
-// This file is https://github.com/orofarne/gowchar/blob/master/gowchar.go
-//
-// It was vendored inline to work around CGO limitations that don't allow C types
-// to directly cross package API boundaries.
-//
-// The vendored file is licensed under the 3-clause BSD license, according to:
-// https://github.com/orofarne/gowchar/blob/master/LICENSE
 
 // +build !ios
 // +build linux darwin windows
@@ -39,9 +32,9 @@ var sizeofWcharT C.size_t = C.size_t(C.SIZEOF_WCHAR_T)
 func stringToWcharT(s string) (*C.wchar_t, C.size_t) {
 	switch sizeofWcharT {
 	case 2:
-		return stringToWchar2(s) // Windows
+		return stringToWchar2(s) 
 	case 4:
-		return stringToWchar4(s) // Unix
+		return stringToWchar4(s) 
 	default:
 		panic(fmt.Sprintf("Invalid sizeof(wchar_t) = %v", sizeofWcharT))
 	}
@@ -50,9 +43,9 @@ func stringToWcharT(s string) (*C.wchar_t, C.size_t) {
 func wcharTToString(s *C.wchar_t) (string, error) {
 	switch sizeofWcharT {
 	case 2:
-		return wchar2ToString(s) // Windows
+		return wchar2ToString(s) 
 	case 4:
-		return wchar4ToString(s) // Unix
+		return wchar4ToString(s) 
 	default:
 		panic(fmt.Sprintf("Invalid sizeof(wchar_t) = %v", sizeofWcharT))
 	}
@@ -61,15 +54,14 @@ func wcharTToString(s *C.wchar_t) (string, error) {
 func wcharTNToString(s *C.wchar_t, size C.size_t) (string, error) {
 	switch sizeofWcharT {
 	case 2:
-		return wchar2NToString(s, size) // Windows
+		return wchar2NToString(s, size) 
 	case 4:
-		return wchar4NToString(s, size) // Unix
+		return wchar4NToString(s, size) 
 	default:
 		panic(fmt.Sprintf("Invalid sizeof(wchar_t) = %v", sizeofWcharT))
 	}
 }
 
-// Windows
 func stringToWchar2(s string) (*C.wchar_t, C.size_t) {
 	var slen int
 	s1 := s
@@ -82,7 +74,7 @@ func stringToWchar2(s string) (*C.wchar_t, C.size_t) {
 		}
 		s1 = s1[size:]
 	}
-	slen++ // \0
+	slen++ 
 	res := C.malloc(C.size_t(slen) * sizeofWcharT)
 	var i int
 	for len(s) > 0 {
@@ -98,14 +90,13 @@ func stringToWchar2(s string) (*C.wchar_t, C.size_t) {
 		}
 		s = s[size:]
 	}
-	C.gowchar_set((*C.wchar_t)(res), C.int(slen-1), C.wchar_t(0)) // \0
+	C.gowchar_set((*C.wchar_t)(res), C.int(slen-1), C.wchar_t(0)) 
 	return (*C.wchar_t)(res), C.size_t(slen)
 }
 
-// Unix
 func stringToWchar4(s string) (*C.wchar_t, C.size_t) {
 	slen := utf8.RuneCountInString(s)
-	slen++ // \0
+	slen++ 
 	res := C.malloc(C.size_t(slen) * sizeofWcharT)
 	var i int
 	for len(s) > 0 {
@@ -114,11 +105,10 @@ func stringToWchar4(s string) (*C.wchar_t, C.size_t) {
 		s = s[size:]
 		i++
 	}
-	C.gowchar_set((*C.wchar_t)(res), C.int(slen-1), C.wchar_t(0)) // \0
+	C.gowchar_set((*C.wchar_t)(res), C.int(slen-1), C.wchar_t(0)) 
 	return (*C.wchar_t)(res), C.size_t(slen)
 }
 
-// Windows
 func wchar2ToString(s *C.wchar_t) (string, error) {
 	var i int
 	var res string
@@ -150,7 +140,6 @@ func wchar2ToString(s *C.wchar_t) (string, error) {
 	return res, nil
 }
 
-// Unix
 func wchar4ToString(s *C.wchar_t) (string, error) {
 	var i int
 	var res string
@@ -170,7 +159,6 @@ func wchar4ToString(s *C.wchar_t) (string, error) {
 	return res, nil
 }
 
-// Windows
 func wchar2NToString(s *C.wchar_t, size C.size_t) (string, error) {
 	var i int
 	var res string
@@ -208,7 +196,6 @@ func wchar2NToString(s *C.wchar_t, size C.size_t) (string, error) {
 	return res, nil
 }
 
-// Unix
 func wchar4NToString(s *C.wchar_t, size C.size_t) (string, error) {
 	var i int
 	var res string

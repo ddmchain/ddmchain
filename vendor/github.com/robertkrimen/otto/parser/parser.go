@@ -1,36 +1,4 @@
-/*
-Package parser implements a parser for JavaScript.
 
-    import (
-        "github.com/robertkrimen/otto/parser"
-    )
-
-Parse and return an AST
-
-    filename := "" // A filename is optional
-    src := `
-        // Sample xyzzy example
-        (function(){
-            if (3.14159 > 0) {
-                console.log("Hello, World.");
-                return;
-            }
-
-            var xyzzy = NaN;
-            console.log("Nothing happens.");
-            return xyzzy;
-        })();
-    `
-
-    // Parse some JavaScript, yielding a *ast.Program and/or an ErrorList
-    program, err := parser.ParseFile(nil, filename, src, 0)
-
-Warning
-
-The parser and AST interfaces are still works-in-progress (particularly where
-node types are concerned) and may change in the future.
-
-*/
 package parser
 
 import (
@@ -46,12 +14,11 @@ import (
 	"gopkg.in/sourcemap.v1"
 )
 
-// A Mode value is a set of flags (or 0). They control optional parser functionality.
 type Mode uint
 
 const (
-	IgnoreRegExpErrors Mode = 1 << iota // Ignore RegExp compatibility errors (allow backtracking)
-	StoreComments                       // Store the comments from source to the comments map
+	IgnoreRegExpErrors Mode = 1 << iota 
+	StoreComments                       
 )
 
 type _parser struct {
@@ -59,22 +26,22 @@ type _parser struct {
 	length int
 	base   int
 
-	chr       rune // The current character
-	chrOffset int  // The offset of current character
-	offset    int  // The offset after current character (may be greater than 1)
+	chr       rune 
+	chrOffset int  
+	offset    int  
 
-	idx     file.Idx    // The index of token
-	token   token.Token // The token
-	literal string      // The literal of the token, if any
+	idx     file.Idx    
+	token   token.Token 
+	literal string      
 
 	scope             *_scope
-	insertSemicolon   bool // If we see a newline, then insert an implicit semicolon
-	implicitSemicolon bool // An implicit semicolon exists
+	insertSemicolon   bool 
+	implicitSemicolon bool 
 
 	errors ErrorList
 
 	recover struct {
-		// Scratch when trying to seek to the next statement, etc.
+
 		idx   file.Idx
 		count int
 	}
@@ -92,7 +59,7 @@ type Parser interface {
 
 func _newParser(filename, src string, base int, sm *sourcemap.Consumer) *_parser {
 	return &_parser{
-		chr:      ' ', // This is set so we can start scanning by skipping whitespace
+		chr:      ' ', 
 		str:      src,
 		length:   len(src),
 		base:     base,
@@ -101,7 +68,6 @@ func _newParser(filename, src string, base int, sm *sourcemap.Consumer) *_parser
 	}
 }
 
-// Returns a new Parser.
 func NewParser(filename, src string) Parser {
 	return _newParser(filename, src, 1, nil)
 }
@@ -193,28 +159,10 @@ func ParseFileWithSourceMap(fileSet *file.FileSet, filename string, javascriptSo
 	return program, err
 }
 
-// ParseFile parses the source code of a single JavaScript/ECMAScript source file and returns
-// the corresponding ast.Program node.
-//
-// If fileSet == nil, ParseFile parses source without a FileSet.
-// If fileSet != nil, ParseFile first adds filename and src to fileSet.
-//
-// The filename argument is optional and is used for labelling errors, etc.
-//
-// src may be a string, a byte slice, a bytes.Buffer, or an io.Reader, but it MUST always be in UTF-8.
-//
-//      // Parse some JavaScript, yielding a *ast.Program and/or an ErrorList
-//      program, err := parser.ParseFile(nil, "", `if (abc > 1) {}`, 0)
-//
 func ParseFile(fileSet *file.FileSet, filename string, src interface{}, mode Mode) (*ast.Program, error) {
 	return ParseFileWithSourceMap(fileSet, filename, src, nil, mode)
 }
 
-// ParseFunction parses a given parameter list and body as a function and returns the
-// corresponding ast.FunctionLiteral node.
-//
-// The parameter list, if any, should be a comma-separated list of identifiers.
-//
 func ParseFunction(parameterList, body string) (*ast.FunctionLiteral, error) {
 
 	src := "(function(" + parameterList + ") {\n" + body + "\n})"
@@ -228,9 +176,6 @@ func ParseFunction(parameterList, body string) (*ast.FunctionLiteral, error) {
 	return program.Body[0].(*ast.ExpressionStatement).Expression.(*ast.FunctionLiteral), nil
 }
 
-// Scan reads a single token from the source at the current offset, increments the offset and
-// returns the token.Token token, a string literal representing the value of the token (if applicable)
-// and it's current file.Idx index.
 func (self *_parser) Scan() (tkn token.Token, literal string, idx file.Idx) {
 	return self.scan()
 }

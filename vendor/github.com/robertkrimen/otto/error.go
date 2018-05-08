@@ -19,7 +19,7 @@ func newException(value interface{}) *_exception {
 
 func (self *_exception) eject() interface{} {
 	value := self.value
-	self.value = nil // Prevent Go from holding on to the value, whatever it is
+	self.value = nil 
 	return value
 }
 
@@ -92,26 +92,14 @@ func (fr _frame) location() string {
 	return str
 }
 
-// An Error represents a runtime error, e.g. a TypeError, a ReferenceError, etc.
 type Error struct {
 	_error
 }
 
-// Error returns a description of the error
-//
-//    TypeError: 'def' is not a function
-//
 func (err Error) Error() string {
 	return err.format()
 }
 
-// String returns a description of the error and a trace of where the
-// error occurred.
-//
-//    TypeError: 'def' is not a function
-//        at xyz (<anonymous>:3:9)
-//        at <anonymous>:7:1/
-//
 func (err Error) String() string {
 	return err.formatWithStack()
 }

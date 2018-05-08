@@ -6,29 +6,19 @@ import (
 	"net/url"
 )
 
-// BlobStorageClient contains operations for Microsoft Azure Blob Storage
-// Service.
 type BlobStorageClient struct {
 	client Client
 	auth   authentication
 }
 
-// GetServiceProperties gets the properties of your storage account's blob service.
-// See: https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/get-blob-service-properties
 func (b *BlobStorageClient) GetServiceProperties() (*ServiceProperties, error) {
 	return b.client.getServiceProperties(blobServiceName, b.auth)
 }
 
-// SetServiceProperties sets the properties of your storage account's blob service.
-// See: https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/set-blob-service-properties
 func (b *BlobStorageClient) SetServiceProperties(props ServiceProperties) error {
 	return b.client.setServiceProperties(props, blobServiceName, b.auth)
 }
 
-// ListContainersParameters defines the set of customizable parameters to make a
-// List Containers call.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179352.aspx
 type ListContainersParameters struct {
 	Prefix     string
 	Marker     string
@@ -37,7 +27,6 @@ type ListContainersParameters struct {
 	Timeout    uint
 }
 
-// GetContainerReference returns a Container object for the specified container name.
 func (b BlobStorageClient) GetContainerReference(name string) Container {
 	return Container{
 		bsc:  &b,
@@ -45,10 +34,6 @@ func (b BlobStorageClient) GetContainerReference(name string) Container {
 	}
 }
 
-// ListContainers returns the list of containers in a storage account along with
-// pagination token and other response details.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179352.aspx
 func (b BlobStorageClient) ListContainers(params ListContainersParameters) (*ContainerListResponse, error) {
 	q := mergeParams(params.getParameters(), url.Values{"comp": {"list"}})
 	uri := b.client.getEndpoint(blobServiceName, "", q)
@@ -62,7 +47,6 @@ func (b BlobStorageClient) ListContainers(params ListContainersParameters) (*Con
 	defer resp.body.Close()
 	err = xmlUnmarshal(resp.body, &out)
 
-	// assign our client to the newly created Container objects
 	for i := range out.Containers {
 		out.Containers[i].bsc = &b
 	}

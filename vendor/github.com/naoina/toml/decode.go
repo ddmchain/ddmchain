@@ -1,6 +1,4 @@
-// Package toml encodes and decodes the TOML configuration format using reflection.
-//
-// This library is compatible with TOML version v0.4.0.
+
 package toml
 
 import (
@@ -35,18 +33,6 @@ var (
 
 var timeType = reflect.TypeOf(time.Time{})
 
-// Unmarshal parses the TOML data and stores the result in the value pointed to by v.
-//
-// Unmarshal will mapped to v that according to following rules:
-//
-//	TOML strings to string
-//	TOML integers to any int type
-//	TOML floats to float32 or float64
-//	TOML booleans to bool
-//	TOML datetimes to time.Time
-//	TOML arrays to any type of slice
-//	TOML tables to struct or map
-//	TOML array tables to slice of struct or map
 func (cfg *Config) Unmarshal(data []byte, v interface{}) error {
 	table, err := Parse(data)
 	if err != nil {
@@ -58,20 +44,15 @@ func (cfg *Config) Unmarshal(data []byte, v interface{}) error {
 	return nil
 }
 
-// A Decoder reads and decodes TOML from an input stream.
 type Decoder struct {
 	r   io.Reader
 	cfg *Config
 }
 
-// NewDecoder returns a new Decoder that reads from r.
-// Note that it reads all from r before parsing it.
 func (cfg *Config) NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{r, cfg}
 }
 
-// Decode parses the TOML data from its input and stores it in the value pointed to by v.
-// See the documentation for Unmarshal for details about the conversion of TOML into a Go value.
 func (d *Decoder) Decode(v interface{}) error {
 	b, err := ioutil.ReadAll(d.r)
 	if err != nil {
@@ -80,38 +61,14 @@ func (d *Decoder) Decode(v interface{}) error {
 	return d.cfg.Unmarshal(b, v)
 }
 
-// UnmarshalerRec may be implemented by types to customize their behavior when being
-// unmarshaled from TOML. You can use it to implement custom validation or to set
-// unexported fields.
-//
-// UnmarshalTOML receives a function that can be called to unmarshal the original TOML
-// value into a field or variable. It is safe to call the function more than once if
-// necessary.
 type UnmarshalerRec interface {
 	UnmarshalTOML(fn func(interface{}) error) error
 }
 
-// Unmarshaler can be used to capture and process raw TOML source of a table or value.
-// UnmarshalTOML must copy the input if it wishes to retain it after returning.
-//
-// Note: this interface is retained for backwards compatibility. You probably want
-// to implement encoding.TextUnmarshaler or UnmarshalerRec instead.
 type Unmarshaler interface {
 	UnmarshalTOML(input []byte) error
 }
 
-// UnmarshalTable applies the contents of an ast.Table to the value pointed at by v.
-//
-// UnmarshalTable will mapped to v that according to following rules:
-//
-//	TOML strings to string
-//	TOML integers to any int type
-//	TOML floats to float32 or float64
-//	TOML booleans to bool
-//	TOML datetimes to time.Time
-//	TOML arrays to any type of slice
-//	TOML tables to struct or map
-//	TOML array tables to slice of struct or map
 func (cfg *Config) UnmarshalTable(t *ast.Table, v interface{}) error {
 	rv := reflect.ValueOf(v)
 	toplevelMap := rv.Kind() == reflect.Map
@@ -121,7 +78,6 @@ func (cfg *Config) UnmarshalTable(t *ast.Table, v interface{}) error {
 	return unmarshalTable(cfg, rv, t, toplevelMap)
 }
 
-// used for UnmarshalerRec.
 func unmarshalTableOrValue(cfg *Config, rv reflect.Value, av interface{}) error {
 	if (rv.Kind() != reflect.Ptr && rv.Kind() != reflect.Map) || rv.IsNil() {
 		return &invalidUnmarshalError{rv.Type()}
@@ -141,10 +97,6 @@ func unmarshalTableOrValue(cfg *Config, rv reflect.Value, av interface{}) error 
 	}
 }
 
-// unmarshalTable unmarshals the fields of a table into a struct or map.
-//
-// toplevelMap is true when rv is an (unadressable) map given to UnmarshalTable. In this
-// (special) case, the map is used as-is instead of creating a new map.
 func unmarshalTable(cfg *Config, rv reflect.Value, t *ast.Table, toplevelMap bool) error {
 	rv = indirect(rv)
 	if err, ok := setUnmarshaler(cfg, rv, t); ok {
@@ -451,7 +403,7 @@ func setArray(cfg *Config, rv reflect.Value, v *ast.Array) error {
 	}
 
 	if len(v.Value) == 0 {
-		// Ensure defined slices are always set to a non-nil value.
+
 		rv.Set(reflect.MakeSlice(slicetyp, 0, 0))
 		return nil
 	}

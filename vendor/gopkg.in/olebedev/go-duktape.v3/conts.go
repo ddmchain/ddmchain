@@ -48,7 +48,6 @@ const (
 const (
 	ErrNone int = 0
 
-	// Internal to Duktape
 	ErrUnimplemented int = 50 + iota
 	ErrUnsupported
 	ErrInternal
@@ -59,7 +58,7 @@ const (
 )
 
 const (
-	// Common prototypes
+
 	ErrError int = 1 + iota
 	ErrEval
 	ErrRange
@@ -70,7 +69,7 @@ const (
 )
 
 const (
-	// Returned error values
+
 	ErrRetUnimplemented int = -(ErrUnimplemented + iota)
 	ErrRetUnsupported
 	ErrRetInternal

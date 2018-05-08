@@ -1,5 +1,4 @@
 
-
 // +build freebsd linux
 
 package gosigar
@@ -26,11 +25,11 @@ var system struct {
 var Procd string
 
 func getLinuxBootTime() {
-	// grab system boot time
+
 	readFile(Procd+"/stat", func(line string) bool {
 		if strings.HasPrefix(line, "btime") {
 			system.btime, _ = strtoull(line[6:])
-			return false // stop reading
+			return false 
 		}
 		return true
 	})
@@ -64,7 +63,7 @@ func (self *Mem) Get() error {
 	cached, _ := table["Cached"]
 
 	if available, ok := table["MemAvailable"]; ok {
-		// MemAvailable is in /proc/meminfo (kernel 3.14+)
+
 		self.ActualFree = available
 	} else {
 		self.ActualFree = self.Free + buffers + cached
@@ -154,7 +153,7 @@ func (self *ProcList) Get() error {
 	}
 	defer dir.Close()
 
-	const readAllDirnames = -1 // see os.File.Readdirnames doc
+	const readAllDirnames = -1 
 
 	names, err := dir.Readdirnames(readAllDirnames)
 	if err != nil {
@@ -185,7 +184,6 @@ func (self *ProcState) Get(pid int) error {
 		return err
 	}
 
-	// Extract the comm value with is surrounded by parentheses.
 	lIdx := bytes.Index(data, []byte("("))
 	rIdx := bytes.LastIndex(data, []byte(")"))
 	if lIdx < 0 || rIdx < 0 || lIdx >= rIdx || rIdx+2 >= len(data) {
@@ -193,20 +191,19 @@ func (self *ProcState) Get(pid int) error {
 	}
 	self.Name = string(data[lIdx+1 : rIdx])
 
-	// Extract the rest of the fields that we are interested in.
 	fields := bytes.Fields(data[rIdx+2:])
 	if len(fields) <= 36 {
 		return fmt.Errorf("expected more stat fields for pid %d from '%v'", pid, string(data))
 	}
 
 	interests := bytes.Join([][]byte{
-		fields[0],  // state
-		fields[1],  // ppid
-		fields[2],  // pgrp
-		fields[4],  // tty_nr
-		fields[15], // priority
-		fields[16], // nice
-		fields[36], // processor (last processor executed on)
+		fields[0],  
+		fields[1],  
+		fields[2],  
+		fields[4],  
+		fields[15], 
+		fields[16], 
+		fields[36], 
 	}, []byte(" "))
 
 	var state string
@@ -224,7 +221,6 @@ func (self *ProcState) Get(pid int) error {
 	}
 	self.State = RunState(state[0])
 
-	// Read /proc/[pid]/status to get the uid, then lookup uid to get username.
 	status, err := getProcStatus(pid)
 	if err != nil {
 		return fmt.Errorf("failed to read process status for pid %d: %v", pid, err)
@@ -284,12 +280,11 @@ func (self *ProcTime) Get(pid int) error {
 
 	user, _ := strtoull(fields[13])
 	sys, _ := strtoull(fields[14])
-	// convert to millis
+
 	self.User = user * (1000 / system.ticks)
 	self.Sys = sys * (1000 / system.ticks)
 	self.Total = self.User + self.Sys
 
-	// convert to millis
 	self.StartTime, _ = strtoull(fields[21])
 	self.StartTime /= system.ticks
 	self.StartTime += system.btime
@@ -376,15 +371,15 @@ func parseMeminfo() (map[string]uint64, error) {
 		fields := strings.Split(line, ":")
 
 		if len(fields) != 2 {
-			return true // skip on errors
+			return true 
 		}
 
 		num := strings.TrimLeft(fields[1], " ")
 		val, err := strtoull(strings.Fields(num)[0])
 		if err != nil {
-			return true // skip on errors
+			return true 
 		}
-		table[fields[0]] = val * 1024 //in bytes
+		table[fields[0]] = val * 1024 
 
 		return true
 	})
@@ -435,8 +430,6 @@ func readProcFile(pid int, name string) ([]byte, error) {
 	return contents, err
 }
 
-// getProcStatus reads /proc/[pid]/status which contains process status
-// information in human readable form.
 func getProcStatus(pid int) (map[string]string, error) {
 	status := make(map[string]string, 42)
 	path := filepath.Join(Procd, strconv.Itoa(pid), "status")
@@ -451,8 +444,6 @@ func getProcStatus(pid int) (map[string]string, error) {
 	return status, err
 }
 
-// getUIDs reads the "Uid" value from status and splits it into four values --
-// real, effective, saved set, and  file system UIDs.
 func getUIDs(status map[string]string) ([]string, error) {
 	uidLine, ok := status["Uid"]
 	if !ok {

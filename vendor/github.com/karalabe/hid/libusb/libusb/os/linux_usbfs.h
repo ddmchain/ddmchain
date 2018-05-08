@@ -1,19 +1,3 @@
-/*
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #ifndef LIBUSB_USBFS_H
 #define LIBUSB_USBFS_H
@@ -23,31 +7,29 @@
 #define SYSFS_DEVICE_PATH "/sys/bus/usb/devices"
 
 struct usbfs_ctrltransfer {
-	/* keep in sync with usbdevice_fs.h:usbdevfs_ctrltransfer */
+
 	uint8_t  bmRequestType;
 	uint8_t  bRequest;
 	uint16_t wValue;
 	uint16_t wIndex;
 	uint16_t wLength;
 
-	uint32_t timeout;	/* in milliseconds */
+	uint32_t timeout;	
 
-	/* pointer to data */
 	void *data;
 };
 
 struct usbfs_bulktransfer {
-	/* keep in sync with usbdevice_fs.h:usbdevfs_bulktransfer */
+
 	unsigned int ep;
 	unsigned int len;
-	unsigned int timeout;	/* in milliseconds */
+	unsigned int timeout;	
 
-	/* pointer to data */
 	void *data;
 };
 
 struct usbfs_setinterface {
-	/* keep in sync with usbdevice_fs.h:usbdevfs_setinterface */
+
 	unsigned int interface;
 	unsigned int altsetting;
 };
@@ -92,8 +74,8 @@ struct usbfs_urb {
 	int actual_length;
 	int start_frame;
 	union {
-		int number_of_packets;	/* Only used for isoc urbs */
-		unsigned int stream_id;	/* Only used with bulk streams */
+		int number_of_packets;	
+		unsigned int stream_id;	
 	};
 	int error_count;
 	unsigned int signr;
@@ -107,15 +89,14 @@ struct usbfs_connectinfo {
 };
 
 struct usbfs_ioctl {
-	int ifno;	/* interface 0..N ; negative numbers reserved */
-	int ioctl_code;	/* MUST encode size + direction of data so the
-			 * macros in <asm/ioctl.h> give correct values */
-	void *data;	/* param buffer (in, or out) */
+	int ifno;	
+	int ioctl_code;	
+	void *data;	
 };
 
 struct usbfs_hub_portinfo {
 	unsigned char numports;
-	unsigned char port[127];	/* port to device num mapping */
+	unsigned char port[127];	
 };
 
 #define USBFS_CAP_ZERO_PACKET		0x01
@@ -134,7 +115,7 @@ struct usbfs_disconnect_claim {
 };
 
 struct usbfs_streams {
-	unsigned int num_streams; /* Not used by USBDEVFS_FREE_STREAMS */
+	unsigned int num_streams; 
 	unsigned int num_eps;
 	unsigned char eps[0];
 };

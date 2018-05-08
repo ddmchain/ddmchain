@@ -20,7 +20,7 @@ type _goArrayObject struct {
 }
 
 func _newGoArrayObject(value reflect.Value) *_goArrayObject {
-	writable := value.Kind() == reflect.Ptr // The Array is addressable (like a Slice)
+	writable := value.Kind() == reflect.Ptr 
 	mode := _propertyMode(0010)
 	if writable {
 		mode = 0110
@@ -55,7 +55,7 @@ func (self _goArrayObject) setValue(index int64, value Value) bool {
 }
 
 func goArrayGetOwnProperty(self *_object, name string) *_property {
-	// length
+
 	if name == "length" {
 		return &_property{
 			value: toValue(reflect.Indirect(self.value.(*_goArrayObject).value).Len()),
@@ -63,7 +63,6 @@ func goArrayGetOwnProperty(self *_object, name string) *_property {
 		}
 	}
 
-	// .0, .1, .2, ...
 	index := stringToArrayIndex(name)
 	if index >= 0 {
 		object := self.value.(*_goArrayObject)
@@ -83,7 +82,6 @@ func goArrayGetOwnProperty(self *_object, name string) *_property {
 
 func goArrayEnumerate(self *_object, all bool, each func(string) bool) {
 	object := self.value.(*_goArrayObject)
-	// .0, .1, .2, ...
 
 	for index, length := 0, object.value.Len(); index < length; index++ {
 		name := strconv.FormatInt(int64(index), 10)
@@ -111,12 +109,11 @@ func goArrayDefineOwnProperty(self *_object, name string, descriptor _property, 
 }
 
 func goArrayDelete(self *_object, name string, throw bool) bool {
-	// length
+
 	if name == "length" {
 		return self.runtime.typeErrorResult(throw)
 	}
 
-	// .0, .1, .2, ...
 	index := stringToArrayIndex(name)
 	if index >= 0 {
 		object := self.value.(*_goArrayObject)

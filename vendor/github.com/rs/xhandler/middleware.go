@@ -7,11 +7,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-// CloseHandler returns a Handler, cancelling the context when the client
-// connection closes unexpectedly.
 func CloseHandler(next HandlerC) HandlerC {
 	return HandlerFuncC(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		// Cancel the context if the client closes the connection
+
 		if wcn, ok := w.(http.CloseNotifier); ok {
 			var cancel context.CancelFunc
 			ctx, cancel = context.WithCancel(ctx)
@@ -31,10 +29,6 @@ func CloseHandler(next HandlerC) HandlerC {
 	})
 }
 
-// TimeoutHandler returns a Handler which adds a timeout to the context.
-//
-// Child handlers have the responsability of obeying the context deadline and to return
-// an appropriate error (or not) response in case of timeout.
 func TimeoutHandler(timeout time.Duration) func(next HandlerC) HandlerC {
 	return func(next HandlerC) HandlerC {
 		return HandlerFuncC(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -44,8 +38,6 @@ func TimeoutHandler(timeout time.Duration) func(next HandlerC) HandlerC {
 	}
 }
 
-// If is a special handler that will skip insert the condNext handler only if a condition
-// applies at runtime.
 func If(cond func(ctx context.Context, w http.ResponseWriter, r *http.Request) bool, condNext func(next HandlerC) HandlerC) func(next HandlerC) HandlerC {
 	return func(next HandlerC) HandlerC {
 		return HandlerFuncC(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {

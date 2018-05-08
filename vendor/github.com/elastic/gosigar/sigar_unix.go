@@ -1,5 +1,4 @@
 
-
 // +build darwin freebsd linux
 
 package gosigar

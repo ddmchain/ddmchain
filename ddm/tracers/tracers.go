@@ -1,20 +1,4 @@
-// 
-// This file is part of the go-ddmchain library.
-//
-// The go-ddmchain library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ddmchain library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ddmchain library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package tracers is a collection of JavaScript transaction tracers.
 package tracers
 
 import (
@@ -24,10 +8,8 @@ import (
 	"github.com/ddmchain/go-ddmchain/ddm/tracers/internal/tracers"
 )
 
-// all contains all the built in JavaScript tracers by name.
 var all = make(map[string]string)
 
-// camel converts a snake cased input string into a camel cased output.
 func camel(str string) string {
 	pieces := strings.Split(str, "_")
 	for i := 1; i < len(pieces); i++ {
@@ -36,7 +18,6 @@ func camel(str string) string {
 	return strings.Join(pieces, "")
 }
 
-// init retrieves the JavaScript transaction tracers included in go-ddmchain.
 func init() {
 	for _, file := range tracers.AssetNames() {
 		name := camel(strings.TrimSuffix(file, ".js"))
@@ -44,7 +25,6 @@ func init() {
 	}
 }
 
-// tracer retrieves a specific JavaScript tracer by name.
 func tracer(name string) (string, bool) {
 	if tracer, ok := all[name]; ok {
 		return tracer, true

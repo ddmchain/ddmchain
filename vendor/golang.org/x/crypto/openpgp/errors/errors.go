@@ -1,40 +1,28 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Package errors contains common error types for the OpenPGP packages.
-package errors // import "golang.org/x/crypto/openpgp/errors"
+package errors 
 
 import (
 	"strconv"
 )
 
-// A StructuralError is returned when OpenPGP data is found to be syntactically
-// invalid.
 type StructuralError string
 
 func (s StructuralError) Error() string {
 	return "openpgp: invalid data: " + string(s)
 }
 
-// UnsupportedError indicates that, although the OpenPGP data is valid, it
-// makes use of currently unimplemented features.
 type UnsupportedError string
 
 func (s UnsupportedError) Error() string {
 	return "openpgp: unsupported feature: " + string(s)
 }
 
-// InvalidArgumentError indicates that the caller is in error and passed an
-// incorrect value.
 type InvalidArgumentError string
 
 func (i InvalidArgumentError) Error() string {
 	return "openpgp: invalid argument: " + string(i)
 }
 
-// SignatureError indicates that a syntactically valid signature failed to
-// validate.
 type SignatureError string
 
 func (b SignatureError) Error() string {

@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-// Array
-
 func builtinArray(call FunctionCall) Value {
 	return toValue_object(builtinNewArrayNative(call.runtime, call.ArgumentList))
 }
@@ -180,49 +178,33 @@ func builtinArray_splice(call FunctionCall) Value {
 		}
 	}
 
-	// 0, <1, 2, 3, 4>, 5, 6, 7
-	// a, b
-	// length 8 - delete 4 @ start 1
-
 	itemList := []Value{}
 	itemCount := int64(len(call.ArgumentList))
 	if itemCount > 2 {
-		itemCount -= 2 // Less the first two arguments
+		itemCount -= 2 
 		itemList = call.ArgumentList[2:]
 	} else {
 		itemCount = 0
 	}
 	if itemCount < deleteCount {
-		// The Object/Array is shrinking
+
 		stop := int64(length) - deleteCount
-		// The new length of the Object/Array before
-		// appending the itemList remainder
-		// Stopping at the lower bound of the insertion:
-		// Move an item from the after the deleted portion
-		// to a position after the inserted portion
+
 		for index := start; index < stop; index++ {
-			from := arrayIndexToString(index + deleteCount) // Position just after deletion
-			to := arrayIndexToString(index + itemCount)     // Position just after splice (insertion)
+			from := arrayIndexToString(index + deleteCount) 
+			to := arrayIndexToString(index + itemCount)     
 			if thisObject.hasProperty(from) {
 				thisObject.put(to, thisObject.get(from), true)
 			} else {
 				thisObject.delete(to, true)
 			}
 		}
-		// Delete off the end
-		// We don't bother to delete below <stop + itemCount> (if any) since those
-		// will be overwritten anyway
+
 		for index := int64(length); index > (stop + itemCount); index-- {
 			thisObject.delete(arrayIndexToString(index-1), true)
 		}
 	} else if itemCount > deleteCount {
-		// The Object/Array is growing
-		// The itemCount is greater than the deleteCount, so we do
-		// not have to worry about overwriting what we should be moving
-		// ---
-		// Starting from the upper bound of the deletion:
-		// Move an item from the after the deleted portion
-		// to a position after the inserted portion
+
 		for index := int64(length) - deleteCount; index > start; index-- {
 			from := arrayIndexToString(index + deleteCount - 1)
 			to := arrayIndexToString(index + itemCount - 1)
@@ -249,7 +231,7 @@ func builtinArray_slice(call FunctionCall) Value {
 	start, end := rangeStartEnd(call.ArgumentList, length, false)
 
 	if start >= end {
-		// Always an empty array
+
 		return toValue_object(call.runtime.newArray(0))
 	}
 	sliceLength := end - start
@@ -302,7 +284,7 @@ func builtinArray_reverse(call FunctionCall) Value {
 	upper := lower
 
 	lower.index = 0
-	middle := length / 2 // Division will floor
+	middle := length / 2 
 
 	for lower.index != middle {
 		lower.name = arrayIndexToString(lower.index)
@@ -326,7 +308,7 @@ func builtinArray_reverse(call FunctionCall) Value {
 			thisObject.delete(lower.name, true)
 			thisObject.put(upper.name, value, true)
 		} else {
-			// Nothing happens.
+
 		}
 
 		lower.index += 1
@@ -412,16 +394,16 @@ func arraySortSwap(thisObject *_object, index0, index1 uint) {
 		thisObject.delete(j.name, true)
 		thisObject.put(k.name, value, true)
 	} else {
-		// Nothing happens.
+
 	}
 }
 
 func arraySortQuickPartition(thisObject *_object, left, right, pivot uint, compare *_object) (uint, uint) {
-	arraySortSwap(thisObject, pivot, right) // Right is now the pivot value
+	arraySortSwap(thisObject, pivot, right) 
 	cursor := left
 	cursor2 := left
 	for index := left; index < right; index++ {
-		comparison := sortCompare(thisObject, index, right, compare) // Compare to the pivot value
+		comparison := sortCompare(thisObject, index, right, compare) 
 		if comparison < 0 {
 			arraySortSwap(thisObject, index, cursor)
 			if cursor < cursor2 {

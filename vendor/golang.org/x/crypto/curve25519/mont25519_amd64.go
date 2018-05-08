@@ -1,14 +1,7 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build amd64,!gccgo,!appengine
 
 package curve25519
-
-// These functions are implemented in the .s files. The names of the functions
-// in the rest of the file are also taken from the SUPERCOP sources to help
-// people following along.
 
 //go:noescape
 
@@ -30,7 +23,6 @@ func mul(dest, a, b *[5]uint64)
 
 func square(out, in *[5]uint64)
 
-// mladder uses a Montgomery ladder to calculate (xr/zr) *= s.
 func mladder(xr, zr *[5]uint64, s *[32]byte) {
 	var work [5][5]uint64
 
@@ -82,8 +74,6 @@ func setint(r *[5]uint64, v uint64) {
 	r[4] = 0
 }
 
-// unpack sets r = x where r consists of 5, 51-bit limbs in little-endian
-// order.
 func unpack(r *[5]uint64, x *[32]byte) {
 	r[0] = uint64(x[0]) |
 		uint64(x[1])<<8 |
@@ -127,8 +117,6 @@ func unpack(r *[5]uint64, x *[32]byte) {
 		uint64(x[31]&127)<<44
 }
 
-// pack sets out = x where out is the usual, little-endian form of the 5,
-// 51-bit limbs in x.
 func pack(out *[32]byte, x *[5]uint64) {
 	t := *x
 	freeze(&t)
@@ -175,66 +163,65 @@ func pack(out *[32]byte, x *[5]uint64) {
 	out[31] = byte(t[4] >> 44)
 }
 
-// invert calculates r = x^-1 mod p using Fermat's little theorem.
 func invert(r *[5]uint64, x *[5]uint64) {
 	var z2, z9, z11, z2_5_0, z2_10_0, z2_20_0, z2_50_0, z2_100_0, t [5]uint64
 
-	square(&z2, x)        /* 2 */
-	square(&t, &z2)       /* 4 */
-	square(&t, &t)        /* 8 */
-	mul(&z9, &t, x)       /* 9 */
-	mul(&z11, &z9, &z2)   /* 11 */
-	square(&t, &z11)      /* 22 */
-	mul(&z2_5_0, &t, &z9) /* 2^5 - 2^0 = 31 */
+	square(&z2, x)        
+	square(&t, &z2)       
+	square(&t, &t)        
+	mul(&z9, &t, x)       
+	mul(&z11, &z9, &z2)   
+	square(&t, &z11)      
+	mul(&z2_5_0, &t, &z9) 
 
-	square(&t, &z2_5_0)      /* 2^6 - 2^1 */
-	for i := 1; i < 5; i++ { /* 2^20 - 2^10 */
+	square(&t, &z2_5_0)      
+	for i := 1; i < 5; i++ { 
 		square(&t, &t)
 	}
-	mul(&z2_10_0, &t, &z2_5_0) /* 2^10 - 2^0 */
+	mul(&z2_10_0, &t, &z2_5_0) 
 
-	square(&t, &z2_10_0)      /* 2^11 - 2^1 */
-	for i := 1; i < 10; i++ { /* 2^20 - 2^10 */
+	square(&t, &z2_10_0)      
+	for i := 1; i < 10; i++ { 
 		square(&t, &t)
 	}
-	mul(&z2_20_0, &t, &z2_10_0) /* 2^20 - 2^0 */
+	mul(&z2_20_0, &t, &z2_10_0) 
 
-	square(&t, &z2_20_0)      /* 2^21 - 2^1 */
-	for i := 1; i < 20; i++ { /* 2^40 - 2^20 */
+	square(&t, &z2_20_0)      
+	for i := 1; i < 20; i++ { 
 		square(&t, &t)
 	}
-	mul(&t, &t, &z2_20_0) /* 2^40 - 2^0 */
+	mul(&t, &t, &z2_20_0) 
 
-	square(&t, &t)            /* 2^41 - 2^1 */
-	for i := 1; i < 10; i++ { /* 2^50 - 2^10 */
+	square(&t, &t)            
+	for i := 1; i < 10; i++ { 
 		square(&t, &t)
 	}
-	mul(&z2_50_0, &t, &z2_10_0) /* 2^50 - 2^0 */
+	mul(&z2_50_0, &t, &z2_10_0) 
 
-	square(&t, &z2_50_0)      /* 2^51 - 2^1 */
-	for i := 1; i < 50; i++ { /* 2^100 - 2^50 */
+	square(&t, &z2_50_0)      
+	for i := 1; i < 50; i++ { 
 		square(&t, &t)
 	}
-	mul(&z2_100_0, &t, &z2_50_0) /* 2^100 - 2^0 */
+	mul(&z2_100_0, &t, &z2_50_0) 
 
-	square(&t, &z2_100_0)      /* 2^101 - 2^1 */
-	for i := 1; i < 100; i++ { /* 2^200 - 2^100 */
+	square(&t, &z2_100_0)      
+	for i := 1; i < 100; i++ { 
 		square(&t, &t)
 	}
-	mul(&t, &t, &z2_100_0) /* 2^200 - 2^0 */
+	mul(&t, &t, &z2_100_0) 
 
-	square(&t, &t)            /* 2^201 - 2^1 */
-	for i := 1; i < 50; i++ { /* 2^250 - 2^50 */
+	square(&t, &t)            
+	for i := 1; i < 50; i++ { 
 		square(&t, &t)
 	}
-	mul(&t, &t, &z2_50_0) /* 2^250 - 2^0 */
+	mul(&t, &t, &z2_50_0) 
 
-	square(&t, &t) /* 2^251 - 2^1 */
-	square(&t, &t) /* 2^252 - 2^2 */
-	square(&t, &t) /* 2^253 - 2^3 */
+	square(&t, &t) 
+	square(&t, &t) 
+	square(&t, &t) 
 
-	square(&t, &t) /* 2^254 - 2^4 */
+	square(&t, &t) 
 
-	square(&t, &t)   /* 2^255 - 2^5 */
-	mul(r, &t, &z11) /* 2^255 - 21 */
+	square(&t, &t)   
+	mul(r, &t, &z11) 
 }

@@ -1,23 +1,3 @@
-/*
- * Windows backend for libusb 1.0
- * With contributions from Michael Plante, Orin Eman et al.
- * Parts of this code adapted from libusb-win32-v1 by Stephan Meyer
- * Major code testing contribution by Xiaofan Chen
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #pragma once
 
@@ -25,16 +5,15 @@
 #include "windows_nt_common.h"
 
 #if defined(_MSC_VER)
-// disable /W4 MSVC warnings that are benign
-#pragma warning(disable:4100)  // unreferenced formal parameter
-#pragma warning(disable:4127)  // conditional expression is constant
-#pragma warning(disable:4201)  // nameless struct/union
-#pragma warning(disable:4214)  // bit field types other than int
-#pragma warning(disable:4996)  // deprecated API calls
-#pragma warning(disable:28159) // more deprecated API calls
+
+#pragma warning(disable:4100)  
+#pragma warning(disable:4127)  
+#pragma warning(disable:4201)  
+#pragma warning(disable:4214)  
+#pragma warning(disable:4996)  
+#pragma warning(disable:28159) 
 #endif
 
-// Missing from MSVC6 setupapi.h
 #if !defined(SPDRP_ADDRESS)
 #define SPDRP_ADDRESS		28
 #endif
@@ -52,14 +31,10 @@
 #define MAX_KEY_LENGTH		256
 #define LIST_SEPARATOR		';'
 
-// Handle code for HID interface that have been claimed ("dibs")
 #define INTERFACE_CLAIMED	((HANDLE)(intptr_t)0xD1B5)
-// Additional return code for HID operations that completed synchronously
+
 #define LIBUSB_COMPLETED	(LIBUSB_SUCCESS + 1)
 
-// http://msdn.microsoft.com/en-us/library/ff545978.aspx
-// http://msdn.microsoft.com/en-us/library/ff545972.aspx
-// http://msdn.microsoft.com/en-us/library/ff545982.aspx
 #if !defined(GUID_DEVINTERFACE_USB_HOST_CONTROLLER)
 const GUID GUID_DEVINTERFACE_USB_HOST_CONTROLLER = { 0x3ABF6F2D, 0x71C4, 0x462A, {0x8A, 0x92, 0x1E, 0x68, 0x61, 0xE6, 0xAF, 0x27} };
 #endif
@@ -73,21 +48,15 @@ const GUID GUID_DEVINTERFACE_USB_HUB = { 0xF18A0E88, 0xC30C, 0x11D0, {0x88, 0x15
 const GUID GUID_DEVINTERFACE_LIBUSB0_FILTER = { 0xF9F3FF14, 0xAE21, 0x48A0, {0x8A, 0x25, 0x80, 0x11, 0xA7, 0xA9, 0x31, 0xD9} };
 #endif
 
-
-/*
- * Multiple USB API backend support
- */
 #define USB_API_UNSUPPORTED	0
 #define USB_API_HUB		1
 #define USB_API_COMPOSITE	2
 #define USB_API_WINUSBX		3
 #define USB_API_HID		4
 #define USB_API_MAX		5
-// The following is used to indicate if the HID or composite extra props have already been set.
+
 #define USB_API_SET		(1 << USB_API_MAX)
 
-// Sub-APIs for WinUSB-like driver APIs (WinUSB, libusbK, libusb-win32 through the libusbK DLL)
-// Must have the same values as the KUSB_DRVID enum from libusbk.h
 #define SUB_API_NOTSET		-1
 #define SUB_API_LIBUSBK		0
 #define SUB_API_LIBUSB0		1
@@ -99,7 +68,7 @@ const GUID GUID_DEVINTERFACE_LIBUSB0_FILTER = { 0xF9F3FF14, 0xAE21, 0x48A0, {0x8
 struct windows_usb_api_backend {
 	const uint8_t id;
 	const char *designation;
-	const char **driver_name_list; // Driver name, without .sys, e.g. "usbccgp"
+	const char **driver_name_list; 
 	const uint8_t nb_driver_names;
 	int (*init)(int sub_api, struct libusb_context *ctx);
 	int (*exit)(int sub_api);
@@ -126,12 +95,6 @@ extern const struct windows_usb_api_backend usb_api_backend[USB_API_MAX];
 		#fname "' (unrecognized device driver)");	\
 	return LIBUSB_ERROR_NOT_SUPPORTED;
 
-/*
- * private structures definition
- * with inline pseudo constructors/destructors
- */
-
-// TODO (v2+): move hid desc to libusb.h?
 struct libusb_hid_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
@@ -153,7 +116,6 @@ struct libusb_hid_descriptor {
 #define LIBUSB_REQ_IN(request_type)		((request_type) & LIBUSB_ENDPOINT_IN)
 #define LIBUSB_REQ_OUT(request_type)		(!LIBUSB_REQ_IN(request_type))
 
-// The following are used for HID reports IOCTLs
 #define HID_CTL_CODE(id) \
 	CTL_CODE (FILE_DEVICE_KEYBOARD, (id), METHOD_NEITHER, FILE_ANY_ACCESS)
 #define HID_BUFFER_CTL_CODE(id) \
@@ -188,33 +150,33 @@ struct hid_device_priv {
 	uint16_t pid;
 	uint8_t config;
 	uint8_t nb_interfaces;
-	bool uses_report_ids[3]; // input, ouptput, feature
+	bool uses_report_ids[3]; 
 	uint16_t input_report_size;
 	uint16_t output_report_size;
 	uint16_t feature_report_size;
 	WCHAR string[3][MAX_USB_STRING_LENGTH];
-	uint8_t string_index[3]; // man, prod, ser
+	uint8_t string_index[3]; 
 };
 
 struct windows_device_priv {
-	uint8_t depth; // distance to HCD
-	uint8_t port;  // port number on the hub
+	uint8_t depth; 
+	uint8_t port;  
 	uint8_t active_config;
 	struct windows_usb_api_backend const *apib;
-	char *path;  // device interface path
-	int sub_api; // for WinUSB-like APIs
+	char *path;  
+	int sub_api; 
 	struct {
-		char *path; // each interface needs a device interface path,
-		struct windows_usb_api_backend const *apib; // an API backend (multiple drivers support),
+		char *path; 
+		struct windows_usb_api_backend const *apib; 
 		int sub_api;
-		int8_t nb_endpoints; // and a set of endpoint addresses (USB_MAXENDPOINTS)
+		int8_t nb_endpoints; 
 		uint8_t *endpoint;
-		bool restricted_functionality;  // indicates if the interface functionality is restricted
-                                                // by Windows (eg. HID keyboards or mice cannot do R/W)
+		bool restricted_functionality;  
+
 	} usb_interface[USB_MAXINTERFACES];
 	struct hid_device_priv *hid;
 	USB_DEVICE_DESCRIPTOR dev_descriptor;
-	unsigned char **config_descriptor; // list of pointers to the cached config descriptors
+	unsigned char **config_descriptor; 
 };
 
 static inline struct windows_device_priv *_device_priv(struct libusb_device *dev)
@@ -256,14 +218,14 @@ static inline void windows_device_priv_release(struct libusb_device *dev)
 }
 
 struct interface_handle_t {
-	HANDLE dev_handle; // WinUSB needs an extra handle for the file
-	HANDLE api_handle; // used by the API to communicate with the device
+	HANDLE dev_handle; 
+	HANDLE api_handle; 
 };
 
 struct windows_device_handle_priv {
 	int active_interface;
 	struct interface_handle_t interface_handle[USB_MAXINTERFACES];
-	int autoclaim_count[USB_MAXINTERFACES]; // For auto-release
+	int autoclaim_count[USB_MAXINTERFACES]; 
 };
 
 static inline struct windows_device_handle_priv *_device_handle_priv(
@@ -272,32 +234,27 @@ static inline struct windows_device_handle_priv *_device_handle_priv(
 	return (struct windows_device_handle_priv *)handle->os_priv;
 }
 
-// used for async polling functions
 struct windows_transfer_priv {
 	struct winfd pollable_fd;
 	uint8_t interface_number;
-	uint8_t *hid_buffer; // 1 byte extended data buffer, required for HID
-	uint8_t *hid_dest;   // transfer buffer destination, required for HID
+	uint8_t *hid_buffer; 
+	uint8_t *hid_dest;   
 	size_t hid_expected_size;
 };
 
-// used to match a device driver (including filter drivers) against a supported API
 struct driver_lookup {
-	char list[MAX_KEY_LENGTH + 1]; // REG_MULTI_SZ list of services (driver) names
-	const DWORD reg_prop;          // SPDRP registry key to use to retrieve list
-	const char* designation;       // internal designation (for debug output)
+	char list[MAX_KEY_LENGTH + 1]; 
+	const DWORD reg_prop;          
+	const char* designation;       
 };
 
-/* OLE32 dependency */
 DLL_DECLARE_HANDLE(OLE32);
 DLL_DECLARE_FUNC_PREFIXED(WINAPI, HRESULT, p, CLSIDFromString, (LPCOLESTR, LPCLSID));
 
-/* Kernel32 dependencies */
 DLL_DECLARE_HANDLE(Kernel32);
-/* This call is only available from XP SP2 */
+
 DLL_DECLARE_FUNC_PREFIXED(WINAPI, BOOL, p, IsWow64Process, (HANDLE, PBOOL));
 
-/* SetupAPI dependencies */
 DLL_DECLARE_HANDLE(SetupAPI);
 DLL_DECLARE_FUNC_PREFIXED(WINAPI, HDEVINFO, p, SetupDiGetClassDevsA, (const GUID*, PCSTR, HWND, DWORD));
 DLL_DECLARE_FUNC_PREFIXED(WINAPI, BOOL, p, SetupDiEnumDeviceInfo, (HDEVINFO, DWORD, PSP_DEVINFO_DATA));
@@ -311,14 +268,10 @@ DLL_DECLARE_FUNC_PREFIXED(WINAPI, BOOL, p, SetupDiGetDeviceRegistryPropertyA, (H
 			PSP_DEVINFO_DATA, DWORD, PDWORD, PBYTE, DWORD, PDWORD));
 DLL_DECLARE_FUNC_PREFIXED(WINAPI, HKEY, p, SetupDiOpenDeviceInterfaceRegKey, (HDEVINFO, PSP_DEVICE_INTERFACE_DATA, DWORD, DWORD));
 
-/* AdvAPI32 dependencies */
 DLL_DECLARE_HANDLE(AdvAPI32);
 DLL_DECLARE_FUNC_PREFIXED(WINAPI, LONG, p, RegQueryValueExW, (HKEY, LPCWSTR, LPDWORD, LPDWORD, LPBYTE, LPDWORD));
 DLL_DECLARE_FUNC_PREFIXED(WINAPI, LONG, p, RegCloseKey, (HKEY));
 
-/*
- * Windows DDK API definitions. Most of it copied from MinGW's includes
- */
 typedef DWORD DEVNODE, DEVINST;
 typedef DEVNODE *PDEVNODE, *PDEVINST;
 typedef DWORD RETURN_TYPE;
@@ -394,7 +347,6 @@ typedef enum USB_HUB_NODE {
 	UsbMIParent
 } USB_HUB_NODE;
 
-/* Cfgmgr32.dll interface */
 DLL_DECLARE_HANDLE(Cfgmgr32);
 DLL_DECLARE_FUNC(WINAPI, CONFIGRET, CM_Get_Parent, (PDEVINST, DEVINST, ULONG));
 DLL_DECLARE_FUNC(WINAPI, CONFIGRET, CM_Get_Child, (PDEVINST, DEVINST, ULONG));
@@ -428,7 +380,6 @@ DLL_DECLARE_FUNC(WINAPI, CONFIGRET, CM_Get_Device_IDA, (DEVINST, PCHAR, ULONG, U
 #define IOCTL_USB_GET_NODE_CONNECTION_NAME \
 	CTL_CODE(FILE_DEVICE_USB, USB_GET_NODE_CONNECTION_NAME, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
-// Most of the structures below need to be packed
 #pragma pack(push, 1)
 
 typedef struct USB_INTERFACE_DESCRIPTOR {
@@ -475,7 +426,7 @@ typedef struct USB_DESCRIPTOR_REQUEST {
 		USHORT wIndex;
 		USHORT wLength;
 	} SetupPacket;
-//	UCHAR Data[0];
+
 } USB_DESCRIPTOR_REQUEST, *PUSB_DESCRIPTOR_REQUEST;
 
 typedef struct USB_HUB_DESCRIPTOR {
@@ -548,7 +499,7 @@ typedef struct USB_NODE_CONNECTION_INFORMATION_EX {
 	USHORT DeviceAddress;
 	ULONG NumberOfOpenPipes;
 	USB_CONNECTION_STATUS ConnectionStatus;
-//	USB_PIPE_INFO PipeList[0];
+
 } USB_NODE_CONNECTION_INFORMATION_EX, *PUSB_NODE_CONNECTION_INFORMATION_EX;
 
 typedef union _USB_PROTOCOLS {
@@ -596,8 +547,6 @@ typedef struct USB_HUB_CAPABILITIES_EX {
 } USB_HUB_CAPABILITIES_EX, *PUSB_HUB_CAPABILITIES_EX;
 
 #pragma pack(pop)
-
-/* winusb.dll interface */
 
 #define SHORT_PACKET_TERMINATE	0x01
 #define AUTO_CLEAR_STALL	0x02
@@ -758,7 +707,6 @@ typedef BOOL (WINAPI *WinUsb_ResetDevice_t)(
 	WINUSB_INTERFACE_HANDLE InterfaceHandle
 );
 
-/* /!\ These must match the ones from the official libusbk.h */
 typedef enum _KUSB_FNID {
 	KUSB_FNID_Init,
 	KUSB_FNID_Free,
@@ -839,8 +787,6 @@ struct winusb_interface {
 	WinUsb_WritePipe_t WritePipe;
 	WinUsb_ResetDevice_t ResetDevice;
 };
-
-/* hid.dll interface */
 
 #define HIDP_STATUS_SUCCESS	0x110000
 typedef void * PHIDP_PREPARSED_DATA;

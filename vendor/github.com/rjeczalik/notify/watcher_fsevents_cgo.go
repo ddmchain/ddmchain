@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by the MIT license that can be
-// found in the LICENSE file.
-
 // +build darwin,!kqueue
 
 package notify
@@ -34,38 +31,28 @@ import (
 
 var nilstream C.FSEventStreamRef
 
-// Default arguments for FSEventStreamCreate function.
 var (
 	latency C.CFTimeInterval
 	flags   = C.FSEventStreamCreateFlags(C.kFSEventStreamCreateFlagFileEvents | C.kFSEventStreamCreateFlagNoDefer)
 	since   = uint64(C.FSEventsGetCurrentEventId())
 )
 
-var runloop C.CFRunLoopRef // global runloop which all streams are registered with
-var wg sync.WaitGroup      // used to wait until the runloop starts
+var runloop C.CFRunLoopRef 
+var wg sync.WaitGroup      
 
-// source is used for synchronization purposes - it signals when runloop has
-// started and is ready via the wg. It also serves purpose of a dummy source,
-// thanks to it the runloop does not return as it also has at least one source
-// registered.
 var source = C.CFRunLoopSourceCreate(nil, 0, &C.CFRunLoopSourceContext{
 	perform: (C.CFRunLoopPerformCallBack)(C.gosource),
 })
 
-// Errors returned when FSEvents functions fail.
 var (
 	errCreate = os.NewSyscallError("FSEventStreamCreate", errors.New("NULL"))
 	errStart  = os.NewSyscallError("FSEventStreamStart", errors.New("false"))
 )
 
-// initializes the global runloop and ensures any created stream awaits its
-// readiness.
 func init() {
 	wg.Add(1)
 	go func() {
-		// There is exactly one run loop per thread. Lock this goroutine to its
-		// thread to ensure that it's not rescheduled on a different thread while
-		// setting up the run loop.
+
 		runtime.LockOSThread()
 		runloop = C.CFRunLoopGetCurrent()
 		C.CFRunLoopAddSource(runloop, source, C.kCFRunLoopDefaultMode)
@@ -107,7 +94,6 @@ func gostream(_, info uintptr, n C.size_t, paths, flags, ids uintptr) {
 	streamFuncs.get(info)(ev)
 }
 
-// StreamFunc is a callback called when stream receives file events.
 type streamFunc func([]FSEvent)
 
 var streamFuncs = streamFuncRegistry{m: map[uintptr]streamFunc{}}
@@ -138,16 +124,12 @@ func (r *streamFuncRegistry) delete(id uintptr) {
 	delete(r.m, id)
 }
 
-// Stream represents single watch-point which listens for events scheduled by
-// the global runloop.
 type stream struct {
 	path string
 	ref  C.FSEventStreamRef
 	info uintptr
 }
 
-// NewStream creates a stream for given path, listening for file events and
-// calling fn upon receiving any.
 func newStream(path string, fn streamFunc) *stream {
 	return &stream{
 		path: path,
@@ -155,8 +137,6 @@ func newStream(path string, fn streamFunc) *stream {
 	}
 }
 
-// Start creates a FSEventStream for the given path and schedules it with
-// global runloop. It's a nop if the stream was already started.
 func (s *stream) Start() error {
 	if s.ref != nilstream {
 		return nil
@@ -179,7 +159,6 @@ func (s *stream) Start() error {
 	return nil
 }
 
-// Stop stops underlying FSEventStream and unregisters it from global runloop.
 func (s *stream) Stop() {
 	if s.ref == nilstream {
 		return

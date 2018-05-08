@@ -9,7 +9,7 @@ import (
 )
 
 func (self *_runtime) evaluateMultiply(left float64, right float64) Value {
-	// TODO 11.5.1
+
 	return Value{}
 }
 
@@ -48,7 +48,7 @@ func (self *_runtime) evaluateDivide(left float64, right float64) Value {
 }
 
 func (self *_runtime) evaluateModulo(left float64, right float64) Value {
-	// TODO 11.5.3
+
 	return Value{}
 }
 
@@ -58,7 +58,6 @@ func (self *_runtime) calculateBinaryExpression(operator token.Token, left Value
 
 	switch operator {
 
-	// Additive
 	case token.PLUS:
 		leftValue = toPrimitive(leftValue)
 		rightValue := right.resolve()
@@ -73,7 +72,6 @@ func (self *_runtime) calculateBinaryExpression(operator token.Token, left Value
 		rightValue := right.resolve()
 		return toValue_float64(leftValue.float64() - rightValue.float64())
 
-		// Multiplicative
 	case token.MULTIPLY:
 		rightValue := right.resolve()
 		return toValue_float64(leftValue.float64() * rightValue.float64())
@@ -84,7 +82,6 @@ func (self *_runtime) calculateBinaryExpression(operator token.Token, left Value
 		rightValue := right.resolve()
 		return toValue_float64(math.Mod(leftValue.float64(), rightValue.float64()))
 
-		// Logical
 	case token.LOGICAL_AND:
 		left := leftValue.bool()
 		if !left {
@@ -98,7 +95,6 @@ func (self *_runtime) calculateBinaryExpression(operator token.Token, left Value
 		}
 		return toValue_bool(right.resolve().bool())
 
-		// Bitwise
 	case token.AND:
 		rightValue := right.resolve()
 		return toValue_int32(toInt32(leftValue) & toInt32(rightValue))
@@ -109,8 +105,6 @@ func (self *_runtime) calculateBinaryExpression(operator token.Token, left Value
 		rightValue := right.resolve()
 		return toValue_int32(toInt32(leftValue) ^ toInt32(rightValue))
 
-		// Shift
-		// (Masking of 0x1f is to restrict the shift to a maximum of 31 places)
 	case token.SHIFT_LEFT:
 		rightValue := right.resolve()
 		return toValue_int32(toInt32(leftValue) << (toUint32(rightValue) & 0x1f))
@@ -119,7 +113,7 @@ func (self *_runtime) calculateBinaryExpression(operator token.Token, left Value
 		return toValue_int32(toInt32(leftValue) >> (toUint32(rightValue) & 0x1f))
 	case token.UNSIGNED_SHIFT_RIGHT:
 		rightValue := right.resolve()
-		// Shifting an unsigned integer is a logical shift
+
 		return toValue_uint32(toUint32(leftValue) >> (toUint32(rightValue) & 0x1f))
 
 	case token.INSTANCEOF:
@@ -197,30 +191,26 @@ func calculateLessThan(left Value, right Value, leftFirst bool) _lessThanResult 
 	return lessThanFalse
 }
 
-// FIXME Probably a map is not the most efficient way to do this
 var lessThanTable [4](map[_lessThanResult]bool) = [4](map[_lessThanResult]bool){
-	// <
+
 	map[_lessThanResult]bool{
 		lessThanFalse:     false,
 		lessThanTrue:      true,
 		lessThanUndefined: false,
 	},
 
-	// >
 	map[_lessThanResult]bool{
 		lessThanFalse:     false,
 		lessThanTrue:      true,
 		lessThanUndefined: false,
 	},
 
-	// <=
 	map[_lessThanResult]bool{
 		lessThanFalse:     true,
 		lessThanTrue:      false,
 		lessThanUndefined: false,
 	},
 
-	// >=
 	map[_lessThanResult]bool{
 		lessThanFalse:     true,
 		lessThanTrue:      false,
@@ -230,8 +220,6 @@ var lessThanTable [4](map[_lessThanResult]bool) = [4](map[_lessThanResult]bool){
 
 func (self *_runtime) calculateComparison(comparator token.Token, left Value, right Value) bool {
 
-	// FIXME Use strictEqualityComparison?
-	// TODO This might be redundant now (with regards to evaluateComparison)
 	x := left.resolve()
 	y := right.resolve()
 

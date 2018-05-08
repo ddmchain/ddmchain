@@ -1,9 +1,4 @@
 
-// All rights reserved.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package leveldb
 
 import (
@@ -26,9 +21,6 @@ type version struct {
 
 	levels []tFiles
 
-	// Level that should be compacted next and its compaction score.
-	// Score < 1 means compaction is not strictly needed. These fields
-	// are initialized by computeCompaction()
 	cLevel int
 	cScore float64
 
@@ -50,7 +42,7 @@ func (v *version) incref() {
 
 	v.ref++
 	if v.ref == 1 {
-		// Incr file ref.
+
 		for _, tt := range v.levels {
 			for _, t := range tt {
 				v.s.addFileRef(t.fd, 1)
@@ -87,7 +79,6 @@ func (v *version) release() {
 func (v *version) walkOverlapping(aux tFiles, ikey internalKey, f func(level int, t *tFile) bool, lf func(level int) bool) {
 	ukey := ikey.ukey()
 
-	// Aux level.
 	if aux != nil {
 		for _, t := range aux {
 			if t.overlaps(v.s.icmp, ukey, ukey) {
@@ -102,15 +93,13 @@ func (v *version) walkOverlapping(aux tFiles, ikey internalKey, f func(level int
 		}
 	}
 
-	// Walk tables level-by-level.
 	for level, tables := range v.levels {
 		if len(tables) == 0 {
 			continue
 		}
 
 		if level == 0 {
-			// Level-0 files may overlap each other. Find all files that
-			// overlap ukey.
+
 			for _, t := range tables {
 				if t.overlaps(v.s.icmp, ukey, ukey) {
 					if !f(level, t) {
@@ -146,7 +135,6 @@ func (v *version) get(aux tFiles, ikey internalKey, ro *opt.ReadOptions, noValue
 		tset  *tSet
 		tseek bool
 
-		// Level-0.
 		zfound bool
 		zseq   uint64
 		zkt    keyType
@@ -155,8 +143,6 @@ func (v *version) get(aux tFiles, ikey internalKey, ro *opt.ReadOptions, noValue
 
 	err = ErrNotFound
 
-	// Since entries never hop across level, finding key/value
-	// in smaller level make later levels irrelevant.
 	v.walkOverlapping(aux, ikey, func(level int, t *tFile) bool {
 		if level >= 0 && !tseek {
 			if tset == nil {
@@ -187,7 +173,7 @@ func (v *version) get(aux tFiles, ikey internalKey, ro *opt.ReadOptions, noValue
 
 		if fukey, fseq, fkt, fkerr := parseInternalKey(fikey); fkerr == nil {
 			if v.s.icmp.uCompare(ukey, fukey) == 0 {
-				// Level <= 0 may overlaps each-other.
+
 				if level <= 0 {
 					if fseq >= zseq {
 						zfound = true
@@ -257,7 +243,7 @@ func (v *version) getIterators(slice *util.Range, ro *opt.ReadOptions) (its []it
 	strict := opt.GetStrict(v.s.o.Options, ro, opt.StrictReader)
 	for level, tables := range v.levels {
 		if level == 0 {
-			// Merge all level zero files together since they may overlap.
+
 			for _, t := range tables {
 				its = append(its, v.s.tops.newIterator(t, slice, ro))
 			}
@@ -272,7 +258,6 @@ func (v *version) newStaging() *versionStaging {
 	return &versionStaging{base: v}
 }
 
-// Spawn a new version based on this version.
 func (v *version) spawn(r *sessionRecord) *version {
 	staging := v.newStaging()
 	staging.commit(r)
@@ -298,19 +283,16 @@ func (v *version) offsetOf(ikey internalKey) (n int64, err error) {
 	for level, tables := range v.levels {
 		for _, t := range tables {
 			if v.s.icmp.Compare(t.imax, ikey) <= 0 {
-				// Entire file is before "ikey", so just add the file size
+
 				n += t.size
 			} else if v.s.icmp.Compare(t.imin, ikey) > 0 {
-				// Entire file is after "ikey", so ignore
+
 				if level > 0 {
-					// Files other than level 0 are sorted by meta->min, so
-					// no further files in this level will contain data for
-					// "ikey".
+
 					break
 				}
 			} else {
-				// "ikey" falls in the range for this table. Add the
-				// approximate offset of "ikey" within the table.
+
 				if m, err := v.s.tops.offsetOf(t, ikey); err == nil {
 					n += m
 				} else {
@@ -349,7 +331,7 @@ func (v *version) pickMemdbLevel(umin, umax []byte, maxLevel int) (level int) {
 }
 
 func (v *version) computeCompaction() {
-	// Precomputed best level for next compaction
+
 	bestLevel := int(-1)
 	bestScore := float64(-1)
 
@@ -362,17 +344,7 @@ func (v *version) computeCompaction() {
 		var score float64
 		size := tables.size()
 		if level == 0 {
-			// We treat level-0 specially by bounding the number of files
-			// instead of number of bytes for two reasons:
-			//
-			// (1) With larger write-buffer sizes, it is nice not to do too
-			// many level-0 compaction.
-			//
-			// (2) The files in level-0 are merged on every read and
-			// therefore we wish to avoid too many files when the individual
-			// file size is small (perhaps because of a small write-buffer
-			// setting, or very high compression ratios, or lots of
-			// overwrites/deletions).
+
 			score = float64(len(tables)) / float64(v.s.o.GetCompactionL0Trigger())
 		} else {
 			score = float64(size) / float64(v.s.o.GetCompactionTotalSize(level))
@@ -419,7 +391,7 @@ func (p *versionStaging) getScratch(level int) *tablesScratch {
 }
 
 func (p *versionStaging) commit(r *sessionRecord) {
-	// Deleted tables.
+
 	for _, r := range r.deletedTables {
 		scratch := p.getScratch(r.level)
 		if r.level < len(p.base.levels) && len(p.base.levels[r.level]) > 0 {
@@ -433,7 +405,6 @@ func (p *versionStaging) commit(r *sessionRecord) {
 		}
 	}
 
-	// New tables.
 	for _, r := range r.addedTables {
 		scratch := p.getScratch(r.level)
 		if scratch.added == nil {
@@ -447,7 +418,7 @@ func (p *versionStaging) commit(r *sessionRecord) {
 }
 
 func (p *versionStaging) finish() *version {
-	// Build new version.
+
 	nv := newVersion(p.base.s)
 	numLevel := len(p.levels)
 	if len(p.base.levels) > numLevel {
@@ -464,12 +435,11 @@ func (p *versionStaging) finish() *version {
 			scratch := p.levels[level]
 
 			var nt tFiles
-			// Prealloc list if possible.
+
 			if n := len(baseTabels) + len(scratch.added) - len(scratch.deleted); n > 0 {
 				nt = make(tFiles, 0, n)
 			}
 
-			// Base tables.
 			for _, t := range baseTabels {
 				if _, ok := scratch.deleted[t.fd.Num]; ok {
 					continue
@@ -480,13 +450,12 @@ func (p *versionStaging) finish() *version {
 				nt = append(nt, t)
 			}
 
-			// New tables.
 			for _, r := range scratch.added {
 				nt = append(nt, tableFileFromRecord(r))
 			}
 
 			if len(nt) != 0 {
-				// Sort tables.
+
 				if level == 0 {
 					nt.sortByNum()
 				} else {
@@ -500,13 +469,11 @@ func (p *versionStaging) finish() *version {
 		}
 	}
 
-	// Trim levels.
 	n := len(nv.levels)
 	for ; n > 0 && nv.levels[n-1] == nil; n-- {
 	}
 	nv.levels = nv.levels[:n]
 
-	// Compute compaction score for new version.
 	nv.computeCompaction()
 
 	return nv

@@ -1,16 +1,13 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build windows
 
 package windows
 
-func itoa(val int) string { // do it here rather than with fmt to avoid dependency
+func itoa(val int) string { 
 	if val < 0 {
 		return "-" + itoa(-val)
 	}
-	var buf [32]byte // big enough for int64
+	var buf [32]byte 
 	i := len(buf) - 1
 	for val >= 10 {
 		buf[i] = byte(val%10 + '0')

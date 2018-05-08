@@ -23,22 +23,18 @@ var (
 )
 
 func init() {
-	// Check if GetFileInformationByHandleEx is available.
+
 	if procGetFileInformationByHandleEx.Find() != nil {
 		procGetFileInformationByHandleEx = nil
 	}
 }
 
-// IsTerminal return true if the file descriptor is terminal.
 func IsTerminal(fd uintptr) bool {
 	var st uint32
 	r, _, e := syscall.Syscall(procGetConsoleMode.Addr(), 2, fd, uintptr(unsafe.Pointer(&st)), 0)
 	return r != 0 && e == 0
 }
 
-// Check pipe name is used for cygwin/msys2 pty.
-// Cygwin/MSYS2 PTY has a name like:
-//   \{cygwin,msys}-XXXXXXXXXXXXXXXX-ptyN-{from,to}-master
 func isCygwinPipeName(name string) bool {
 	token := strings.Split(name, "-")
 	if len(token) < 5 {
@@ -68,14 +64,11 @@ func isCygwinPipeName(name string) bool {
 	return true
 }
 
-// IsCygwinTerminal() return true if the file descriptor is a cygwin or msys2
-// terminal.
 func IsCygwinTerminal(fd uintptr) bool {
 	if procGetFileInformationByHandleEx == nil {
 		return false
 	}
 
-	// Cygwin/msys's pty is a pipe.
 	ft, _, e := syscall.Syscall(procGetFileType.Addr(), 1, fd, 0, 0)
 	if ft != fileTypePipe || e != 0 {
 		return false

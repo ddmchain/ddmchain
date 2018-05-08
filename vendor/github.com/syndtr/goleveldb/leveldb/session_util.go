@@ -1,9 +1,4 @@
 
-// All rights reserved.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package leveldb
 
 import (
@@ -13,8 +8,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/journal"
 	"github.com/syndtr/goleveldb/leveldb/storage"
 )
-
-// Logging.
 
 type dropper struct {
 	s  *session
@@ -31,8 +24,6 @@ func (d dropper) Drop(err error) {
 
 func (s *session) log(v ...interface{})                 { s.stor.Log(fmt.Sprint(v...)) }
 func (s *session) logf(format string, v ...interface{}) { s.stor.Log(fmt.Sprintf(format, v...)) }
-
-// File utils.
 
 func (s *session) newTemp() storage.FileDesc {
 	num := atomic.AddInt64(&s.stTempFileNum, 1) - 1
@@ -51,10 +42,6 @@ func (s *session) addFileRef(fd storage.FileDesc, ref int) int {
 	return ref
 }
 
-// Session state.
-
-// Get current version. This will incr version ref, must call
-// version.release (exactly once) after use.
 func (s *session) version() *version {
 	s.vmu.Lock()
 	defer s.vmu.Unlock()
@@ -68,31 +55,26 @@ func (s *session) tLen(level int) int {
 	return s.stVersion.tLen(level)
 }
 
-// Set current version to v.
 func (s *session) setVersion(v *version) {
 	s.vmu.Lock()
 	defer s.vmu.Unlock()
-	// Hold by session. It is important to call this first before releasing
-	// current version, otherwise the still used files might get released.
+
 	v.incref()
 	if s.stVersion != nil {
-		// Release current version.
+
 		s.stVersion.releaseNB()
 	}
 	s.stVersion = v
 }
 
-// Get current unused file number.
 func (s *session) nextFileNum() int64 {
 	return atomic.LoadInt64(&s.stNextFileNum)
 }
 
-// Set current unused file number to num.
 func (s *session) setNextFileNum(num int64) {
 	atomic.StoreInt64(&s.stNextFileNum, num)
 }
 
-// Mark file number as used.
 func (s *session) markFileNum(num int64) {
 	nextFileNum := num + 1
 	for {
@@ -106,12 +88,10 @@ func (s *session) markFileNum(num int64) {
 	}
 }
 
-// Allocate a file number.
 func (s *session) allocFileNum() int64 {
 	return atomic.AddInt64(&s.stNextFileNum, 1) - 1
 }
 
-// Reuse given file number.
 func (s *session) reuseFileNum(num int64) {
 	for {
 		old, x := s.stNextFileNum, num
@@ -124,7 +104,6 @@ func (s *session) reuseFileNum(num int64) {
 	}
 }
 
-// Set compaction ptr at given level; need external synchronization.
 func (s *session) setCompPtr(level int, ik internalKey) {
 	if level >= len(s.stCompPtrs) {
 		newCompPtrs := make([]internalKey, level+1)
@@ -134,7 +113,6 @@ func (s *session) setCompPtr(level int, ik internalKey) {
 	s.stCompPtrs[level] = append(internalKey{}, ik...)
 }
 
-// Get compaction ptr at given level; need external synchronization.
 func (s *session) getCompPtr(level int) internalKey {
 	if level >= len(s.stCompPtrs) {
 		return nil
@@ -142,10 +120,6 @@ func (s *session) getCompPtr(level int) internalKey {
 	return s.stCompPtrs[level]
 }
 
-// Manifest related utils.
-
-// Fill given session record obj with current states; need external
-// synchronization.
 func (s *session) fillRecord(r *sessionRecord, snapshot bool) {
 	r.setNextFileNum(s.nextFileNum())
 
@@ -168,8 +142,6 @@ func (s *session) fillRecord(r *sessionRecord, snapshot bool) {
 	}
 }
 
-// Mark if record has been committed, this will update session state;
-// need external synchronization.
 func (s *session) recordCommited(rec *sessionRecord) {
 	if rec.has(recJournalNum) {
 		s.stJournalNum = rec.journalNum
@@ -188,7 +160,6 @@ func (s *session) recordCommited(rec *sessionRecord) {
 	}
 }
 
-// Create a new manifest file; need external synchronization.
 func (s *session) newManifest(rec *sessionRecord, v *version) (err error) {
 	fd := storage.FileDesc{storage.TypeManifest, s.allocFileNum()}
 	writer, err := s.stor.Create(fd)
@@ -245,7 +216,6 @@ func (s *session) newManifest(rec *sessionRecord, v *version) (err error) {
 	return
 }
 
-// Flush record to disk.
 func (s *session) flushManifest(rec *sessionRecord) (err error) {
 	s.fillRecord(rec, false)
 	w, err := s.manifest.Next()

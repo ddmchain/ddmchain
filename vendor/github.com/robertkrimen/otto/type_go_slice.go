@@ -7,7 +7,7 @@ import (
 
 func (runtime *_runtime) newGoSliceObject(value reflect.Value) *_object {
 	self := runtime.newObject()
-	self.class = "GoArray" // TODO GoSlice?
+	self.class = "GoArray" 
 	self.objectClass = _classGoSlice
 	self.value = _newGoSliceObject(value)
 	return self
@@ -45,7 +45,7 @@ func (self _goSliceObject) setValue(index int64, value Value) bool {
 }
 
 func goSliceGetOwnProperty(self *_object, name string) *_property {
-	// length
+
 	if name == "length" {
 		return &_property{
 			value: toValue(self.value.(*_goSliceObject).value.Len()),
@@ -53,7 +53,6 @@ func goSliceGetOwnProperty(self *_object, name string) *_property {
 		}
 	}
 
-	// .0, .1, .2, ...
 	index := stringToArrayIndex(name)
 	if index >= 0 {
 		value := Value{}
@@ -67,7 +66,6 @@ func goSliceGetOwnProperty(self *_object, name string) *_property {
 		}
 	}
 
-	// Other methods
 	if method := self.value.(*_goSliceObject).value.MethodByName(name); (method != reflect.Value{}) {
 		return &_property{
 			value: self.runtime.toValue(method.Interface()),
@@ -80,7 +78,6 @@ func goSliceGetOwnProperty(self *_object, name string) *_property {
 
 func goSliceEnumerate(self *_object, all bool, each func(string) bool) {
 	object := self.value.(*_goSliceObject)
-	// .0, .1, .2, ...
 
 	for index, length := 0, object.value.Len(); index < length; index++ {
 		name := strconv.FormatInt(int64(index), 10)
@@ -105,12 +102,11 @@ func goSliceDefineOwnProperty(self *_object, name string, descriptor _property, 
 }
 
 func goSliceDelete(self *_object, name string, throw bool) bool {
-	// length
+
 	if name == "length" {
 		return self.runtime.typeErrorResult(throw)
 	}
 
-	// .0, .1, .2, ...
 	index := stringToArrayIndex(name)
 	if index >= 0 {
 		object := self.value.(*_goSliceObject)

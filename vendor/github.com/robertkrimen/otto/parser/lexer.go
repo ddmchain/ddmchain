@@ -35,7 +35,7 @@ func digitValue(chr rune) int {
 	case 'A' <= chr && chr <= 'F':
 		return int(chr - 'A' + 10)
 	}
-	return 16 // Larger than any legal digit value
+	return 16 
 }
 
 func isDigit(chr rune, base int) bool {
@@ -96,7 +96,6 @@ func (self *_parser) scanIdentifier() (string, error) {
 	return literal, nil
 }
 
-// 7.2
 func isLineWhiteSpace(chr rune) bool {
 	switch chr {
 	case '\u0009', '\u000b', '\u000c', '\u0020', '\u00a0', '\ufeff':
@@ -109,7 +108,6 @@ func isLineWhiteSpace(chr rune) bool {
 	return unicode.IsSpace(chr)
 }
 
-// 7.3
 func isLineTerminator(chr rune) bool {
 	switch chr {
 	case '\u000a', '\u000d', '\u2028', '\u2029':
@@ -137,13 +135,13 @@ func (self *_parser) scan() (tkn token.Token, literal string, idx file.Idx) {
 				break
 			}
 			if len(literal) > 1 {
-				// Keywords are longer than 1 character, avoid lookup otherwise
+
 				var strict bool
 				tkn, strict = token.IsKeyword(literal)
 
 				switch tkn {
 
-				case 0: // Not a keyword
+				case 0: 
 					if literal == "true" || literal == "false" {
 						self.insertSemicolon = true
 						tkn = token.BOOLEAN
@@ -157,7 +155,7 @@ func (self *_parser) scan() (tkn token.Token, literal string, idx file.Idx) {
 				case token.KEYWORD:
 					tkn = token.KEYWORD
 					if strict {
-						// TODO If strict and in strict mode, then this is not a break
+
 						break
 					}
 					return
@@ -165,7 +163,7 @@ func (self *_parser) scan() (tkn token.Token, literal string, idx file.Idx) {
 				case
 					token.THIS,
 					token.BREAK,
-					token.THROW, // A newline after a throw is not allowed, but we need to detect it
+					token.THROW, 
 					token.RETURN,
 					token.CONTINUE,
 					token.DEBUGGER:
@@ -256,7 +254,7 @@ func (self *_parser) scan() (tkn token.Token, literal string, idx file.Idx) {
 					self.skipMultiLineComment()
 					continue
 				} else {
-					// Could be division, could be RegExp literal
+
 					tkn = self.switch2(token.SLASH, token.QUOTIENT_ASSIGN)
 					insertSemicolon = true
 				}
@@ -390,7 +388,7 @@ func (self *_parser) read() {
 	if self.offset < self.length {
 		self.chrOffset = self.offset
 		chr, width := rune(self.str[self.offset]), 1
-		if chr >= utf8.RuneSelf { // !ASCII
+		if chr >= utf8.RuneSelf { 
 			chr, width = utf8.DecodeRuneInString(self.str[self.offset:])
 			if chr == utf8.RuneError && width == 1 {
 				self.error(self.chrOffset, "Invalid UTF-8 character")
@@ -400,16 +398,15 @@ func (self *_parser) read() {
 		self.chr = chr
 	} else {
 		self.chrOffset = self.length
-		self.chr = -1 // EOF
+		self.chr = -1 
 	}
 }
 
-// This is here since the functions are so similar
 func (self *_RegExp_parser) read() {
 	if self.offset < self.length {
 		self.chrOffset = self.offset
 		chr, width := rune(self.str[self.offset]), 1
-		if chr >= utf8.RuneSelf { // !ASCII
+		if chr >= utf8.RuneSelf { 
 			chr, width = utf8.DecodeRuneInString(self.str[self.offset:])
 			if chr == utf8.RuneError && width == 1 {
 				self.error(self.chrOffset, "Invalid UTF-8 character")
@@ -419,7 +416,7 @@ func (self *_RegExp_parser) read() {
 		self.chr = chr
 	} else {
 		self.chrOffset = self.length
-		self.chr = -1 // EOF
+		self.chr = -1 
 	}
 }
 
@@ -432,7 +429,6 @@ func (self *_parser) readSingleLineComment() (result []rune) {
 		result = append(result, self.chr)
 	}
 
-	// Get rid of the trailing -1
 	result = result[:len(result)-1]
 
 	return
@@ -525,9 +521,7 @@ func (self *_parser) scanEscape(quote rune) {
 
 	var length, base uint32
 	switch self.chr {
-	//case '0', '1', '2', '3', '4', '5', '6', '7':
-	//    Octal:
-	//    length, base, limit = 3, 8, 255
+
 	case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', '"', '\'', '0':
 		self.read()
 		return
@@ -541,7 +535,7 @@ func (self *_parser) scanEscape(quote rune) {
 		self.read()
 		length, base = 4, 16
 	default:
-		self.read() // Always make progress
+		self.read() 
 		return
 	}
 
@@ -557,7 +551,7 @@ func (self *_parser) scanEscape(quote rune) {
 }
 
 func (self *_parser) scanString(offset int) (string, error) {
-	// " ' /
+
 	quote := rune(self.str[offset])
 
 	for self.chr != quote {
@@ -576,15 +570,13 @@ func (self *_parser) scanString(offset int) (string, error) {
 				self.scanEscape(quote)
 			}
 		} else if chr == '[' && quote == '/' {
-			// Allow a slash (/) in a bracket character class ([...])
-			// TODO Fix this, this is hacky...
+
 			quote = -1
 		} else if chr == ']' && quote == -1 {
 			quote = '/'
 		}
 	}
 
-	// " ' /
 	self.read()
 
 	return string(self.str[offset:self.chrOffset]), nil
@@ -625,19 +617,19 @@ func hex2decimal(chr byte) (value rune, ok bool) {
 }
 
 func parseNumberLiteral(literal string) (value interface{}, err error) {
-	// TODO Is Uint okay? What about -MAX_UINT
+
 	value, err = strconv.ParseInt(literal, 0, 64)
 	if err == nil {
 		return
 	}
 
-	parseIntErr := err // Save this first error, just in case
+	parseIntErr := err 
 
 	value, err = strconv.ParseFloat(literal, 64)
 	if err == nil {
 		return
 	} else if err.(*strconv.NumError).Err == strconv.ErrRange {
-		// Infinity, etc.
+
 		return value, nil
 	}
 
@@ -645,7 +637,7 @@ func parseNumberLiteral(literal string) (value interface{}, err error) {
 
 	if err.(*strconv.NumError).Err == strconv.ErrRange {
 		if len(literal) > 2 && literal[0] == '0' && (literal[1] == 'X' || literal[1] == 'x') {
-			// Could just be a very large number (e.g. 0x8000000000000000)
+
 			var value float64
 			literal = literal[2:]
 			for _, chr := range literal {
@@ -664,12 +656,11 @@ error:
 }
 
 func parseStringLiteral(literal string) (string, error) {
-	// Best case scenario...
+
 	if literal == "" {
 		return "", nil
 	}
 
-	// Slightly less-best case scenario...
 	if !strings.ContainsRune(literal, '\\') {
 		return literal, nil
 	}
@@ -679,9 +670,7 @@ func parseStringLiteral(literal string) (string, error) {
 
 	for len(str) > 0 {
 		switch chr := str[0]; {
-		// We do not explicitly handle the case of the quote
-		// value, which can be: " ' /
-		// This assumes we're already passed a partially well-formed literal
+
 		case chr >= utf8.RuneSelf:
 			chr, size := utf8.DecodeRuneInString(str)
 			buffer.WriteRune(chr)
@@ -702,9 +691,9 @@ func parseStringLiteral(literal string) (string, error) {
 			str = str[1:]
 			var size int
 			value, size = utf8.DecodeRuneInString(str)
-			str = str[size:] // \ + <character>
+			str = str[size:] 
 		} else {
-			str = str[2:] // \<character>
+			str = str[2:] 
 			switch chr {
 			case 'b':
 				value = '\b'
@@ -750,7 +739,7 @@ func parseStringLiteral(literal string) (string, error) {
 				}
 				fallthrough
 			case '1', '2', '3', '4', '5', '6', '7':
-				// TODO strict
+
 				value = rune(chr) - '0'
 				j := 0
 				for ; j < 2; j++ {
@@ -803,7 +792,7 @@ func (self *_parser) scanNumericLiteral(decimalPoint bool) (token.Token, string)
 		offset := self.chrOffset
 		self.read()
 		if self.chr == 'x' || self.chr == 'X' {
-			// Hexadecimal
+
 			self.read()
 			if isDigit(self.chr, 16) {
 				self.read()
@@ -813,16 +802,16 @@ func (self *_parser) scanNumericLiteral(decimalPoint bool) (token.Token, string)
 			self.scanMantissa(16)
 
 			if self.chrOffset-offset <= 2 {
-				// Only "0x" or "0X"
+
 				self.error(0, "Illegal hexadecimal number")
 			}
 
 			goto hexadecimal
 		} else if self.chr == '.' {
-			// Float
+
 			goto float
 		} else {
-			// Octal, Float
+
 			if self.chr == 'e' || self.chr == 'E' {
 				goto exponent
 			}

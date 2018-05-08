@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build linux,!appengine darwin freebsd openbsd netbsd
 
 package imports
@@ -16,8 +13,6 @@ import (
 
 const blockSize = 8 << 10
 
-// unknownFileMode is a sentinel (and bogus) os.FileMode
-// value used to represent a syscall.DT_UNKNOWN Dirent.Type.
 const unknownFileMode os.FileMode = os.ModeNamedPipe | os.ModeSocket | os.ModeDevice
 
 func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) error) error {
@@ -27,10 +22,9 @@ func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) e
 	}
 	defer syscall.Close(fd)
 
-	// The buffer must be at least a block long.
-	buf := make([]byte, blockSize) // stack-allocated; doesn't escape
-	bufp := 0                      // starting read position in buf
-	nbuf := 0                      // end valid data in buf
+	buf := make([]byte, blockSize) 
+	bufp := 0                      
+	nbuf := 0                      
 	for {
 		if bufp >= nbuf {
 			bufp = 0
@@ -47,13 +41,11 @@ func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) e
 		if name == "" || name == "." || name == ".." {
 			continue
 		}
-		// Fallback for filesystems (like old XFS) that don't
-		// support Dirent.Type and have DT_UNKNOWN (0) there
-		// instead.
+
 		if typ == unknownFileMode {
 			fi, err := os.Lstat(dirName + "/" + name)
 			if err != nil {
-				// It got deleted in the meantime.
+
 				if os.IsNotExist(err) {
 					continue
 				}
@@ -68,7 +60,7 @@ func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) e
 }
 
 func parseDirEnt(buf []byte) (consumed int, name string, typ os.FileMode) {
-	// golang.org/issue/15653
+
 	dirent := (*syscall.Dirent)(unsafe.Pointer(&buf[0]))
 	if v := unsafe.Offsetof(dirent.Reclen) + unsafe.Sizeof(dirent.Reclen); uintptr(len(buf)) < v {
 		panic(fmt.Sprintf("buf size of %d smaller than dirent header size %d", len(buf), v))
@@ -77,7 +69,7 @@ func parseDirEnt(buf []byte) (consumed int, name string, typ os.FileMode) {
 		panic(fmt.Sprintf("buf size %d < record length %d", len(buf), dirent.Reclen))
 	}
 	consumed = int(dirent.Reclen)
-	if direntInode(dirent) == 0 { // File absent in directory.
+	if direntInode(dirent) == 0 { 
 		return
 	}
 	switch dirent.Type {
@@ -96,11 +88,7 @@ func parseDirEnt(buf []byte) (consumed int, name string, typ os.FileMode) {
 	case syscall.DT_UNKNOWN:
 		typ = unknownFileMode
 	default:
-		// Skip weird things.
-		// It's probably a DT_WHT (http://lwn.net/Articles/325369/)
-		// or something. Revisit if/when this package is moved outside
-		// of goimports. goimports only cares about regular files,
-		// symlinks, and directories.
+
 		return
 	}
 
@@ -110,7 +98,6 @@ func parseDirEnt(buf []byte) (consumed int, name string, typ os.FileMode) {
 		panic("failed to find terminating 0 byte in dirent")
 	}
 
-	// Special cases for common things:
 	if nameLen == 1 && nameBuf[0] == '.' {
 		name = "."
 	} else if nameLen == 2 && nameBuf[0] == '.' && nameBuf[1] == '.' {

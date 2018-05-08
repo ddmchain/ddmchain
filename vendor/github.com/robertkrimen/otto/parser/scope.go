@@ -37,7 +37,7 @@ func (self *_scope) hasLabel(name string) bool {
 		}
 	}
 	if self.outer != nil && !self.inFunction {
-		// Crossing a function boundary to look for a label is verboten
+
 		return self.outer.hasLabel(name)
 	}
 	return false

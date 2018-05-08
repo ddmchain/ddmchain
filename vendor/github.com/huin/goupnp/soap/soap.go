@@ -1,4 +1,3 @@
-// Definition for the SOAP structure required for UPnP's SOAP usage.
 
 package soap
 
@@ -29,9 +28,6 @@ func NewSOAPClient(endpointURL url.URL) *SOAPClient {
 	}
 }
 
-// PerformSOAPAction makes a SOAP request, with the given action.
-// inAction and outAction must both be pointers to structs with string fields
-// only.
 func (client *SOAPClient) PerformAction(actionNamespace, actionName string, inAction interface{}, outAction interface{}) error {
 	requestBytes, err := encodeRequestAction(actionNamespace, actionName, inAction)
 	if err != nil {
@@ -46,7 +42,7 @@ func (client *SOAPClient) PerformAction(actionNamespace, actionName string, inAc
 			"CONTENT-TYPE": []string{"text/xml; charset=\"utf-8\""},
 		},
 		Body: ioutil.NopCloser(bytes.NewBuffer(requestBytes)),
-		// Set ContentLength to avoid chunked encoding - some servers might not support it.
+
 		ContentLength: int64(len(requestBytes)),
 	})
 	if err != nil {
@@ -76,18 +72,12 @@ func (client *SOAPClient) PerformAction(actionNamespace, actionName string, inAc
 	return nil
 }
 
-// newSOAPAction creates a soapEnvelope with the given action and arguments.
 func newSOAPEnvelope() *soapEnvelope {
 	return &soapEnvelope{
 		EncodingStyle: soapEncodingStyle,
 	}
 }
 
-// encodeRequestAction is a hacky way to create an encoded SOAP envelope
-// containing the given action. Experiments with one router have shown that it
-// 500s for requests where the outer default xmlns is set to the SOAP
-// namespace, and then reassigning the default namespace within that to the
-// service namespace. Hand-coding the outer XML to work-around this.
 func encodeRequestAction(actionNamespace, actionName string, inAction interface{}) ([]byte, error) {
 	requestBuf := new(bytes.Buffer)
 	requestBuf.WriteString(soapPrefix)
@@ -145,7 +135,6 @@ type soapBody struct {
 	RawAction []byte          `xml:",innerxml"`
 }
 
-// SOAPFaultError implements error, and contains SOAP fault information.
 type SOAPFaultError struct {
 	FaultCode   string `xml:"faultcode"`
 	FaultString string `xml:"faultstring"`

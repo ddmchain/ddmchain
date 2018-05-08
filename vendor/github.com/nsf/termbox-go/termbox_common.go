@@ -1,7 +1,5 @@
 package termbox
 
-// private API, common OS agnostic part
-
 type cellbuf struct {
 	width  int
 	height int

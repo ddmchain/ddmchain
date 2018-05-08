@@ -1,9 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// We have an implementation in amd64 assembly so this code is only run on
-// non-amd64 platforms. The amd64 assembly does not support gccgo.
 // +build !amd64 gccgo appengine
 
 package curve25519
@@ -12,12 +7,6 @@ import (
 	"encoding/binary"
 )
 
-// This code is a port of the public domain, "ref10" implementation of
-
-// fieldElement represents an element of the field GF(2^255 - 19). An element
-// t, entries t[0]...t[9], represents the integer t[0]+2^26 t[1]+2^51 t[2]+2^77
-// t[3]+2^102 t[4]+...+2^230 t[9]. Bounds on each t[i] vary depending on
-// context.
 type fieldElement [10]int32
 
 func feZero(fe *fieldElement) {
@@ -49,9 +38,6 @@ func feCopy(dst, src *fieldElement) {
 	}
 }
 
-// feCSwap replaces (f,g) with (g,f) if b == 1; replaces (f,g) with (f,g) if b == 0.
-//
-// Preconditions: b in {0,1}.
 func feCSwap(f, g *fieldElement, b int32) {
 	b = -b
 	for i := range f {
@@ -61,7 +47,6 @@ func feCSwap(f, g *fieldElement, b int32) {
 	}
 }
 
-// load3 reads a 24-bit, little-endian value from in.
 func load3(in []byte) int64 {
 	var r int64
 	r = int64(in[0])
@@ -70,7 +55,6 @@ func load3(in []byte) int64 {
 	return r
 }
 
-// load4 reads a 32-bit, little-endian value from in.
 func load4(in []byte) int64 {
 	return int64(binary.LittleEndian.Uint32(in))
 }
@@ -132,29 +116,6 @@ func feFromBytes(dst *fieldElement, src *[32]byte) {
 	dst[9] = int32(h9)
 }
 
-// feToBytes marshals h to s.
-// Preconditions:
-//   |h| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
-//
-// Write p=2^255-19; q=floor(h/p).
-// Basic claim: q = floor(2^(-255)(h + 19 2^(-25)h9 + 2^(-1))).
-//
-// Proof:
-//   Have |h|<=p so |q|<=1 so |19^2 2^(-255) q|<1/4.
-//   Also have |h-2^230 h9|<2^230 so |19 2^(-255)(h-2^230 h9)|<1/4.
-//
-//   Write y=2^(-1)-19^2 2^(-255)q-19 2^(-255)(h-2^230 h9).
-//   Then 0<y<1.
-//
-//   Write r=h-pq.
-//   Have 0<=r<=p-1=2^255-20.
-//   Thus 0<=r+19(2^-255)r<r+19(2^-255)2^255<=2^255-1.
-//
-//   Write x=r+19(2^-255)r+y.
-//   Then 0<x<2^255 so floor(2^(-255)x) = 0 so floor(q+2^(-255)x) = q.
-//
-//   Have q+2^(-255)x = 2^(-255)(h + 19 2^(-25) h9 + 2^(-1))
-//   so floor(2^(-255)(h + 19 2^(-25) h9 + 2^(-1))) = q.
 func feToBytes(s *[32]byte, h *fieldElement) {
 	var carry [10]int32
 
@@ -170,9 +131,7 @@ func feToBytes(s *[32]byte, h *fieldElement) {
 	q = (h[8] + q) >> 26
 	q = (h[9] + q) >> 25
 
-	// Goal: Output h-(2^255-19)q, which is between 0 and 2^255-20.
 	h[0] += 19 * q
-	// Goal: Output h-2^255 q, which is between 0 and 2^255-20.
 
 	carry[0] = h[0] >> 26
 	h[1] += carry[0]
@@ -203,12 +162,6 @@ func feToBytes(s *[32]byte, h *fieldElement) {
 	h[8] -= carry[8] << 26
 	carry[9] = h[9] >> 25
 	h[9] -= carry[9] << 25
-	// h10 = carry9
-
-	// Goal: Output h[0]+...+2^255 h10-2^255 q, which is between 0 and 2^255-20.
-	// Have h[0]+...+2^230 h[9] between 0 and 2^255-1;
-	// evidently 2^255 h10-2^255 q = 0.
-	// Goal: Output h[0]+...+2^230 h[9].
 
 	s[0] = byte(h[0] >> 0)
 	s[1] = byte(h[0] >> 8)
@@ -244,33 +197,6 @@ func feToBytes(s *[32]byte, h *fieldElement) {
 	s[31] = byte(h[9] >> 18)
 }
 
-// feMul calculates h = f * g
-// Can overlap h with f or g.
-//
-// Preconditions:
-//    |f| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
-//    |g| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
-//
-// Postconditions:
-//    |h| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
-//
-// Notes on implementation strategy:
-//
-// Using schoolbook multiplication.
-// Karatsuba would save a little in some cost models.
-//
-// Most multiplications by 2 and 19 are 32-bit precomputations;
-// cheaper than 64-bit postcomputations.
-//
-// There is one remaining multiplication by 19 in the carry chain;
-// one *19 precomputation can be merged into this,
-// but the resulting data flow is considerably less clean.
-//
-// There are 12 carries below.
-// 10 of them are 2-way parallelizable and vectorizable.
-// Can get away with 11 carries, but then data flow is much deeper.
-//
-// With tighter constraints on inputs can squeeze carries into int32.
 func feMul(h, f, g *fieldElement) {
 	f0 := f[0]
 	f1 := f[1]
@@ -292,8 +218,8 @@ func feMul(h, f, g *fieldElement) {
 	g7 := g[7]
 	g8 := g[8]
 	g9 := g[9]
-	g1_19 := 19 * g1 // 1.4*2^29
-	g2_19 := 19 * g2 // 1.4*2^30; still ok
+	g1_19 := 19 * g1 
+	g2_19 := 19 * g2 
 	g3_19 := 19 * g3
 	g4_19 := 19 * g4
 	g5_19 := 19 * g5
@@ -418,21 +344,12 @@ func feMul(h, f, g *fieldElement) {
 	h9 := f0g9 + f1g8 + f2g7 + f3g6 + f4g5 + f5g4 + f6g3 + f7g2 + f8g1 + f9g0
 	var carry [10]int64
 
-	// |h0| <= (1.1*1.1*2^52*(1+19+19+19+19)+1.1*1.1*2^50*(38+38+38+38+38))
-	//   i.e. |h0| <= 1.2*2^59; narrower ranges for h2, h4, h6, h8
-	// |h1| <= (1.1*1.1*2^51*(1+1+19+19+19+19+19+19+19+19))
-	//   i.e. |h1| <= 1.5*2^58; narrower ranges for h3, h5, h7, h9
-
 	carry[0] = (h0 + (1 << 25)) >> 26
 	h1 += carry[0]
 	h0 -= carry[0] << 26
 	carry[4] = (h4 + (1 << 25)) >> 26
 	h5 += carry[4]
 	h4 -= carry[4] << 26
-	// |h0| <= 2^25
-	// |h4| <= 2^25
-	// |h1| <= 1.51*2^58
-	// |h5| <= 1.51*2^58
 
 	carry[1] = (h1 + (1 << 24)) >> 25
 	h2 += carry[1]
@@ -440,10 +357,6 @@ func feMul(h, f, g *fieldElement) {
 	carry[5] = (h5 + (1 << 24)) >> 25
 	h6 += carry[5]
 	h5 -= carry[5] << 25
-	// |h1| <= 2^24; from now on fits into int32
-	// |h5| <= 2^24; from now on fits into int32
-	// |h2| <= 1.21*2^59
-	// |h6| <= 1.21*2^59
 
 	carry[2] = (h2 + (1 << 25)) >> 26
 	h3 += carry[2]
@@ -451,10 +364,6 @@ func feMul(h, f, g *fieldElement) {
 	carry[6] = (h6 + (1 << 25)) >> 26
 	h7 += carry[6]
 	h6 -= carry[6] << 26
-	// |h2| <= 2^25; from now on fits into int32 unchanged
-	// |h6| <= 2^25; from now on fits into int32 unchanged
-	// |h3| <= 1.51*2^58
-	// |h7| <= 1.51*2^58
 
 	carry[3] = (h3 + (1 << 24)) >> 25
 	h4 += carry[3]
@@ -462,10 +371,6 @@ func feMul(h, f, g *fieldElement) {
 	carry[7] = (h7 + (1 << 24)) >> 25
 	h8 += carry[7]
 	h7 -= carry[7] << 25
-	// |h3| <= 2^24; from now on fits into int32 unchanged
-	// |h7| <= 2^24; from now on fits into int32 unchanged
-	// |h4| <= 1.52*2^33
-	// |h8| <= 1.52*2^33
 
 	carry[4] = (h4 + (1 << 25)) >> 26
 	h5 += carry[4]
@@ -473,22 +378,14 @@ func feMul(h, f, g *fieldElement) {
 	carry[8] = (h8 + (1 << 25)) >> 26
 	h9 += carry[8]
 	h8 -= carry[8] << 26
-	// |h4| <= 2^25; from now on fits into int32 unchanged
-	// |h8| <= 2^25; from now on fits into int32 unchanged
-	// |h5| <= 1.01*2^24
-	// |h9| <= 1.51*2^58
 
 	carry[9] = (h9 + (1 << 24)) >> 25
 	h0 += carry[9] * 19
 	h9 -= carry[9] << 25
-	// |h9| <= 2^24; from now on fits into int32 unchanged
-	// |h0| <= 1.8*2^37
 
 	carry[0] = (h0 + (1 << 25)) >> 26
 	h1 += carry[0]
 	h0 -= carry[0] << 26
-	// |h0| <= 2^25; from now on fits into int32 unchanged
-	// |h1| <= 1.01*2^24
 
 	h[0] = int32(h0)
 	h[1] = int32(h1)
@@ -502,13 +399,6 @@ func feMul(h, f, g *fieldElement) {
 	h[9] = int32(h9)
 }
 
-// feSquare calculates h = f*f. Can overlap h with f.
-//
-// Preconditions:
-//    |f| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
-//
-// Postconditions:
-//    |h| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
 func feSquare(h, f *fieldElement) {
 	f0 := f[0]
 	f1 := f[1]
@@ -528,11 +418,11 @@ func feSquare(h, f *fieldElement) {
 	f5_2 := 2 * f5
 	f6_2 := 2 * f6
 	f7_2 := 2 * f7
-	f5_38 := 38 * f5 // 1.31*2^30
-	f6_19 := 19 * f6 // 1.31*2^30
-	f7_38 := 38 * f7 // 1.31*2^30
-	f8_19 := 19 * f8 // 1.31*2^30
-	f9_38 := 38 * f9 // 1.31*2^30
+	f5_38 := 38 * f5 
+	f6_19 := 19 * f6 
+	f7_38 := 38 * f7 
+	f8_19 := 19 * f8 
+	f9_38 := 38 * f9 
 	f0f0 := int64(f0) * int64(f0)
 	f0f1_2 := int64(f0_2) * int64(f1)
 	f0f2_2 := int64(f0_2) * int64(f2)
@@ -655,13 +545,6 @@ func feSquare(h, f *fieldElement) {
 	h[9] = int32(h9)
 }
 
-// feMul121666 calculates h = f * 121666. Can overlap h with f.
-//
-// Preconditions:
-//    |f| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
-//
-// Postconditions:
-//    |h| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
 func feMul121666(h, f *fieldElement) {
 	h0 := int64(f[0]) * 121666
 	h1 := int64(f[1]) * 121666
@@ -719,7 +602,6 @@ func feMul121666(h, f *fieldElement) {
 	h[9] = int32(h9)
 }
 
-// feInvert sets out = z^-1.
 func feInvert(out, z *fieldElement) {
 	var t0, t1, t2, t3 fieldElement
 	var i int

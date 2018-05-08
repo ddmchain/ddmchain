@@ -1,25 +1,10 @@
 package otto
 
-// _scope:
-// entryFile
-// entryIdx
-// top?
-// outer => nil
-
-// _stash:
-// lexical
-// variable
-//
-// _thisStash (ObjectEnvironment)
-// _fnStash
-// _dclStash
-
-// An ECMA-262 ExecutionContext
 type _scope struct {
 	lexical  _stash
 	variable _stash
 	this     *_object
-	eval     bool // Replace this with kind?
+	eval     bool 
 	outer    *_scope
 	depth    int
 

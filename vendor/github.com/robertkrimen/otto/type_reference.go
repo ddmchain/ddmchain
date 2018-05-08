@@ -1,13 +1,11 @@
 package otto
 
 type _reference interface {
-	invalid() bool         // IsUnresolvableReference
-	getValue() Value       // getValue
-	putValue(Value) string // PutValue
+	invalid() bool         
+	getValue() Value       
+	putValue(Value) string 
 	delete() bool
 }
-
-// PropertyReference
 
 type _propertyReference struct {
 	name    string
@@ -48,13 +46,11 @@ func (self *_propertyReference) putValue(value Value) string {
 
 func (self *_propertyReference) delete() bool {
 	if self.base == nil {
-		// TODO Throw an error if strict
+
 		return true
 	}
 	return self.base.delete(self.name, self.strict)
 }
-
-// ArgumentReference
 
 func newArgumentReference(runtime *_runtime, base *_object, name string, strict bool, at _at) *_propertyReference {
 	if base == nil {
@@ -70,7 +66,7 @@ type _stashReference struct {
 }
 
 func (self *_stashReference) invalid() bool {
-	return false // The base (an environment) will never be nil
+	return false 
 }
 
 func (self *_stashReference) getValue() Value {
@@ -84,13 +80,11 @@ func (self *_stashReference) putValue(value Value) string {
 
 func (self *_stashReference) delete() bool {
 	if self.base == nil {
-		// This should never be reached, but just in case
+
 		return false
 	}
 	return self.base.deleteBinding(self.name)
 }
-
-// getIdentifierReference
 
 func getIdentifierReference(runtime *_runtime, stash _stash, name string, strict bool, at _at) _reference {
 	if stash == nil {

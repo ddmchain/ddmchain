@@ -1,9 +1,4 @@
 
-// All rights reserved.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package leveldb
 
 import (
@@ -14,17 +9,13 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
-// Reader is the interface that wraps basic Get and NewIterator methods.
-// This interface implemented by both DB and Snapshot.
 type Reader interface {
 	Get(key []byte, ro *opt.ReadOptions) (value []byte, err error)
 	NewIterator(slice *util.Range, ro *opt.ReadOptions) iterator.Iterator
 }
 
-// Sizes is list of size.
 type Sizes []int64
 
-// Sum returns sum of the sizes.
 func (sizes Sizes) Sum() int64 {
 	var sum int64
 	for _, size := range sizes {
@@ -33,11 +24,9 @@ func (sizes Sizes) Sum() int64 {
 	return sum
 }
 
-// Logging.
 func (db *DB) log(v ...interface{})                 { db.s.log(v...) }
 func (db *DB) logf(format string, v ...interface{}) { db.s.logf(format, v...) }
 
-// Check and clean files.
 func (db *DB) checkAndCleanFiles() error {
 	v := db.s.version()
 	defer v.release()

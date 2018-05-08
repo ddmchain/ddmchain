@@ -13,16 +13,12 @@ import (
 	"time"
 )
 
-// A Blob is an entry in BlobListResponse.
 type Blob struct {
 	Name       string         `xml:"Name"`
 	Properties BlobProperties `xml:"Properties"`
 	Metadata   BlobMetadata   `xml:"Metadata"`
 }
 
-// BlobMetadata is a set of custom name/value pairs.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179404.aspx
 type BlobMetadata map[string]string
 
 type blobMetadataEntries struct {
@@ -33,7 +29,6 @@ type blobMetadataEntry struct {
 	Value   string `xml:",chardata"`
 }
 
-// UnmarshalXML converts the xml:Metadata into Metadata map
 func (bm *BlobMetadata) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var entries blobMetadataEntries
 	if err := d.DecodeElement(&entries, &start); err != nil {
@@ -48,9 +43,6 @@ func (bm *BlobMetadata) UnmarshalXML(d *xml.Decoder, start xml.StartElement) err
 	return nil
 }
 
-// MarshalXML implements the xml.Marshaler interface. It encodes
-// metadata name/value pairs as they would appear in an Azure
-// ListBlobs response.
 func (bm BlobMetadata) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
 	entries := make([]blobMetadataEntry, 0, len(bm))
 	for k, v := range bm {
@@ -64,8 +56,6 @@ func (bm BlobMetadata) MarshalXML(enc *xml.Encoder, start xml.StartElement) erro
 	}, start)
 }
 
-// BlobProperties contains various properties of a blob
-// returned in various endpoints like ListBlobs or GetBlobProperties.
 type BlobProperties struct {
 	LastModified          string   `xml:"Last-Modified"`
 	Etag                  string   `xml:"Etag"`
@@ -87,8 +77,6 @@ type BlobProperties struct {
 	LeaseState            string   `xml:"LeaseState"`
 }
 
-// BlobHeaders contains various properties of a blob and is an entry
-// in SetBlobProperties
 type BlobHeaders struct {
 	ContentMD5      string `header:"x-ms-blob-content-md5"`
 	ContentLanguage string `header:"x-ms-blob-content-language"`
@@ -97,21 +85,16 @@ type BlobHeaders struct {
 	CacheControl    string `header:"x-ms-blob-cache-control"`
 }
 
-// BlobType defines the type of the Azure Blob.
 type BlobType string
 
-// Types of page blobs
 const (
 	BlobTypeBlock  BlobType = "BlockBlob"
 	BlobTypePage   BlobType = "PageBlob"
 	BlobTypeAppend BlobType = "AppendBlob"
 )
 
-// PageWriteType defines the type updates that are going to be
-// done on the page blob.
 type PageWriteType string
 
-// Types of operations on page blobs
 const (
 	PageWriteTypeUpdate PageWriteType = "update"
 	PageWriteTypeClear  PageWriteType = "clear"
@@ -124,7 +107,6 @@ const (
 	blobCopyStatusFailed  = "failed"
 )
 
-// lease constants.
 const (
 	leaseHeaderPrefix = "x-ms-lease-"
 	headerLeaseID     = "x-ms-lease-id"
@@ -141,73 +123,48 @@ const (
 	breakLease   = "break"
 )
 
-// BlockListType is used to filter out types of blocks in a Get Blocks List call
-// for a block blob.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179400.aspx for all
-// block types.
 type BlockListType string
 
-// Filters for listing blocks in block blobs
 const (
 	BlockListTypeAll         BlockListType = "all"
 	BlockListTypeCommitted   BlockListType = "committed"
 	BlockListTypeUncommitted BlockListType = "uncommitted"
 )
 
-// Maximum sizes (per REST API) for various concepts
 const (
 	MaxBlobBlockSize = 100 * 1024 * 1024
 	MaxBlobPageSize  = 4 * 1024 * 1024
 )
 
-// BlockStatus defines states a block for a block blob can
-// be in.
 type BlockStatus string
 
-// List of statuses that can be used to refer to a block in a block list
 const (
 	BlockStatusUncommitted BlockStatus = "Uncommitted"
 	BlockStatusCommitted   BlockStatus = "Committed"
 	BlockStatusLatest      BlockStatus = "Latest"
 )
 
-// Block is used to create Block entities for Put Block List
-// call.
 type Block struct {
 	ID     string
 	Status BlockStatus
 }
 
-// BlockListResponse contains the response fields from Get Block List call.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179400.aspx
 type BlockListResponse struct {
 	XMLName           xml.Name        `xml:"BlockList"`
 	CommittedBlocks   []BlockResponse `xml:"CommittedBlocks>Block"`
 	UncommittedBlocks []BlockResponse `xml:"UncommittedBlocks>Block"`
 }
 
-// BlockResponse contains the block information returned
-// in the GetBlockListCall.
 type BlockResponse struct {
 	Name string `xml:"Name"`
 	Size int64  `xml:"Size"`
 }
 
-// GetPageRangesResponse contains the response fields from
-// Get Page Ranges call.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/ee691973.aspx
 type GetPageRangesResponse struct {
 	XMLName  xml.Name    `xml:"PageList"`
 	PageList []PageRange `xml:"PageRange"`
 }
 
-// PageRange contains information about a page of a page blob from
-// Get Pages Range call.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/ee691973.aspx
 type PageRange struct {
 	Start int64 `xml:"Start"`
 	End   int64 `xml:"End"`
@@ -218,8 +175,6 @@ var (
 	errBlobCopyIDMismatch = errors.New("storage: blob copy id is a mismatch")
 )
 
-// BlobExists returns true if a blob with given name exists on the specified
-// container of the storage account.
 func (b BlobStorageClient) BlobExists(container, name string) (bool, error) {
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), url.Values{})
 	headers := b.client.getStandardHeaders()
@@ -233,11 +188,6 @@ func (b BlobStorageClient) BlobExists(container, name string) (bool, error) {
 	return false, err
 }
 
-// GetBlobURL gets the canonical URL to the blob with the specified name in the
-// specified container. If name is not specified, the canonical URL for the entire
-// container is obtained.
-// This method does not create a publicly accessible URL if the blob or container
-// is private and this method does not check if the blob exists.
 func (b BlobStorageClient) GetBlobURL(container, name string) string {
 	if container == "" {
 		container = "$root"
@@ -245,10 +195,6 @@ func (b BlobStorageClient) GetBlobURL(container, name string) string {
 	return b.client.getEndpoint(blobServiceName, pathForResource(container, name), url.Values{})
 }
 
-// GetBlob returns a stream to read the blob. Caller must call Close() the
-// reader to close on the underlying connection.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx
 func (b BlobStorageClient) GetBlob(container, name string) (io.ReadCloser, error) {
 	resp, err := b.getBlobRange(container, name, "", nil)
 	if err != nil {
@@ -261,10 +207,6 @@ func (b BlobStorageClient) GetBlob(container, name string) (io.ReadCloser, error
 	return resp.body, nil
 }
 
-// GetBlobRange reads the specified range of a blob to a stream. The bytesRange
-// string must be in a format like "0-", "10-100" as defined in HTTP 1.1 spec.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx
 func (b BlobStorageClient) GetBlobRange(container, name, bytesRange string, extraHeaders map[string]string) (io.ReadCloser, error) {
 	resp, err := b.getBlobRange(container, name, bytesRange, extraHeaders)
 	if err != nil {
@@ -297,7 +239,6 @@ func (b BlobStorageClient) getBlobRange(container, name, bytesRange string, extr
 	return resp, err
 }
 
-// leasePut is common PUT code for the various acquire/release/break etc functions.
 func (b BlobStorageClient) leaseCommonPut(container string, name string, headers map[string]string, expectedStatus int) (http.Header, error) {
 	params := url.Values{"comp": {"lease"}}
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), params)
@@ -315,7 +256,6 @@ func (b BlobStorageClient) leaseCommonPut(container string, name string, headers
 	return resp.headers, nil
 }
 
-// SnapshotBlob creates a snapshot for a blob as per https://msdn.microsoft.com/en-us/library/azure/ee691971.aspx
 func (b BlobStorageClient) SnapshotBlob(container string, name string, timeout int, extraHeaders map[string]string) (snapshotTimestamp *time.Time, err error) {
 	extraHeaders = b.client.protectUserAgent(extraHeaders)
 	headers := b.client.getStandardHeaders()
@@ -354,15 +294,12 @@ func (b BlobStorageClient) SnapshotBlob(container string, name string, timeout i
 	return nil, errors.New("Snapshot not created")
 }
 
-// AcquireLease creates a lease for a blob as per https://msdn.microsoft.com/en-us/library/azure/ee691972.aspx
-// returns leaseID acquired
-// non-infinite leaseTimeInSeconds is 60. To specify an infinite lease, provide the value -1.
 func (b BlobStorageClient) AcquireLease(container string, name string, leaseTimeInSeconds int, proposedLeaseID string) (returnedLeaseID string, err error) {
 	headers := b.client.getStandardHeaders()
 	headers[leaseAction] = acquireLease
 
 	if leaseTimeInSeconds == -1 {
-		// Do nothing, but don't trigger the following clauses.
+
 	} else if leaseTimeInSeconds > 60 || b.client.apiVersion < "2012-02-12" {
 		leaseTimeInSeconds = 60
 	} else if leaseTimeInSeconds < 15 {
@@ -389,17 +326,12 @@ func (b BlobStorageClient) AcquireLease(container string, name string, leaseTime
 	return "", errors.New("LeaseID not returned")
 }
 
-// BreakLease breaks the lease for a blob as per https://msdn.microsoft.com/en-us/library/azure/ee691972.aspx
-// Returns the timeout remaining in the lease in seconds
 func (b BlobStorageClient) BreakLease(container string, name string) (breakTimeout int, err error) {
 	headers := b.client.getStandardHeaders()
 	headers[leaseAction] = breakLease
 	return b.breakLeaseCommon(container, name, headers)
 }
 
-// BreakLeaseWithBreakPeriod breaks the lease for a blob as per https://msdn.microsoft.com/en-us/library/azure/ee691972.aspx
-// breakPeriodInSeconds is used to determine how long until new lease can be created.
-// Returns the timeout remaining in the lease in seconds
 func (b BlobStorageClient) BreakLeaseWithBreakPeriod(container string, name string, breakPeriodInSeconds int) (breakTimeout int, err error) {
 	headers := b.client.getStandardHeaders()
 	headers[leaseAction] = breakLease
@@ -407,7 +339,6 @@ func (b BlobStorageClient) BreakLeaseWithBreakPeriod(container string, name stri
 	return b.breakLeaseCommon(container, name, headers)
 }
 
-// breakLeaseCommon is common code for both version of BreakLease (with and without break period)
 func (b BlobStorageClient) breakLeaseCommon(container string, name string, headers map[string]string) (breakTimeout int, err error) {
 
 	respHeaders, err := b.leaseCommonPut(container, name, headers, http.StatusAccepted)
@@ -426,8 +357,6 @@ func (b BlobStorageClient) breakLeaseCommon(container string, name string, heade
 	return breakTimeout, nil
 }
 
-// ChangeLease changes a lease ID for a blob as per https://msdn.microsoft.com/en-us/library/azure/ee691972.aspx
-// Returns the new LeaseID acquired
 func (b BlobStorageClient) ChangeLease(container string, name string, currentLeaseID string, proposedLeaseID string) (newLeaseID string, err error) {
 	headers := b.client.getStandardHeaders()
 	headers[leaseAction] = changeLease
@@ -447,7 +376,6 @@ func (b BlobStorageClient) ChangeLease(container string, name string, currentLea
 	return "", errors.New("LeaseID not returned")
 }
 
-// ReleaseLease releases the lease for a blob as per https://msdn.microsoft.com/en-us/library/azure/ee691972.aspx
 func (b BlobStorageClient) ReleaseLease(container string, name string, currentLeaseID string) error {
 	headers := b.client.getStandardHeaders()
 	headers[leaseAction] = releaseLease
@@ -461,7 +389,6 @@ func (b BlobStorageClient) ReleaseLease(container string, name string, currentLe
 	return nil
 }
 
-// RenewLease renews the lease for a blob as per https://msdn.microsoft.com/en-us/library/azure/ee691972.aspx
 func (b BlobStorageClient) RenewLease(container string, name string, currentLeaseID string) error {
 	headers := b.client.getStandardHeaders()
 	headers[leaseAction] = renewLease
@@ -475,8 +402,6 @@ func (b BlobStorageClient) RenewLease(container string, name string, currentLeas
 	return nil
 }
 
-// GetBlobProperties provides various information about the specified
-// blob. See https://msdn.microsoft.com/en-us/library/azure/dd179394.aspx
 func (b BlobStorageClient) GetBlobProperties(container, name string) (*BlobProperties, error) {
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), url.Values{})
 
@@ -531,14 +456,6 @@ func (b BlobStorageClient) GetBlobProperties(container, name string) (*BlobPrope
 	}, nil
 }
 
-// SetBlobProperties replaces the BlobHeaders for the specified blob.
-//
-// Some keys may be converted to Camel-Case before sending. All keys
-// are returned in lower case by GetBlobProperties. HTTP header names
-// are case-insensitive so case munging should not matter to other
-// applications either.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/ee691966.aspx
 func (b BlobStorageClient) SetBlobProperties(container, name string, blobHeaders BlobHeaders) error {
 	params := url.Values{"comp": {"properties"}}
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), params)
@@ -559,14 +476,6 @@ func (b BlobStorageClient) SetBlobProperties(container, name string, blobHeaders
 	return checkRespCode(resp.statusCode, []int{http.StatusOK})
 }
 
-// SetBlobMetadata replaces the metadata for the specified blob.
-//
-// Some keys may be converted to Camel-Case before sending. All keys
-// are returned in lower case by GetBlobMetadata. HTTP header names
-// are case-insensitive so case munging should not matter to other
-// applications either.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179414.aspx
 func (b BlobStorageClient) SetBlobMetadata(container, name string, metadata map[string]string, extraHeaders map[string]string) error {
 	params := url.Values{"comp": {"metadata"}}
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), params)
@@ -590,12 +499,6 @@ func (b BlobStorageClient) SetBlobMetadata(container, name string, metadata map[
 	return checkRespCode(resp.statusCode, []int{http.StatusOK})
 }
 
-// GetBlobMetadata returns all user-defined metadata for the specified blob.
-//
-// All metadata keys will be returned in lower case. (HTTP header
-// names are case-insensitive.)
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179414.aspx
 func (b BlobStorageClient) GetBlobMetadata(container, name string) (map[string]string, error) {
 	params := url.Values{"comp": {"metadata"}}
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), params)
@@ -613,42 +516,22 @@ func (b BlobStorageClient) GetBlobMetadata(container, name string) (map[string]s
 
 	metadata := make(map[string]string)
 	for k, v := range resp.headers {
-		// Can't trust CanonicalHeaderKey() to munge case
-		// reliably. "_" is allowed in identifiers:
-		// https://msdn.microsoft.com/en-us/library/azure/dd179414.aspx
-		// https://msdn.microsoft.com/library/aa664670(VS.71).aspx
-		// http://tools.ietf.org/html/rfc7230#section-3.2
-		// ...but "_" is considered invalid by
-		// CanonicalMIMEHeaderKey in
-		// https://golang.org/src/net/textproto/reader.go?s=14615:14659#L542
-		// so k can be "X-Ms-Meta-Foo" or "x-ms-meta-foo_bar".
+
 		k = strings.ToLower(k)
 		if len(v) == 0 || !strings.HasPrefix(k, strings.ToLower(userDefinedMetadataHeaderPrefix)) {
 			continue
 		}
-		// metadata["foo"] = content of the last X-Ms-Meta-Foo header
+
 		k = k[len(userDefinedMetadataHeaderPrefix):]
 		metadata[k] = v[len(v)-1]
 	}
 	return metadata, nil
 }
 
-// CreateBlockBlob initializes an empty block blob with no blocks.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx
 func (b BlobStorageClient) CreateBlockBlob(container, name string) error {
 	return b.CreateBlockBlobFromReader(container, name, 0, nil, nil)
 }
 
-// CreateBlockBlobFromReader initializes a block blob using data from
-// reader. Size must be the number of bytes read from reader. To
-// create an empty blob, use size==0 and reader==nil.
-//
-// The API rejects requests with size > 256 MiB (but this limit is not
-// checked by the SDK). To write a larger blob, use CreateBlockBlob,
-// PutBlock, and PutBlockList.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx
 func (b BlobStorageClient) CreateBlockBlobFromReader(container, name string, size uint64, blob io.Reader, extraHeaders map[string]string) error {
 	path := fmt.Sprintf("%s/%s", container, name)
 	uri := b.client.getEndpoint(blobServiceName, path, url.Values{})
@@ -669,25 +552,10 @@ func (b BlobStorageClient) CreateBlockBlobFromReader(container, name string, siz
 	return checkRespCode(resp.statusCode, []int{http.StatusCreated})
 }
 
-// PutBlock saves the given data chunk to the specified block blob with
-// given ID.
-//
-// The API rejects chunks larger than 100 MB (but this limit is not
-// checked by the SDK).
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx
 func (b BlobStorageClient) PutBlock(container, name, blockID string, chunk []byte) error {
 	return b.PutBlockWithLength(container, name, blockID, uint64(len(chunk)), bytes.NewReader(chunk), nil)
 }
 
-// PutBlockWithLength saves the given data stream of exactly specified size to
-// the block blob with given ID. It is an alternative to PutBlocks where data
-// comes as stream but the length is known in advance.
-//
-// The API rejects requests with size > 100 MB (but this limit is not
-// checked by the SDK).
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx
 func (b BlobStorageClient) PutBlockWithLength(container, name, blockID string, size uint64, blob io.Reader, extraHeaders map[string]string) error {
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), url.Values{"comp": {"block"}, "blockid": {blockID}})
 	extraHeaders = b.client.protectUserAgent(extraHeaders)
@@ -708,9 +576,6 @@ func (b BlobStorageClient) PutBlockWithLength(container, name, blockID string, s
 	return checkRespCode(resp.statusCode, []int{http.StatusCreated})
 }
 
-// PutBlockList saves list of blocks to the specified block blob.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179467.aspx
 func (b BlobStorageClient) PutBlockList(container, name string, blocks []Block) error {
 	blockListXML := prepareBlockListRequest(blocks)
 
@@ -726,9 +591,6 @@ func (b BlobStorageClient) PutBlockList(container, name string, blocks []Block) 
 	return checkRespCode(resp.statusCode, []int{http.StatusCreated})
 }
 
-// GetBlockList retrieves list of blocks in the specified block blob.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179400.aspx
 func (b BlobStorageClient) GetBlockList(container, name string, blockType BlockListType) (BlockListResponse, error) {
 	params := url.Values{"comp": {"blocklist"}, "blocklisttype": {string(blockType)}}
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), params)
@@ -745,11 +607,6 @@ func (b BlobStorageClient) GetBlockList(container, name string, blockType BlockL
 	return out, err
 }
 
-// PutPageBlob initializes an empty page blob with specified name and maximum
-// size in bytes (size must be aligned to a 512-byte boundary). A page blob must
-// be created using this method before writing pages.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx
 func (b BlobStorageClient) PutPageBlob(container, name string, size int64, extraHeaders map[string]string) error {
 	path := fmt.Sprintf("%s/%s", container, name)
 	uri := b.client.getEndpoint(blobServiceName, path, url.Values{})
@@ -771,11 +628,6 @@ func (b BlobStorageClient) PutPageBlob(container, name string, size int64, extra
 	return checkRespCode(resp.statusCode, []int{http.StatusCreated})
 }
 
-// PutPage writes a range of pages to a page blob or clears the given range.
-// In case of 'clear' writes, given chunk is discarded. Ranges must be aligned
-// with 512-byte boundaries and chunk must be of size multiplies by 512.
-//
-// See https://msdn.microsoft.com/en-us/library/ee691975.aspx
 func (b BlobStorageClient) PutPage(container, name string, startByte, endByte int64, writeType PageWriteType, chunk []byte, extraHeaders map[string]string) error {
 	path := fmt.Sprintf("%s/%s", container, name)
 	uri := b.client.getEndpoint(blobServiceName, path, url.Values{"comp": {"page"}})
@@ -807,9 +659,6 @@ func (b BlobStorageClient) PutPage(container, name string, startByte, endByte in
 	return checkRespCode(resp.statusCode, []int{http.StatusCreated})
 }
 
-// GetPageRanges returns the list of valid page ranges for a page blob.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/ee691973.aspx
 func (b BlobStorageClient) GetPageRanges(container, name string) (GetPageRangesResponse, error) {
 	path := fmt.Sprintf("%s/%s", container, name)
 	uri := b.client.getEndpoint(blobServiceName, path, url.Values{"comp": {"pagelist"}})
@@ -829,10 +678,6 @@ func (b BlobStorageClient) GetPageRanges(container, name string) (GetPageRangesR
 	return out, err
 }
 
-// PutAppendBlob initializes an empty append blob with specified name. An
-// append blob must be created using this method before appending blocks.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx
 func (b BlobStorageClient) PutAppendBlob(container, name string, extraHeaders map[string]string) error {
 	path := fmt.Sprintf("%s/%s", container, name)
 	uri := b.client.getEndpoint(blobServiceName, path, url.Values{})
@@ -853,9 +698,6 @@ func (b BlobStorageClient) PutAppendBlob(container, name string, extraHeaders ma
 	return checkRespCode(resp.statusCode, []int{http.StatusCreated})
 }
 
-// AppendBlock appends a block to an append blob.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/mt427365.aspx
 func (b BlobStorageClient) AppendBlock(container, name string, chunk []byte, extraHeaders map[string]string) error {
 	path := fmt.Sprintf("%s/%s", container, name)
 	uri := b.client.getEndpoint(blobServiceName, path, url.Values{"comp": {"appendblock"}})
@@ -877,12 +719,6 @@ func (b BlobStorageClient) AppendBlock(container, name string, chunk []byte, ext
 	return checkRespCode(resp.statusCode, []int{http.StatusCreated})
 }
 
-// CopyBlob starts a blob copy operation and waits for the operation to
-// complete. sourceBlob parameter must be a canonical URL to the blob (can be
-// obtained using GetBlobURL method.) There is no SLA on blob copy and therefore
-// this helper method works faster on smaller files.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd894037.aspx
 func (b BlobStorageClient) CopyBlob(container, name, sourceBlob string) error {
 	copyID, err := b.StartBlobCopy(container, name, sourceBlob)
 	if err != nil {
@@ -892,11 +728,6 @@ func (b BlobStorageClient) CopyBlob(container, name, sourceBlob string) error {
 	return b.WaitForBlobCopy(container, name, copyID)
 }
 
-// StartBlobCopy starts a blob copy operation.
-// sourceBlob parameter must be a canonical URL to the blob (can be
-// obtained using GetBlobURL method.)
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd894037.aspx
 func (b BlobStorageClient) StartBlobCopy(container, name, sourceBlob string) (string, error) {
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), url.Values{})
 
@@ -920,10 +751,6 @@ func (b BlobStorageClient) StartBlobCopy(container, name, sourceBlob string) (st
 	return copyID, nil
 }
 
-// AbortBlobCopy aborts a BlobCopy which has already been triggered by the StartBlobCopy function.
-// copyID is generated from StartBlobCopy function.
-// currentLeaseID is required IF the destination blob has an active lease on it.
-// As defined in https://msdn.microsoft.com/en-us/library/azure/jj159098.aspx
 func (b BlobStorageClient) AbortBlobCopy(container, name, copyID, currentLeaseID string, timeout int) error {
 	params := url.Values{"comp": {"copy"}, "copyid": {copyID}}
 	if timeout > 0 {
@@ -951,7 +778,6 @@ func (b BlobStorageClient) AbortBlobCopy(container, name, copyID, currentLeaseID
 	return nil
 }
 
-// WaitForBlobCopy loops until a BlobCopy operation is completed (or fails with error)
 func (b BlobStorageClient) WaitForBlobCopy(container, name, copyID string) error {
 	for {
 		props, err := b.GetBlobProperties(container, name)
@@ -978,9 +804,6 @@ func (b BlobStorageClient) WaitForBlobCopy(container, name, copyID string) error
 	}
 }
 
-// DeleteBlob deletes the given blob from the specified container.
-// If the blob does not exists at the time of the Delete Blob operation, it
-// returns error. See https://msdn.microsoft.com/en-us/library/azure/dd179413.aspx
 func (b BlobStorageClient) DeleteBlob(container, name string, extraHeaders map[string]string) error {
 	resp, err := b.deleteBlob(container, name, extraHeaders)
 	if err != nil {
@@ -990,10 +813,6 @@ func (b BlobStorageClient) DeleteBlob(container, name string, extraHeaders map[s
 	return checkRespCode(resp.statusCode, []int{http.StatusAccepted})
 }
 
-// DeleteBlobIfExists deletes the given blob from the specified container If the
-// blob is deleted with this call, returns true. Otherwise returns false.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/dd179413.aspx
 func (b BlobStorageClient) DeleteBlobIfExists(container, name string, extraHeaders map[string]string) (bool, error) {
 	resp, err := b.deleteBlob(container, name, extraHeaders)
 	if resp != nil {
@@ -1016,13 +835,10 @@ func (b BlobStorageClient) deleteBlob(container, name string, extraHeaders map[s
 	return b.client.exec(http.MethodDelete, uri, headers, nil, b.auth)
 }
 
-// helper method to construct the path to a blob given its container and blob
-// name
 func pathForBlob(container, name string) string {
 	return fmt.Sprintf("/%s/%s", container, name)
 }
 
-// helper method to construct the path to either a blob or container
 func pathForResource(container, name string) string {
 	if len(name) > 0 {
 		return fmt.Sprintf("/%s/%s", container, name)
@@ -1030,12 +846,6 @@ func pathForResource(container, name string) string {
 	return fmt.Sprintf("/%s", container)
 }
 
-// GetBlobSASURIWithSignedIPAndProtocol creates an URL to the specified blob which contains the Shared
-// Access Signature with specified permissions and expiration time. Also includes signedIPRange and allowed protocols.
-// If old API version is used but no signedIP is passed (ie empty string) then this should still work.
-// We only populate the signedIP when it non-empty.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/ee395415.aspx
 func (b BlobStorageClient) GetBlobSASURIWithSignedIPAndProtocol(container, name string, expiry time.Time, permissions string, signedIPRange string, HTTPSOnly bool) (string, error) {
 	var (
 		signedPermissions = permissions
@@ -1046,12 +856,6 @@ func (b BlobStorageClient) GetBlobSASURIWithSignedIPAndProtocol(container, name 
 		return "", err
 	}
 
-	// "The canonicalizedresouce portion of the string is a canonical path to the signed resource.
-	// It must include the service name (blob, table, queue or file) for version 2015-02-21 or
-	// later, the storage account name, and the resource name, and must be URL-decoded.
-	// -- https://msdn.microsoft.com/en-us/library/azure/dn140255.aspx
-
-	// We need to replace + with %2b first to avoid being treated as a space (which is correct for query strings, but not the path component).
 	canonicalizedResource = strings.Replace(canonicalizedResource, "+", "%2b", -1)
 	canonicalizedResource, err = url.QueryUnescape(canonicalizedResource)
 	if err != nil {
@@ -1060,7 +864,6 @@ func (b BlobStorageClient) GetBlobSASURIWithSignedIPAndProtocol(container, name 
 
 	signedExpiry := expiry.UTC().Format(time.RFC3339)
 
-	//If blob name is missing, resource is a container
 	signedResource := "c"
 	if len(name) > 0 {
 		signedResource = "b"
@@ -1099,10 +902,6 @@ func (b BlobStorageClient) GetBlobSASURIWithSignedIPAndProtocol(container, name 
 	return sasURL.String(), nil
 }
 
-// GetBlobSASURI creates an URL to the specified blob which contains the Shared
-// Access Signature with specified permissions and expiration time.
-//
-// See https://msdn.microsoft.com/en-us/library/azure/ee395415.aspx
 func (b BlobStorageClient) GetBlobSASURI(container, name string, expiry time.Time, permissions string) (string, error) {
 	url, err := b.GetBlobSASURIWithSignedIPAndProtocol(container, name, expiry, permissions, "", false)
 	return url, err
@@ -1115,12 +914,10 @@ func blobSASStringToSign(signedVersion, canonicalizedResource, signedExpiry, sig
 		canonicalizedResource = "/blob" + canonicalizedResource
 	}
 
-	// https://msdn.microsoft.com/en-us/library/azure/dn140255.aspx#Anchor_12
 	if signedVersion >= "2015-04-05" {
 		return fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s", signedPermissions, signedStart, signedExpiry, canonicalizedResource, signedIdentifier, signedIP, protocols, signedVersion, rscc, rscd, rsce, rscl, rsct), nil
 	}
 
-	// reference: http://msdn.microsoft.com/en-us/library/azure/dn140255.aspx
 	if signedVersion >= "2013-08-15" {
 		return fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s", signedPermissions, signedStart, signedExpiry, canonicalizedResource, signedIdentifier, signedVersion, rscc, rscd, rsce, rscl, rsct), nil
 	}

@@ -1,42 +1,8 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
 import "strings"
 
-/* Table is like:
-
-┌Awesome Table ────────────────────────────────────────────────┐
-│  Col0          | Col1 | Col2 | Col3  | Col4  | Col5  | Col6  |
-│──────────────────────────────────────────────────────────────│
-│  Some Item #1  | AAA  | 123  | CCCCC | EEEEE | GGGGG | IIIII |
-│──────────────────────────────────────────────────────────────│
-│  Some Item #2  | BBB  | 456  | DDDDD | FFFFF | HHHHH | JJJJJ |
-└──────────────────────────────────────────────────────────────┘
-
-Datapoints are a two dimensional array of strings: [][]string
-
-Example:
-	data := [][]string{
-		{"Col0", "Col1", "Col3", "Col4", "Col5", "Col6"},
-		{"Some Item #1", "AAA", "123", "CCCCC", "EEEEE", "GGGGG", "IIIII"},
-		{"Some Item #2", "BBB", "456", "DDDDD", "FFFFF", "HHHHH", "JJJJJ"},
-	}
-
-	table := termui.NewTable()
-	table.Rows = data  // type [][]string
-	table.FgColor = termui.ColorWhite
-	table.BgColor = termui.ColorDefault
-	table.Height = 7
-	table.Width = 62
-	table.Y = 0
-	table.X = 0
-	table.Border = true
-*/
-
-// Table tracks all the attributes of a Table instance
 type Table struct {
 	Block
 	Rows      [][]string
@@ -49,7 +15,6 @@ type Table struct {
 	TextAlign Align
 }
 
-// NewTable returns a new Table instance
 func NewTable() *Table {
 	table := &Table{Block: *NewBlock()}
 	table.FgColor = ColorWhite
@@ -58,7 +23,6 @@ func NewTable() *Table {
 	return table
 }
 
-// CellsWidth calculates the width of a cell array and returns an int
 func cellsWidth(cells []Cell) int {
 	width := 0
 	for _, c := range cells {
@@ -67,7 +31,6 @@ func cellsWidth(cells []Cell) int {
 	return width
 }
 
-// Analysis generates and returns an array of []Cell that represent all columns in the Table
 func (table *Table) Analysis() [][]Cell {
 	var rowCells [][]Cell
 	length := len(table.Rows)
@@ -104,7 +67,6 @@ func (table *Table) Analysis() [][]Cell {
 	return rowCells
 }
 
-// SetSize calculates the table size and sets the internal value
 func (table *Table) SetSize() {
 	length := len(table.Rows)
 	if table.Separator {
@@ -120,7 +82,6 @@ func (table *Table) SetSize() {
 	}
 }
 
-// CalculatePosition ...
 func (table *Table) CalculatePosition(x int, y int, coordinateX *int, coordinateY *int, cellStart *int) {
 	if table.Separator {
 		*coordinateY = table.innerArea.Min.Y + y*2
@@ -143,7 +104,6 @@ func (table *Table) CalculatePosition(x int, y int, coordinateX *int, coordinate
 	}
 }
 
-// Buffer ...
 func (table *Table) Buffer() Buffer {
 	buffer := table.Block.Buffer()
 	rowCells := table.Analysis()

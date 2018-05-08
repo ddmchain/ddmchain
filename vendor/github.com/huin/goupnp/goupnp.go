@@ -1,17 +1,4 @@
-// goupnp is an implementation of a client for various UPnP services.
-//
-// For most uses, it is recommended to use the code-generated packages under
-// github.com/huin/goupnp/dcps. Example use is shown at
-// http://godoc.org/github.com/huin/goupnp/example
-//
-// A commonly used client is internetgateway1.WANPPPConnection1:
-// http://godoc.org/github.com/huin/goupnp/dcps/internetgateway1#WANPPPConnection1
-//
-// Currently only a couple of schemas have code generated for them from the
-// UPnP example XML specifications. Not all methods will work on these clients,
-// because the generated stubs contain the full set of specified methods from
-// the XML specifications, and the discovered services will likely support a
-// subset of those methods.
+
 package goupnp
 
 import (
@@ -27,7 +14,6 @@ import (
 	"github.com/huin/goupnp/ssdp"
 )
 
-// ContextError is an error that wraps an error with some context information.
 type ContextError struct {
 	Context string
 	Err     error
@@ -37,26 +23,15 @@ func (err ContextError) Error() string {
 	return fmt.Sprintf("%s: %v", err.Context, err.Err)
 }
 
-// MaybeRootDevice contains either a RootDevice or an error.
 type MaybeRootDevice struct {
-	// Set iff Err == nil.
+
 	Root *RootDevice
 
-	// The location the device was discovered at. This can be used with
-	// DeviceByURL, assuming the device is still present. A location represents
-	// the discovery of a device, regardless of if there was an error probing it.
 	Location *url.URL
 
-	// Any error encountered probing a discovered device.
 	Err error
 }
 
-// DiscoverDevices attempts to find targets of the given type. This is
-// typically the entry-point for this package. searchTarget is typically a URN
-// in the form "urn:schemas-upnp-org:device:..." or
-// "urn:schemas-upnp-org:service:...". A single error is returned for errors
-// while attempting to send the query. An error or RootDevice is returned for
-// each discovered RootDevice.
 func DiscoverDevices(searchTarget string) ([]MaybeRootDevice, error) {
 	httpu, err := httpu.NewHTTPUClient()
 	if err != nil {

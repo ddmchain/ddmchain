@@ -1,12 +1,4 @@
-/*
-Package ast declares types representing a JavaScript AST.
 
-Warning
-
-The parser and AST interfaces are still works-in-progress (particularly where
-node types are concerned) and may change in the future.
-
-*/
 package ast
 
 import (
@@ -14,18 +6,13 @@ import (
 	"github.com/robertkrimen/otto/token"
 )
 
-// All nodes implement the Node interface.
 type Node interface {
-	Idx0() file.Idx // The index of the first character belonging to the node
-	Idx1() file.Idx // The index of the first character immediately after the node
+	Idx0() file.Idx 
+	Idx1() file.Idx 
 }
 
-// ========== //
-// Expression //
-// ========== //
-
 type (
-	// All expression nodes implement the Expression interface.
+
 	Expression interface {
 		Node
 		_expressionNode()
@@ -167,7 +154,7 @@ type (
 
 	UnaryExpression struct {
 		Operator token.Token
-		Idx      file.Idx // If a prefix operation
+		Idx      file.Idx 
 		Operand  Expression
 		Postfix  bool
 	}
@@ -178,8 +165,6 @@ type (
 		Initializer Expression
 	}
 )
-
-// _expressionNode
 
 func (*ArrayLiteral) _expressionNode()          {}
 func (*AssignExpression) _expressionNode()      {}
@@ -204,12 +189,8 @@ func (*ThisExpression) _expressionNode()        {}
 func (*UnaryExpression) _expressionNode()       {}
 func (*VariableExpression) _expressionNode()    {}
 
-// ========= //
-// Statement //
-// ========= //
-
 type (
-	// All statement nodes implement the Statement interface.
+
 	Statement interface {
 		Node
 		_statementNode()
@@ -336,8 +317,6 @@ type (
 	}
 )
 
-// _statementNode
-
 func (*BadStatement) _statementNode()        {}
 func (*BlockStatement) _statementNode()      {}
 func (*BranchStatement) _statementNode()     {}
@@ -360,12 +339,8 @@ func (*VariableStatement) _statementNode()   {}
 func (*WhileStatement) _statementNode()      {}
 func (*WithStatement) _statementNode()       {}
 
-// =========== //
-// Declaration //
-// =========== //
-
 type (
-	// All declaration nodes implement the Declaration interface.
+
 	Declaration interface {
 		_declarationNode()
 	}
@@ -380,14 +355,8 @@ type (
 	}
 )
 
-// _declarationNode
-
 func (*FunctionDeclaration) _declarationNode() {}
 func (*VariableDeclaration) _declarationNode() {}
-
-// ==== //
-// Node //
-// ==== //
 
 type Program struct {
 	Body []Statement
@@ -398,10 +367,6 @@ type Program struct {
 
 	Comments CommentMap
 }
-
-// ==== //
-// Idx0 //
-// ==== //
 
 func (self *ArrayLiteral) Idx0() file.Idx          { return self.LeftBracket }
 func (self *AssignExpression) Idx0() file.Idx      { return self.Left.Idx0() }
@@ -449,10 +414,6 @@ func (self *VariableStatement) Idx0() file.Idx   { return self.Var }
 func (self *WhileStatement) Idx0() file.Idx      { return self.While }
 func (self *WithStatement) Idx0() file.Idx       { return self.With }
 
-// ==== //
-// Idx1 //
-// ==== //
-
 func (self *ArrayLiteral) Idx1() file.Idx          { return self.RightBracket }
 func (self *AssignExpression) Idx1() file.Idx      { return self.Right.Idx1() }
 func (self *BadExpression) Idx1() file.Idx         { return self.To }
@@ -466,7 +427,7 @@ func (self *EmptyExpression) Idx1() file.Idx       { return self.End }
 func (self *FunctionLiteral) Idx1() file.Idx       { return self.Body.Idx1() }
 func (self *Identifier) Idx1() file.Idx            { return file.Idx(int(self.Idx) + len(self.Name)) }
 func (self *NewExpression) Idx1() file.Idx         { return self.RightParenthesis + 1 }
-func (self *NullLiteral) Idx1() file.Idx           { return file.Idx(int(self.Idx) + 4) } // "null"
+func (self *NullLiteral) Idx1() file.Idx           { return file.Idx(int(self.Idx) + 4) } 
 func (self *NumberLiteral) Idx1() file.Idx         { return file.Idx(int(self.Idx) + len(self.Literal)) }
 func (self *ObjectLiteral) Idx1() file.Idx         { return self.RightBrace }
 func (self *RegExpLiteral) Idx1() file.Idx         { return file.Idx(int(self.Idx) + len(self.Literal)) }
@@ -475,7 +436,7 @@ func (self *StringLiteral) Idx1() file.Idx         { return file.Idx(int(self.Id
 func (self *ThisExpression) Idx1() file.Idx        { return self.Idx }
 func (self *UnaryExpression) Idx1() file.Idx {
 	if self.Postfix {
-		return self.Operand.Idx1() + 2 // ++ --
+		return self.Operand.Idx1() + 2 
 	}
 	return self.Operand.Idx1()
 }

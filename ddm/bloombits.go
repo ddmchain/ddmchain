@@ -1,53 +1,29 @@
-// 
-// This file is part of the go-ddmchain library.
-//
-// The go-ddmchain library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ddmchain library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ddmchain library. If not, see <http://www.gnu.org/licenses/>.
 
 package ddm
 
 import (
 	"time"
 
-	"github.com/ddmchain/go-ddmchain/common"
-	"github.com/ddmchain/go-ddmchain/common/bitutil"
-	"github.com/ddmchain/go-ddmchain/core"
-	"github.com/ddmchain/go-ddmchain/core/bloombits"
-	"github.com/ddmchain/go-ddmchain/core/types"
-	"github.com/ddmchain/go-ddmchain/ddmdb"
-	"github.com/ddmchain/go-ddmchain/params"
+	"github.com/ddmchain/go-ddmchain/general"
+	"github.com/ddmchain/go-ddmchain/general/bitutil"
+	"github.com/ddmchain/go-ddmchain/major"
+	"github.com/ddmchain/go-ddmchain/major/bloombits"
+	"github.com/ddmchain/go-ddmchain/major/types"
+	"github.com/ddmchain/go-ddmchain/ddmpv"
+	"github.com/ddmchain/go-ddmchain/part"
 )
 
 const (
-	// bloomServiceThreads is the number of goroutines used globally by an DDMchain
-	// instance to service bloombits lookups for all running filters.
+
 	bloomServiceThreads = 16
 
-	// bloomFilterThreads is the number of goroutines used locally per filter to
-	// multiplex requests onto the global servicing goroutines.
 	bloomFilterThreads = 3
 
-	// bloomRetrievalBatch is the maximum number of bloom bit retrievals to service
-	// in a single batch.
 	bloomRetrievalBatch = 16
 
-	// bloomRetrievalWait is the maximum time to wait for enough bloom bit requests
-	// to accumulate request an entire batch (avoiding hysteresis).
 	bloomRetrievalWait = time.Duration(0)
 )
 
-// startBloomHandlers starts a batch of goroutines to accept bloom bit database
-// retrievals from possibly a range of filters and serving the data to satisfy.
 func (ddm *DDMchain) startBloomHandlers() {
 	for i := 0; i < bloomServiceThreads; i++ {
 		go func() {
@@ -79,29 +55,22 @@ func (ddm *DDMchain) startBloomHandlers() {
 }
 
 const (
-	// bloomConfirms is the number of confirmation blocks before a bloom section is
-	// considered probably final and its rotated bits are calculated.
+
 	bloomConfirms = 256
 
-	// bloomThrottling is the time to wait between processing two consecutive index
-	// sections. It's useful during chain upgrades to prevent disk overload.
 	bloomThrottling = 100 * time.Millisecond
 )
 
-// BloomIndexer implements a core.ChainIndexer, building up a rotated bloom bits index
-// for the DDMchain header bloom filters, permitting blazing fast filtering.
 type BloomIndexer struct {
-	size uint64 // section size to generate bloombits for
+	size uint64 
 
-	db  ddmdb.Database       // database instance to write index data and metadata into
-	gen *bloombits.Generator // generator to rotate the bloom bits crating the bloom index
+	db  ddmdb.Database       
+	gen *bloombits.Generator 
 
-	section uint64      // Section is the section number being processed currently
-	head    common.Hash // Head is the hash of the last header processed
+	section uint64      
+	head    common.Hash 
 }
 
-// NewBloomIndexer returns a chain indexer that generates bloom bits data for the
-// canonical chain for fast logs filtering.
 func NewBloomIndexer(db ddmdb.Database, size uint64) *core.ChainIndexer {
 	backend := &BloomIndexer{
 		db:   db,
@@ -112,23 +81,17 @@ func NewBloomIndexer(db ddmdb.Database, size uint64) *core.ChainIndexer {
 	return core.NewChainIndexer(db, table, backend, size, bloomConfirms, bloomThrottling, "bloombits")
 }
 
-// Reset implements core.ChainIndexerBackend, starting a new bloombits index
-// section.
 func (b *BloomIndexer) Reset(section uint64, lastSectionHead common.Hash) error {
 	gen, err := bloombits.NewGenerator(uint(b.size))
 	b.gen, b.section, b.head = gen, section, common.Hash{}
 	return err
 }
 
-// Process implements core.ChainIndexerBackend, adding a new header's bloom into
-// the index.
 func (b *BloomIndexer) Process(header *types.Header) {
 	b.gen.AddBloom(uint(header.Number.Uint64()-b.section*b.size), header.Bloom)
 	b.head = header.Hash()
 }
 
-// Commit implements core.ChainIndexerBackend, finalizing the bloom section and
-// writing it out into the database.
 func (b *BloomIndexer) Commit() error {
 	batch := b.db.NewBatch()
 

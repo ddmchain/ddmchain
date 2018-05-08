@@ -1,18 +1,3 @@
-// 
-// This file is part of the go-ddmchain library.
-//
-// The go-ddmchain library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ddmchain library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ddmchain library. If not, see <http://www.gnu.org/licenses/>.
 
 package ddm
 
@@ -20,23 +5,22 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/ddmchain/go-ddmchain/accounts"
-	"github.com/ddmchain/go-ddmchain/common"
-	"github.com/ddmchain/go-ddmchain/common/math"
-	"github.com/ddmchain/go-ddmchain/core"
-	"github.com/ddmchain/go-ddmchain/core/bloombits"
-	"github.com/ddmchain/go-ddmchain/core/state"
-	"github.com/ddmchain/go-ddmchain/core/types"
-	"github.com/ddmchain/go-ddmchain/core/vm"
+	"github.com/ddmchain/go-ddmchain/user"
+	"github.com/ddmchain/go-ddmchain/general"
+	"github.com/ddmchain/go-ddmchain/general/math"
+	"github.com/ddmchain/go-ddmchain/major"
+	"github.com/ddmchain/go-ddmchain/major/bloombits"
+	"github.com/ddmchain/go-ddmchain/major/state"
+	"github.com/ddmchain/go-ddmchain/major/types"
+	"github.com/ddmchain/go-ddmchain/major/vm"
 	"github.com/ddmchain/go-ddmchain/ddm/downloader"
 	"github.com/ddmchain/go-ddmchain/ddm/gasprice"
-	"github.com/ddmchain/go-ddmchain/ddmdb"
-	"github.com/ddmchain/go-ddmchain/event"
-	"github.com/ddmchain/go-ddmchain/params"
-	"github.com/ddmchain/go-ddmchain/rpc"
+	"github.com/ddmchain/go-ddmchain/ddmpv"
+	"github.com/ddmchain/go-ddmchain/signal"
+	"github.com/ddmchain/go-ddmchain/part"
+	"github.com/ddmchain/go-ddmchain/control"
 )
 
-// DDMApiBackend implements ddmapi.Backend for full nodes
 type DDMApiBackend struct {
 	ddm *DDMchain
 	gpo *gasprice.Oracle
@@ -56,12 +40,12 @@ func (b *DDMApiBackend) SetHead(number uint64) {
 }
 
 func (b *DDMApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Header, error) {
-	// Pending block is only known by the miner
+
 	if blockNr == rpc.PendingBlockNumber {
 		block := b.ddm.miner.PendingBlock()
 		return block.Header(), nil
 	}
-	// Otherwise resolve and return the block
+
 	if blockNr == rpc.LatestBlockNumber {
 		return b.ddm.blockchain.CurrentBlock().Header(), nil
 	}
@@ -69,12 +53,12 @@ func (b *DDMApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNum
 }
 
 func (b *DDMApiBackend) BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error) {
-	// Pending block is only known by the miner
+
 	if blockNr == rpc.PendingBlockNumber {
 		block := b.ddm.miner.PendingBlock()
 		return block, nil
 	}
-	// Otherwise resolve and return the block
+
 	if blockNr == rpc.LatestBlockNumber {
 		return b.ddm.blockchain.CurrentBlock(), nil
 	}
@@ -82,12 +66,12 @@ func (b *DDMApiBackend) BlockByNumber(ctx context.Context, blockNr rpc.BlockNumb
 }
 
 func (b *DDMApiBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *types.Header, error) {
-	// Pending state is only known by the miner
+
 	if blockNr == rpc.PendingBlockNumber {
 		block, state := b.ddm.miner.Pending()
 		return state, block.Header(), nil
 	}
-	// Otherwise resolve the block number and return its state
+
 	header, err := b.HeaderByNumber(ctx, blockNr)
 	if header == nil || err != nil {
 		return nil, nil, err

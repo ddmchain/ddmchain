@@ -1,8 +1,5 @@
 // +build ignore
 
-// mkstdlib generates the zstdlib.go file, containing the Go standard
-// library API symbols. It's baked into the binary to avoid scanning
-// GOPATH in the common case.
 package main
 
 import (
@@ -54,7 +51,7 @@ func main() {
 		mustOpen(api("go1.7.txt")),
 	)
 	sc := bufio.NewScanner(f)
-	fullImport := map[string]string{} // "zip.NewReader" => "archive/zip"
+	fullImport := map[string]string{} 
 	ambiguous := map[string]bool{}
 	var keys []string
 	for sc.Scan() {

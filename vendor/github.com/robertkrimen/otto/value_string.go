@@ -8,12 +8,10 @@ import (
 	"unicode/utf16"
 )
 
-var matchLeading0Exponent = regexp.MustCompile(`([eE][\+\-])0+([1-9])`) // 1e-07 => 1e-7
+var matchLeading0Exponent = regexp.MustCompile(`([eE][\+\-])0+([1-9])`) 
 
-// FIXME
-// https://code.google.com/p/v8/source/browse/branches/bleeding_edge/src/conversions.cc?spec=svn18082&r=18082
 func floatToString(value float64, bitsize int) string {
-	// TODO Fit to ECMA-262 9.8.1 specification
+
 	if math.IsNaN(value) {
 		return "NaN"
 	} else if math.IsInf(value, 0) {
@@ -38,9 +36,7 @@ func numberToStringRadix(value Value, radix int) string {
 	} else if math.IsInf(float, -1) {
 		return "-Infinity"
 	}
-	// FIXME This is very broken
-	// Need to do proper radix conversion for floats, ...
-	// This truncates large floats (so bad).
+
 	return strconv.FormatInt(int64(float), radix)
 }
 
@@ -84,12 +80,12 @@ func (value Value) string() string {
 		return strconv.FormatUint(value, 10)
 	case float32:
 		if value == 0 {
-			return "0" // Take care not to return -0
+			return "0" 
 		}
 		return floatToString(float64(value), 32)
 	case float64:
 		if value == 0 {
-			return "0" // Take care not to return -0
+			return "0" 
 		}
 		return floatToString(value, 64)
 	case []uint16:

@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
 import (
@@ -9,7 +6,6 @@ import (
 	"sync"
 )
 
-// event mixins
 type WgtMgr map[string]WgtInfo
 
 type WgtInfo struct {

@@ -1,11 +1,5 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build ignore
-
-// Language tag table generator.
-// Data read from the web.
 
 package main
 
@@ -135,10 +129,6 @@ regionInclusionNext marks, for each entry in regionInclusionBits, the set of
 all groups that are reachable from the groups set in the respective entry.`,
 }
 
-// TODO: consider changing some of these structures to tries. This can reduce
-// memory, but may increase the need for memory allocations. This could be
-// mitigated if we can piggyback on language tags for common cases.
-
 func failOnError(e error) {
 	if e != nil {
 		log.Panic(e)
@@ -148,7 +138,7 @@ func failOnError(e error) {
 type setType int
 
 const (
-	Indexed setType = 1 + iota // all elements must be of same size
+	Indexed setType = 1 + iota 
 	Linear
 )
 
@@ -156,10 +146,8 @@ type stringSet struct {
 	s              []string
 	sorted, frozen bool
 
-	// We often need to update values after the creation of an index is completed.
-	// We include a convenience map for keeping track of this.
 	update map[string]string
-	typ    setType // used for checking.
+	typ    setType 
 }
 
 func (ss *stringSet) clone() stringSet {
@@ -174,8 +162,6 @@ func (ss *stringSet) setType(t setType) {
 	}
 }
 
-// parse parses a whitespace-separated string and initializes ss with its
-// components.
 func (ss *stringSet) parse(s string) {
 	scan := bufio.NewScanner(strings.NewReader(s))
 	scan.Split(bufio.ScanWords)
@@ -276,7 +262,6 @@ func (ss *stringSet) updateLater(v, key string) {
 	ss.update[v] = key
 }
 
-// join joins the string and ensures that all entries are of the same length.
 func (ss *stringSet) join() string {
 	ss.setType(Indexed)
 	n := len(ss.s[0])
@@ -289,10 +274,6 @@ func (ss *stringSet) join() string {
 	return strings.Join(ss.s, "")
 }
 
-// ianaEntry holds information for an entry in the IANA Language Subtag Repository.
-// All types use the same entry.
-// See http://tools.ietf.org/html/bcp47#section-5.1 for a description of the various
-// fields.
 type ianaEntry struct {
 	typ            string
 	description    []string
@@ -307,22 +288,19 @@ type ianaEntry struct {
 
 type builder struct {
 	w    *gen.CodeWriter
-	hw   io.Writer // MultiWriter for w and w.Hash
+	hw   io.Writer 
 	data *cldr.CLDR
 	supp *cldr.SupplementalData
 
-	// indices
-	locale      stringSet // common locales
-	lang        stringSet // canonical language ids (2 or 3 letter ISO codes) with data
-	langNoIndex stringSet // 3-letter ISO codes with no associated data
-	script      stringSet // 4-letter ISO codes
-	region      stringSet // 2-letter ISO or 3-digit UN M49 codes
-	variant     stringSet // 4-8-alphanumeric variant code.
+	locale      stringSet 
+	lang        stringSet 
+	langNoIndex stringSet 
+	script      stringSet 
+	region      stringSet 
+	variant     stringSet 
 
-	// Region codes that are groups with their corresponding group IDs.
 	groups map[int]index
 
-	// langInfo
 	registry map[string]*ianaEntry
 }
 
@@ -449,8 +427,6 @@ func (b *builder) writeConst(name string, x interface{}) {
 	b.w.WriteConst(name, x)
 }
 
-// writeConsts computes f(v) for all v in values and writes the results
-// as constants named _v to a single constant block.
 func (b *builder) writeConsts(f func(string) int, values ...string) {
 	b.pf("const (")
 	for _, v := range values {
@@ -459,7 +435,6 @@ func (b *builder) writeConsts(f func(string) int, values ...string) {
 	b.pf(")")
 }
 
-// writeType writes the type of the given value, which must be a struct.
 func (b *builder) writeType(value interface{}) {
 	b.comment(reflect.TypeOf(value).Name())
 	b.w.WriteType(value)
@@ -507,8 +482,6 @@ func strToInt(s string) uint {
 	return v
 }
 
-// converts the given integer to the original ASCII string passed to strToInt.
-// len(s) must match the number of characters obtained.
 func intToStr(v uint, s []byte) {
 	for i := len(s) - 1; i >= 0; i-- {
 		s[i] = byte(v%base) + 'a'
@@ -525,7 +498,6 @@ func (b *builder) writeBitVector(name string, ss []string) {
 	b.writeSlice(name, vec)
 }
 
-// TODO: convert this type into a list or two-stage trie.
 func (b *builder) writeMapFunc(name string, m map[string]string, f func(string) uint16) {
 	b.comment(name)
 	v := reflect.ValueOf(m)
@@ -572,7 +544,6 @@ func (b *builder) langIndex(s string) uint16 {
 	return uint16(strToInt(s)) + uint16(len(b.lang.s))
 }
 
-// inc advances the string to its lexicographical successor.
 func inc(s string) string {
 	const maxTagLength = 4
 	var buf [maxTagLength]byte
@@ -609,7 +580,7 @@ func (b *builder) parseIndices() {
 		}
 		ss.add(k)
 	}
-	// Include any language for which there is data.
+
 	for _, lang := range b.data.Locales() {
 		if x := b.data.RawLDML(lang); false ||
 			x.LocaleDisplayNames != nil ||
@@ -632,7 +603,7 @@ func (b *builder) parseIndices() {
 			}
 		}
 	}
-	// Include locales for plural rules, which uses a different structure.
+
 	for _, plurals := range b.data.Supplemental().Plurals {
 		for _, rules := range plurals.PluralRules {
 			for _, lang := range strings.Split(rules.Locales, " ") {
@@ -642,18 +613,18 @@ func (b *builder) parseIndices() {
 			}
 		}
 	}
-	// Include languages in likely subtags.
+
 	for _, m := range b.supp.LikelySubtags.LikelySubtag {
 		from := strings.Split(m.From, "_")
 		b.lang.add(from[0])
 	}
-	// Include ISO-639 alpha-3 bibliographic entries.
+
 	for _, a := range meta.Alias.LanguageAlias {
 		if a.Reason == "bibliographic" {
 			b.langNoIndex.add(a.Type)
 		}
 	}
-	// Include regions in territoryAlias (not all are in the IANA registry!)
+
 	for _, reg := range b.supp.Metadata.Alias.TerritoryAlias {
 		if len(reg.Type) == 2 {
 			b.region.add(reg.Type)
@@ -669,27 +640,21 @@ func (b *builder) parseIndices() {
 	b.writeConst("numScripts", len(b.script.slice()))
 	b.writeConst("numRegions", len(b.region.slice()))
 
-	// Add dummy codes at the start of each list to represent "unspecified".
 	b.lang.add("---")
 	b.script.add("----")
 	b.region.add("---")
 
-	// common locales
 	b.locale.parse(meta.DefaultContent.Locales)
 }
-
-// TODO: region inclusion data will probably not be use used in future matchers.
 
 func (b *builder) computeRegionGroups() {
 	b.groups = make(map[int]index)
 
-	// Create group indices.
-	for i := 1; b.region.s[i][0] < 'A'; i++ { // Base M49 indices on regionID.
+	for i := 1; b.region.s[i][0] < 'A'; i++ { 
 		b.groups[i] = index(len(b.groups))
 	}
 	for _, g := range b.supp.TerritoryContainment.Group {
-		// Skip UN and EURO zone as they are flattening the containment
-		// relationship.
+
 		if g.Type == "EZ" || g.Type == "UN" {
 			continue
 		}
@@ -712,12 +677,10 @@ var langConsts = []string{
 	"ro", "ru", "sh", "si", "sk", "sl", "sq", "sr", "sv", "sw", "ta", "te", "th",
 	"tl", "tn", "tr", "uk", "ur", "uz", "vi", "zh", "zu",
 
-	// constants for grandfathered tags (if not already defined)
 	"jbo", "ami", "bnn", "hak", "tlh", "lb", "nv", "pwn", "tao", "tay", "tsu",
 	"nn", "sfb", "vgt", "sgg", "cmn", "nan", "hsn",
 }
 
-// writeLanguage generates all tables needed for language canonicalization.
 func (b *builder) writeLanguage() {
 	meta := b.supp.Metadata
 
@@ -726,14 +689,11 @@ func (b *builder) writeLanguage() {
 	b.writeConst("langPrivateStart", b.langIndex("qaa"))
 	b.writeConst("langPrivateEnd", b.langIndex("qtz"))
 
-	// Get language codes that need to be mapped (overlong 3-letter codes,
-	// deprecated 2-letter codes, legacy and grandfathered tags.)
 	langAliasMap := stringSet{}
 	aliasTypeMap := map[string]langAliasType{}
 
-	// altLangISO3 get the alternative ISO3 names that need to be mapped.
 	altLangISO3 := stringSet{}
-	// Add dummy start to avoid the use of index 0.
+
 	altLangISO3.add("---")
 	altLangISO3.updateLater("---", "aa")
 
@@ -742,7 +702,7 @@ func (b *builder) writeLanguage() {
 		if a.Replacement == "" {
 			a.Replacement = "und"
 		}
-		// TODO: support mapping to tags
+
 		repl := strings.SplitN(a.Replacement, "_", 2)[0]
 		if a.Reason == "overlong" {
 			if len(a.Replacement) == 2 && len(a.Type) == 3 {
@@ -753,7 +713,7 @@ func (b *builder) writeLanguage() {
 			case "macrolanguage":
 				aliasTypeMap[a.Type] = langMacro
 			case "deprecated":
-				// handled elsewhere
+
 				continue
 			case "bibliographic", "legacy":
 				if a.Type == "no" {
@@ -767,21 +727,20 @@ func (b *builder) writeLanguage() {
 			langAliasMap.updateLater(a.Type, repl)
 		}
 	}
-	// Manually add the mapping of "nb" (Norwegian) to its macro language.
-	// This can be removed if CLDR adopts this change.
+
 	langAliasMap.add("nb")
 	langAliasMap.updateLater("nb", "no")
 	aliasTypeMap["nb"] = langMacro
 
 	for k, v := range b.registry {
-		// Also add deprecated values for 3-letter ISO codes, which CLDR omits.
+
 		if v.typ == "language" && v.deprecated != "" && v.preferred != "" {
 			langAliasMap.add(k)
 			langAliasMap.updateLater(k, v.preferred)
 			aliasTypeMap[k] = langDeprecated
 		}
 	}
-	// Fix CLDR mappings.
+
 	lang.updateLater("tl", "tgl")
 	lang.updateLater("sh", "hbs")
 	lang.updateLater("mo", "mol")
@@ -791,7 +750,6 @@ func (b *builder) writeLanguage() {
 	lang.updateLater("ak", "aka")
 	lang.updateLater("bh", "bih")
 
-	// Ensure that each 2-letter code is matched with a 3-letter code.
 	for _, v := range lang.s[1:] {
 		s, ok := lang.update[v]
 		if !ok {
@@ -806,12 +764,9 @@ func (b *builder) writeLanguage() {
 		}
 	}
 
-	// Complete canonialized language tags.
 	lang.freeze()
 	for i, v := range lang.s {
-		// We can avoid these manual entries by using the IANI registry directly.
-		// Seems easier to update the list manually, as changes are rare.
-		// The panic in this loop will trigger if we miss an entry.
+
 		add := ""
 		if s, ok := lang.update[v]; ok {
 			if s[0] == v[0] {
@@ -830,7 +785,6 @@ func (b *builder) writeLanguage() {
 
 	b.writeConst("langNoIndexOffset", len(b.lang.s))
 
-	// space of all valid 3-letter language identifiers.
 	b.writeBitVector("langNoIndex", b.langNoIndex.slice())
 
 	altLangIndex := []uint16{}
@@ -869,8 +823,6 @@ func (b *builder) writeScript() {
 	}
 	b.writeSlice("suppressScript", supp)
 
-	// There is only one deprecated script in CLDR. This value is hard-coded.
-	// We check here if the code must be updated.
 	for _, a := range b.supp.Metadata.Alias.ScriptAlias {
 		if a.Type != "Qaai" {
 			log.Panicf("unexpected deprecated stript %q", a.Type)
@@ -889,7 +841,7 @@ func parseM49(s string) int16 {
 
 var regionConsts = []string{
 	"001", "419", "BR", "CA", "ES", "GB", "MD", "PT", "UK", "US",
-	"ZZ", "XA", "XC", "XK", // Unofficial tag for Kosovo.
+	"ZZ", "XA", "XC", "XK", 
 }
 
 func (b *builder) writeRegion() {
@@ -903,14 +855,12 @@ func (b *builder) writeRegion() {
 
 	b.writeConst("isoRegionOffset", isoOffset)
 
-	// 2-letter region lookup and mapping to numeric codes.
 	regionISO := b.region.clone()
 	regionISO.s = regionISO.s[isoOffset:]
 	regionISO.sorted = false
 
 	regionTypes := make([]byte, len(b.region.s))
 
-	// Is the region valid BCP 47?
 	for s, e := range b.registry {
 		if len(s) == 2 && s == strings.ToUpper(s) {
 			i := b.region.index(s)
@@ -923,7 +873,6 @@ func (b *builder) writeRegion() {
 		}
 	}
 
-	// Is the region a valid ccTLD?
 	r := gen.OpenIANAFile("domains/root/db")
 	defer r.Close()
 
@@ -983,8 +932,7 @@ func (b *builder) writeRegion() {
 			update(tc.Type, tc.Alpha3)
 		}
 	}
-	// This entries are not included in territoryCodes. Mostly 3-letter variants
-	// of deleted codes and an entry for QU.
+
 	for _, m := range []struct{ iso2, iso3 string }{
 		{"CT", "CTE"},
 		{"DY", "DHY"},
@@ -999,7 +947,7 @@ func (b *builder) writeRegion() {
 		{"RH", "RHO"},
 		{"VD", "VDR"},
 		{"WK", "WAK"},
-		// These three-letter codes are used for others as well.
+
 		{"FQ", "ATF"},
 	} {
 		update(m.iso2, m.iso3)
@@ -1013,11 +961,8 @@ func (b *builder) writeRegion() {
 	b.writeConst("altRegionISO3", altRegionISO3)
 	b.writeSlice("altRegionIDs", altRegionIDs)
 
-	// Create list of deprecated regions.
-	// TODO: consider inserting SF -> FI. Not included by CLDR, but is the only
-	// Transitionally-reserved mapping not included.
 	regionOldMap := stringSet{}
-	// Include regions in territoryAlias (not all are in the IANA registry!)
+
 	for _, reg := range b.supp.Metadata.Alias.TerritoryAlias {
 		if len(reg.Type) == 2 && reg.Reason == "deprecated" && len(reg.Replacement) == 2 {
 			regionOldMap.add(reg.Type)
@@ -1032,7 +977,7 @@ func (b *builder) writeRegion() {
 	b.writeSortedMap("regionOldMap", &regionOldMap, func(s string) uint16 {
 		return uint16(b.region.index(s))
 	})
-	// 3-digit region lookup, groupings.
+
 	for i := 1; i < isoOffset; i++ {
 		m := parseM49(b.region.s[i])
 		m49map[i] = m
@@ -1064,11 +1009,10 @@ func (b *builder) writeRegion() {
 }
 
 const (
-	// TODO: put these lists in regionTypes as user data? Could be used for
-	// various optimizations and refinements and could be exposed in the API.
+
 	iso3166Except = "AC CP DG EA EU FX IC SU TA UK"
-	iso3166Trans  = "AN BU CS NT TP YU ZR" // SF is not in our set of Regions.
-	// DY and RH are actually not deleted, but indeterminately reserved.
+	iso3166Trans  = "AN BU CS NT TP YU ZR" 
+
 	iso3166DelCLDR = "CT DD DY FQ HV JT MI NH NQ PC PU PZ RH VD WK YD"
 )
 
@@ -1087,31 +1031,11 @@ func find(list []string, s string) int {
 	return -1
 }
 
-// writeVariants generates per-variant information and creates a map from variant
-// name to index value. We assign index values such that sorting multiple
-// variants by index value will result in the correct order.
-// There are two types of variants: specialized and general. Specialized variants
-// are only applicable to certain language or language-script pairs. Generalized
-// variants apply to any language. Generalized variants always sort after
-// specialized variants.  We will therefore always assign a higher index value
-// to a generalized variant than any other variant. Generalized variants are
-// sorted alphabetically among themselves.
-// Specialized variants may also sort after other specialized variants. Such
-// variants will be ordered after any of the variants they may follow.
-// We assume that if a variant x is followed by a variant y, then for any prefix
-// p of x, p-x is a prefix of y. This allows us to order tags based on the
-// maximum of the length of any of its prefixes.
-// TODO: it is possible to define a set of Prefix values on variants such that
-// a total order cannot be defined to the point that this algorithm breaks.
-// In other words, we cannot guarantee the same order of variants for the
-// future using the same algorithm or for non-compliant combinations of
-// variants. For this reason, consider using simple alphabetic sorting
-// of variants and ignore Prefix restrictions altogether.
 func (b *builder) writeVariant() {
 	generalized := stringSet{}
 	specialized := stringSet{}
 	specializedExtend := stringSet{}
-	// Collate the variants by type and check assumptions.
+
 	for _, v := range b.variant.slice() {
 		e := b.registry[v]
 		if len(e.prefix) == 0 {
@@ -1128,27 +1052,24 @@ func (b *builder) writeVariant() {
 			}
 		}
 		if len(c) == 1 || len(c) == 2 && hasScriptOrRegion {
-			// Variant is preceded by a language.
+
 			specialized.add(v)
 			continue
 		}
-		// Variant is preceded by another variant.
+
 		specializedExtend.add(v)
 		prefix := c[0] + "-"
 		if hasScriptOrRegion {
 			prefix += c[1]
 		}
 		for _, p := range e.prefix {
-			// Verify that the prefix minus the last element is a prefix of the
-			// predecessor element.
+
 			i := strings.LastIndex(p, "-")
 			pred := b.registry[p[i+1:]]
 			if find(pred.prefix, p[:i]) < 0 {
 				log.Fatalf("prefix %q for variant %q not consistent with predecessor spec", p, v)
 			}
-			// The sorting used below does not work in the general case. It works
-			// if we assume that variants that may be followed by others only have
-			// prefixes of the same length. Verify this.
+
 			count := strings.Count(p[:i], "-")
 			for _, q := range pred.prefix {
 				if c := strings.Count(q, "-"); c != count {
@@ -1161,10 +1082,9 @@ func (b *builder) writeVariant() {
 		}
 	}
 
-	// Sort extended variants.
 	a := specializedExtend.s
 	less := func(v, w string) bool {
-		// Sort by the maximum number of elements.
+
 		maxCount := func(s string) (max int) {
 			for _, p := range b.registry[s].prefix {
 				if c := strings.Count(p, "-"); c > max {
@@ -1176,13 +1096,12 @@ func (b *builder) writeVariant() {
 		if cv, cw := maxCount(v), maxCount(w); cv != cw {
 			return cv < cw
 		}
-		// Sort by name as tie breaker.
+
 		return v < w
 	}
 	sort.Sort(funcSorter{less, sort.StringSlice(a)})
 	specializedExtend.frozen = true
 
-	// Create index from variant name to index.
 	variantIndex := make(map[string]uint8)
 	add := func(s []string) {
 		for _, v := range s {
@@ -1203,16 +1122,13 @@ func (b *builder) writeVariant() {
 func (b *builder) writeLanguageInfo() {
 }
 
-// writeLikelyData writes tables that are used both for finding parent relations and for
-// language matching.  Each entry contains additional bits to indicate the status of the
-// data to know when it cannot be used for parent relations.
 func (b *builder) writeLikelyData() {
 	const (
 		isList = 1 << iota
 		scriptInFrom
 		regionInFrom
 	)
-	type ( // generated types
+	type ( 
 		likelyScriptRegion struct {
 			region uint16
 			script uint8
@@ -1227,15 +1143,14 @@ func (b *builder) writeLikelyData() {
 			lang   uint16
 			region uint16
 		}
-		// likelyTag is used for getting likely tags for group regions, where
-		// the likely region might be a region contained in the group.
+
 		likelyTag struct {
 			lang   uint16
 			region uint16
 			script uint8
 		}
 	)
-	var ( // generated variables
+	var ( 
 		likelyRegionGroup = make([]likelyTag, len(b.groups))
 		likelyLang        = make([]likelyScriptRegion, len(b.lang.s))
 		likelyRegion      = make([]likelyLangScript, len(b.region.s))
@@ -1321,7 +1236,7 @@ func (b *builder) writeLikelyData() {
 			}
 		}
 	}
-	// TODO: merge suppressScript data with this table.
+
 	b.writeType(likelyScriptRegion{})
 	b.writeSlice("likelyLang", likelyLang)
 	b.writeSlice("likelyLangList", likelyLangList)
@@ -1368,7 +1283,7 @@ type mutualIntelligibility struct {
 }
 
 type scriptIntelligibility struct {
-	lang       uint16 // langID or 0 if *
+	lang       uint16 
 	want, have uint8
 	conf       uint8
 }
@@ -1387,26 +1302,19 @@ func (l sortByConf) Len() int {
 	return len(l)
 }
 
-// toConf converts a percentage value [0, 100] to a confidence class.
 func toConf(pct uint8) uint8 {
 	switch {
 	case pct == 100:
-		return 3 // Exact
+		return 3 
 	case pct >= 90:
-		return 2 // High
+		return 2 
 	case pct > 50:
-		return 1 // Low
+		return 1 
 	default:
-		return 0 // No
+		return 0 
 	}
 }
 
-// writeMatchData writes tables with languages and scripts for which there is
-// mutual intelligibility. The data is based on CLDR's languageMatching data.
-// Note that we use a different algorithm than the one defined by CLDR and that
-// we slightly modify the data. For example, we convert scores to confidence levels.
-// We also drop all region-related data as we use a different algorithm to
-// determine region equivalence.
 func (b *builder) writeMatchData() {
 	b.writeType(mutualIntelligibility{})
 	b.writeType(scriptIntelligibility{})
@@ -1415,20 +1323,20 @@ func (b *builder) writeMatchData() {
 
 	matchLang := []mutualIntelligibility{}
 	matchScript := []scriptIntelligibility{}
-	// Convert the languageMatch entries in lists keyed by desired language.
+
 	for _, m := range lm[0].LanguageMatch {
-		// Different versions of CLDR use different separators.
+
 		desired := strings.Replace(m.Desired, "-", "_", -1)
 		supported := strings.Replace(m.Supported, "-", "_", -1)
 		d := strings.Split(desired, "_")
 		s := strings.Split(supported, "_")
 		if len(d) != len(s) || len(d) > 2 {
-			// Skip all entries with regions and work around CLDR bug.
+
 			continue
 		}
 		pct, _ := strconv.ParseInt(m.Percent, 10, 8)
 		if len(d) == 2 && d[0] == s[0] && len(d[1]) == 4 {
-			// language-script pair.
+
 			lang := uint16(0)
 			if d[0] != "*" {
 				lang = uint16(b.langIndex(d[0]))
@@ -1449,8 +1357,7 @@ func (b *builder) writeMatchData() {
 			}
 		} else if len(d) == 1 && d[0] != "*" {
 			if pct == 100 {
-				// nb == no is already handled by macro mapping. Check there
-				// really is only this case.
+
 				if d[0] != "no" || s[0] != "nb" {
 					log.Fatalf("unhandled equivalence %s == %s", s[0], d[0])
 				}
@@ -1463,7 +1370,7 @@ func (b *builder) writeMatchData() {
 				oneway: m.Oneway == "true",
 			})
 		} else {
-			// TODO: Handle other mappings.
+
 			a := []string{"*;*", "*_*;*_*", "es_MX;es_419"}
 			s := strings.Join([]string{desired, supported}, ";")
 			if i := sort.SearchStrings(a, s); i == len(a) || a[i] != s {
@@ -1472,7 +1379,7 @@ func (b *builder) writeMatchData() {
 		}
 	}
 	sort.Stable(sortByConf(matchLang))
-	// collapse percentage into confidence classes
+
 	for i, m := range matchLang {
 		matchLang[i].conf = toConf(m.conf)
 	}
@@ -1482,16 +1389,13 @@ func (b *builder) writeMatchData() {
 
 func (b *builder) writeRegionInclusionData() {
 	var (
-		// mm holds for each group the set of groups with a distance of 1.
+
 		mm = make(map[int][]index)
 
-		// containment holds for each group the transitive closure of
-		// containment of other groups.
 		containment = make(map[index][]index)
 	)
 	for _, g := range b.supp.TerritoryContainment.Group {
-		// Skip UN and EURO zone as they are flattening the containment
-		// relationship.
+
 		if g.Type == "EZ" || g.Type == "UN" {
 			continue
 		}
@@ -1511,23 +1415,21 @@ func (b *builder) writeRegionInclusionData() {
 	for _, g := range b.groups {
 		l := containment[g]
 
-		// Compute the transitive closure of containment.
 		for i := 0; i < len(l); i++ {
 			l = append(l, containment[l[i]]...)
 		}
 
-		// Compute the bitmask.
 		regionContainment[g] = 1 << g
 		for _, v := range l {
 			regionContainment[g] |= 1 << v
 		}
-		// log.Printf("%d: %X", g, regionContainment[g])
+
 	}
 	b.writeSlice("regionContainment", regionContainment)
 
 	regionInclusion := make([]uint8, len(b.region.s))
 	bvs := make(map[uint32]index)
-	// Make the first bitvector positions correspond with the groups.
+
 	for r, i := range b.groups {
 		bv := uint32(1 << i)
 		for _, g := range mm[r] {
@@ -1543,7 +1445,7 @@ func (b *builder) writeRegionInclusionData() {
 				bv |= 1 << g
 			}
 			if bv == 0 {
-				// Pick the world for unspecified regions.
+
 				bv = 1 << b.groups[b.region.index("001")]
 			}
 			if _, ok := bvs[bv]; !ok {
@@ -1557,7 +1459,7 @@ func (b *builder) writeRegionInclusionData() {
 	for k, v := range bvs {
 		regionInclusionBits[v] = uint32(k)
 	}
-	// Add bit vectors for increasingly large distances until a fixed point is reached.
+
 	regionInclusionNext := []uint8{}
 	for i := 0; i < len(regionInclusionBits); i++ {
 		bits := regionInclusionBits[i]
@@ -1590,10 +1492,9 @@ func (b *builder) writeParents() {
 
 	parents := []parentRel{}
 
-	// Construct parent overrides.
 	n := 0
 	for _, p := range b.data.Supplemental().ParentLocales.ParentLocale {
-		// Skipping non-standard scripts to root is implemented using addTags.
+
 		if p.Parent == "root" {
 			continue
 		}
@@ -1601,8 +1502,7 @@ func (b *builder) writeParents() {
 		sub := strings.Split(p.Parent, "_")
 		parent := parentRel{lang: b.langIndex(sub[0])}
 		if len(sub) == 2 {
-			// TODO: check that all undefined scripts are indeed Latn in these
-			// cases.
+
 			parent.maxScript = uint8(b.script.index("Latn"))
 			parent.toRegion = uint16(b.region.index(sub[1]))
 		} else {
@@ -1639,7 +1539,7 @@ func main() {
 	b.writeScript()
 	b.writeRegion()
 	b.writeVariant()
-	// TODO: b.writeLocale()
+
 	b.computeRegionGroups()
 	b.writeLikelyData()
 	b.writeMatchData()

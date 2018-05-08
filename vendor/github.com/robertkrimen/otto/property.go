@@ -1,7 +1,5 @@
 package otto
 
-// property
-
 type _propertyMode int
 
 const (
@@ -10,7 +8,7 @@ const (
 	modeConfigureMask               = 0007
 	modeOnMask                      = 0111
 	modeOffMask                     = 0000
-	modeSetMask                     = 0222 // If value is 2, then mode is neither "On" nor "Off"
+	modeSetMask                     = 0222 
 )
 
 type _propertyGetSet [2]*_object
@@ -97,7 +95,7 @@ func (self _property) isAccessorDescriptor() bool {
 }
 
 func (self _property) isDataDescriptor() bool {
-	if self.writeSet() { // Either "On" or "Off"
+	if self.writeSet() { 
 		return true
 	}
 	value, valid := self.value.(Value)
@@ -112,9 +110,6 @@ func (self _property) isEmpty() bool {
 	return self.mode == 0222 && self.isGenericDescriptor()
 }
 
-// _enumerableValue, _enumerableTrue, _enumerableFalse?
-// .enumerableValue() .enumerableExists()
-
 func toPropertyDescriptor(rt *_runtime, value Value) (descriptor _property) {
 	objectDescriptor := value._object()
 	if objectDescriptor == nil {
@@ -122,7 +117,7 @@ func toPropertyDescriptor(rt *_runtime, value Value) (descriptor _property) {
 	}
 
 	{
-		descriptor.mode = modeSetMask // Initially nothing is set
+		descriptor.mode = modeSetMask 
 		if objectDescriptor.hasProperty("enumerable") {
 			if objectDescriptor.get("enumerable").bool() {
 				descriptor.enumerateOn()

@@ -1,13 +1,8 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package openpgp
 
 import "hash"
 
-// NewCanonicalTextHash reformats text written to it into the canonical
-// form and then applies the hash h.  See RFC 4880, section 5.2.1.
 func NewCanonicalTextHash(h hash.Hash) hash.Hash {
 	return &canonicalTextHash{h, 0}
 }

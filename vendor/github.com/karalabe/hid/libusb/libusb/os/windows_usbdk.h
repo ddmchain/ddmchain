@@ -1,25 +1,3 @@
-/*
-* windows UsbDk backend for libusb 1.0
-
-
-* Authors:
-* Dmitry Fleytman <dmitry@daynix.com>
-* Pavel Gurvich <pavel@daynix.com>
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2.1 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-*/
 
 #pragma once
 
@@ -54,12 +32,12 @@ typedef struct tag_USB_DK_ISO_TRANSFER_RESULT {
 
 typedef struct tag_USB_DK_GEN_TRANSFER_RESULT {
 	ULONG64 BytesTransferred;
-	ULONG64 UsbdStatus; // USBD_STATUS code
+	ULONG64 UsbdStatus; 
 } USB_DK_GEN_TRANSFER_RESULT, *PUSB_DK_GEN_TRANSFER_RESULT;
 
 typedef struct tag_USB_DK_TRANSFER_RESULT {
 	USB_DK_GEN_TRANSFER_RESULT GenResult;
-	PVOID64 IsochronousResultsArray; // array of USB_DK_ISO_TRANSFER_RESULT
+	PVOID64 IsochronousResultsArray; 
 } USB_DK_TRANSFER_RESULT, *PUSB_DK_TRANSFER_RESULT;
 
 typedef struct tag_USB_DK_TRANSFER_REQUEST {

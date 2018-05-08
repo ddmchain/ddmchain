@@ -9,7 +9,6 @@ import (
 var (
 	mu sync.Mutex
 
-	// Based on https://github.com/golang/lint/blob/32a87160691b3c96046c0c678fe57c5bef761456/lint.go#L702
 	commonInitialismMap = map[string]struct{}{
 		"API":   struct{}{},
 		"ASCII": struct{}{},
@@ -55,8 +54,6 @@ var (
 	shortestLen       = shortestLength(commonInitialisms, longestLen)
 )
 
-// ToUpperCamelCase returns a copy of the string s with all Unicode letters mapped to their camel case.
-// It will convert to upper case previous letter of '_' and first letter, and remove letter of '_'.
 func ToUpperCamelCase(s string) string {
 	if s == "" {
 		return ""
@@ -118,10 +115,6 @@ func ToUpperCamelCase(s string) string {
 	return string(result)
 }
 
-// ToUpperCamelCaseASCII is similar to ToUpperCamelCase, but optimized for
-// only the ASCII characters.
-// ToUpperCamelCaseASCII is faster than ToUpperCamelCase, but doesn't work if
-// contains non-ASCII characters.
 func ToUpperCamelCaseASCII(s string) string {
 	if s == "" {
 		return ""
@@ -163,10 +156,6 @@ func ToUpperCamelCaseASCII(s string) string {
 	return string(result)
 }
 
-// ToSnakeCase returns a copy of the string s with all Unicode letters mapped to their snake case.
-// It will insert letter of '_' at position of previous letter of uppercase and all
-// letters convert to lower case.
-// ToSnakeCase does not insert '_' letter into a common initialism word like ID, URL and so on.
 func ToSnakeCase(s string) string {
 	if s == "" {
 		return ""
@@ -208,10 +197,6 @@ func ToSnakeCase(s string) string {
 	return string(result)
 }
 
-// ToSnakeCaseASCII is similar to ToSnakeCase, but optimized for only the ASCII
-// characters.
-// ToSnakeCaseASCII is faster than ToSnakeCase, but doesn't work correctly if
-// contains non-ASCII characters.
 func ToSnakeCaseASCII(s string) string {
 	if s == "" {
 		return ""
@@ -238,7 +223,6 @@ func ToSnakeCaseASCII(s string) string {
 	return string(result)
 }
 
-// AddCommonInitialism adds ss to list of common initialisms.
 func AddCommonInitialism(ss ...string) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -251,7 +235,6 @@ func AddCommonInitialism(ss ...string) {
 	shortestLen = shortestLength(commonInitialisms, longestLen)
 }
 
-// DelCommonInitialism deletes ss from list of common initialisms.
 func DelCommonInitialism(ss ...string) {
 	mu.Lock()
 	defer mu.Unlock()

@@ -1,11 +1,4 @@
-/** libkeccak-tiny
-*
-* A single-file implementation of SHA-3 and SHAKE.
-*
-* Implementor: David Leon Gil
-* License: CC0, attribution kindly requested. Blame taken too,
-* but not liability.
-*/
+
 #include "sha3.h"
 
 #include <stdint.h>
@@ -13,9 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/******** The Keccak-f[1600] permutation ********/
-
-/*** Constants. ***/
 static const uint8_t rho[24] = \
 	{ 1,  3,   6, 10, 15, 21,
 	  28, 36, 45, 55,  2, 14,
@@ -34,7 +24,6 @@ static const uint64_t RC[24] = \
 	 0x8000000000008002ULL, 0x8000000000000080ULL, 0x800aULL, 0x800000008000000aULL,
 	 0x8000000080008081ULL, 0x8000000000008080ULL, 0x80000001ULL, 0x8000000080008008ULL};
 
-/*** Helper macros to unroll the permutation. ***/
 #define rol(x, s) (((x) << s) | ((x) >> (64 - s)))
 #define REPEAT6(e) e e e e e e
 #define REPEAT24(e) REPEAT6(e e e e)
@@ -43,7 +32,6 @@ static const uint64_t RC[24] = \
 	v = 0;										\
 	REPEAT5(e; v += s;)
 
-/*** Keccak-f[1600] ***/
 static inline void keccakf(void* state) {
 	uint64_t* a = (uint64_t*)state;
 	uint64_t b[5] = {0};
@@ -51,7 +39,7 @@ static inline void keccakf(void* state) {
 	uint8_t x, y;
 
 	for (int i = 0; i < 24; i++) {
-		// Theta
+
 		FOR5(x, 1,
 				b[x] = 0;
 				FOR5(y, 5,
@@ -59,28 +47,24 @@ static inline void keccakf(void* state) {
 		FOR5(x, 1,
 				FOR5(y, 5,
 						a[y + x] ^= b[(x + 4) % 5] ^ rol(b[(x + 1) % 5], 1); ))
-		// Rho and pi
+
 		t = a[1];
 		x = 0;
 		REPEAT24(b[0] = a[pi[x]];
 				a[pi[x]] = rol(t, rho[x]);
 				t = b[0];
 				x++; )
-		// Chi
+
 		FOR5(y,
 				5,
 				FOR5(x, 1,
 						b[x] = a[y + x];)
 				FOR5(x, 1,
 				a[y + x] = b[x] ^ ((~b[(x + 1) % 5]) & b[(x + 2) % 5]); ))
-		// Iota
+
 		a[0] ^= RC[i];
 	}
 }
-
-/******** The FIPS202-defined functions. ********/
-
-/*** Some helper macros. ***/
 
 #define _(S) do { S } while (0)
 #define FOR(i, ST, L, S)							\
@@ -98,13 +82,12 @@ static inline void keccakf(void* state) {
 		FOR(i, 1, len, S);							\
 	}
 
-mkapply_ds(xorin, dst[i] ^= src[i])  // xorin
-mkapply_sd(setout, dst[i] = src[i])  // setout
+mkapply_ds(xorin, dst[i] ^= src[i])  
+mkapply_sd(setout, dst[i] = src[i])  
 
 #define P keccakf
 #define Plen 200
 
-// Fold P*F over the full blocks of an input.
 #define foldP(I, L, F)								\
 	while (L >= rate) {							\
 		F(a, I, rate);								\
@@ -113,7 +96,6 @@ mkapply_sd(setout, dst[i] = src[i])  // setout
 		L -= rate;									\
 	}
 
-/** The sponge-based hash construction. **/
 static inline int hash(uint8_t* out, size_t outlen,
 		const uint8_t* in, size_t inlen,
 		size_t rate, uint8_t delim) {
@@ -121,16 +103,16 @@ static inline int hash(uint8_t* out, size_t outlen,
 		return -1;
 	}
 	uint8_t a[Plen] = {0};
-	// Absorb input.
+
 	foldP(in, inlen, xorin);
-	// Xor in the DS and pad frame.
+
 	a[inlen] ^= delim;
 	a[rate - 1] ^= 0x80;
-	// Xor in the last block.
+
 	xorin(a, in, inlen);
-	// Apply P
+
 	P(a);
-	// Squeeze output.
+
 	foldP(out, outlen, setout);
 	setout(a, out, outlen);
 	memset(a, 0, 200);
@@ -146,6 +128,5 @@ static inline int hash(uint8_t* out, size_t outlen,
 		return hash(out, outlen, in, inlen, 200 - (bits / 4), 0x01);	\
 	}
 
-/*** FIPS202 SHA3 FOFs ***/
 defsha3(256)
 defsha3(512)

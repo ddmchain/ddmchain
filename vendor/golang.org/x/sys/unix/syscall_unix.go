@@ -1,7 +1,4 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // +build darwin dragonfly freebsd linux netbsd openbsd solaris
 
 package unix
@@ -26,16 +23,12 @@ const (
 	solaris64Bit   = runtime.GOOS == "solaris" && sizeofPtr == 8
 )
 
-// Do the interface allocations only once for common
-// Errno values.
 var (
 	errEAGAIN error = syscall.EAGAIN
 	errEINVAL error = syscall.EINVAL
 	errENOENT error = syscall.ENOENT
 )
 
-// errnoErr returns common boxed Errno values, to prevent
-// allocations at runtime.
 func errnoErr(e syscall.Errno) error {
 	switch e {
 	case 0:
@@ -50,11 +43,9 @@ func errnoErr(e syscall.Errno) error {
 	return e
 }
 
-// Mmap manager, for use by operating system-specific implementations.
-
 type mmapper struct {
 	sync.Mutex
-	active map[*byte][]byte // active mappings; key is last byte in mapping
+	active map[*byte][]byte 
 	mmap   func(addr, length uintptr, prot, flags, fd int, offset int64) (uintptr, error)
 	munmap func(addr uintptr, length uintptr) error
 }
@@ -64,23 +55,19 @@ func (m *mmapper) Mmap(fd int, offset int64, length int, prot int, flags int) (d
 		return nil, EINVAL
 	}
 
-	// Map the requested memory.
 	addr, errno := m.mmap(0, uintptr(length), prot, flags, fd, offset)
 	if errno != nil {
 		return nil, errno
 	}
 
-	// Slice memory layout
 	var sl = struct {
 		addr uintptr
 		len  int
 		cap  int
 	}{addr, length, length}
 
-	// Use unsafe to turn sl into a []byte.
 	b := *(*[]byte)(unsafe.Pointer(&sl))
 
-	// Register mapping in m and return it.
 	p := &b[cap(b)-1]
 	m.Lock()
 	defer m.Unlock()
@@ -93,7 +80,6 @@ func (m *mmapper) Munmap(data []byte) (err error) {
 		return EINVAL
 	}
 
-	// Find the base of the mapping.
 	p := &data[cap(data)-1]
 	m.Lock()
 	defer m.Unlock()
@@ -102,7 +88,6 @@ func (m *mmapper) Munmap(data []byte) (err error) {
 		return EINVAL
 	}
 
-	// Unmap the memory and update m.
 	if errno := m.munmap(uintptr(unsafe.Pointer(&b[0])), uintptr(len(b))); errno != nil {
 		return errno
 	}
@@ -134,12 +119,10 @@ func Write(fd int, p []byte) (n int, err error) {
 	return
 }
 
-// For testing: clients can set this flag to force
-// creation of IPv6 sockets to return EAFNOSUPPORT.
 var SocketDisableIPv6 bool
 
 type Sockaddr interface {
-	sockaddr() (ptr unsafe.Pointer, len _Socklen, err error) // lowercase; only we can define Sockaddrs
+	sockaddr() (ptr unsafe.Pointer, len _Socklen, err error) 
 }
 
 type SockaddrInet4 struct {

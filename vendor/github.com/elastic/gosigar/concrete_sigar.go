@@ -7,7 +7,7 @@ import (
 type ConcreteSigar struct{}
 
 func (c *ConcreteSigar) CollectCpuStats(collectionInterval time.Duration) (<-chan Cpu, chan<- struct{}) {
-	// samplesCh is buffered to 1 value to immediately return first CPU sample
+
 	samplesCh := make(chan Cpu, 1)
 
 	stopCh := make(chan struct{})
@@ -15,8 +15,6 @@ func (c *ConcreteSigar) CollectCpuStats(collectionInterval time.Duration) (<-cha
 	go func() {
 		var cpuUsage Cpu
 
-		// Immediately provide non-delta value.
-		// samplesCh is buffered to 1 value, so it will not block.
 		cpuUsage.Get()
 		samplesCh <- cpuUsage
 
@@ -32,7 +30,7 @@ func (c *ConcreteSigar) CollectCpuStats(collectionInterval time.Duration) (<-cha
 				select {
 				case samplesCh <- cpuUsage.Delta(previousCpuUsage):
 				default:
-					// Include default to avoid channel blocking
+
 				}
 
 			case <-stopCh:
@@ -74,8 +72,6 @@ func (c *ConcreteSigar) GetFDUsage() (FDUsage, error) {
 	return fd, err
 }
 
-// GetRusage return the resource usage of the process
-// Possible params: 0 = RUSAGE_SELF, 1 = RUSAGE_CHILDREN, 2 = RUSAGE_THREAD
 func (c *ConcreteSigar) GetRusage(who int) (Rusage, error) {
 	r := Rusage{}
 	err := r.Get(who)

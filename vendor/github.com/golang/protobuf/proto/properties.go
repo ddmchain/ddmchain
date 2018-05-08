@@ -1,39 +1,5 @@
-// Go support for Protocol Buffers - Google's data interchange format
-//
-
-// https://github.com/golang/protobuf
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package proto
-
-/*
- * Routines for encoding data into the wire format for protocol buffers.
- */
 
 import (
 	"fmt"
@@ -48,7 +14,6 @@ import (
 
 const debug bool = false
 
-// Constants that identify the encoding of a value on the wire.
 const (
 	WireVarint     = 0
 	WireFixed64    = 1
@@ -58,52 +23,31 @@ const (
 	WireFixed32    = 5
 )
 
-const startSize = 10 // initial slice/string sizes
+const startSize = 10 
 
-// Encoders are defined in encode.go
-// An encoder outputs the full representation of a field, including its
-// tag and encoder type.
 type encoder func(p *Buffer, prop *Properties, base structPointer) error
 
-// A valueEncoder encodes a single integer in a particular encoding.
 type valueEncoder func(o *Buffer, x uint64) error
 
-// Sizers are defined in encode.go
-// A sizer returns the encoded size of a field, including its tag and encoder
-// type.
 type sizer func(prop *Properties, base structPointer) int
 
-// A valueSizer returns the encoded size of a single integer in a particular
-// encoding.
 type valueSizer func(x uint64) int
 
-// Decoders are defined in decode.go
-// A decoder creates a value from its wire representation.
-// Unrecognized subelements are saved in unrec.
 type decoder func(p *Buffer, prop *Properties, base structPointer) error
 
-// A valueDecoder decodes a single integer in a particular encoding.
 type valueDecoder func(o *Buffer) (x uint64, err error)
 
-// A oneofMarshaler does the marshaling for all oneof fields in a message.
 type oneofMarshaler func(Message, *Buffer) error
 
-// A oneofUnmarshaler does the unmarshaling for a oneof field in a message.
 type oneofUnmarshaler func(Message, int, int, *Buffer) (bool, error)
 
-// A oneofSizer does the sizing for all oneof fields in a message.
 type oneofSizer func(Message) int
 
-// tagMap is an optimization over map[int]int for typical protocol buffer
-// use-cases. Encoded protocol buffers are often in tag order with small tag
-// numbers.
 type tagMap struct {
 	fastTags []int
 	slowTags map[int]int
 }
 
-// tagMapFastLimit is the upper bound on the tag number that will be stored in
-// the tagMap slice rather than its map.
 const tagMapFastLimit = 1024
 
 func (p *tagMap) get(t int) (int, bool) {
@@ -132,36 +76,28 @@ func (p *tagMap) put(t int, fi int) {
 	p.slowTags[t] = fi
 }
 
-// StructProperties represents properties for all the fields of a struct.
-// decoderTags and decoderOrigNames should only be used by the decoder.
 type StructProperties struct {
-	Prop             []*Properties  // properties for each field
-	reqCount         int            // required count
-	decoderTags      tagMap         // map from proto tag to struct field number
-	decoderOrigNames map[string]int // map from original name to struct field number
-	order            []int          // list of struct field numbers in tag order
-	unrecField       field          // field id of the XXX_unrecognized []byte field
-	extendable       bool           // is this an extendable proto
+	Prop             []*Properties  
+	reqCount         int            
+	decoderTags      tagMap         
+	decoderOrigNames map[string]int 
+	order            []int          
+	unrecField       field          
+	extendable       bool           
 
 	oneofMarshaler   oneofMarshaler
 	oneofUnmarshaler oneofUnmarshaler
 	oneofSizer       oneofSizer
 	stype            reflect.Type
 
-	// OneofTypes contains information about the oneof fields in this message.
-	// It is keyed by the original name of a field.
 	OneofTypes map[string]*OneofProperties
 }
 
-// OneofProperties represents information about a specific field in a oneof.
 type OneofProperties struct {
-	Type  reflect.Type // pointer to generated struct type for this oneof field
-	Field int          // struct field number of the containing oneof in the message
+	Type  reflect.Type 
+	Field int          
 	Prop  *Properties
 }
-
-// Implement the sorting interface so we can sort the fields in tag order, as recommended by the spec.
-// See encode.go, (*Buffer).enc_struct.
 
 func (sp *StructProperties) Len() int { return len(sp.order) }
 func (sp *StructProperties) Less(i, j int) bool {
@@ -169,51 +105,48 @@ func (sp *StructProperties) Less(i, j int) bool {
 }
 func (sp *StructProperties) Swap(i, j int) { sp.order[i], sp.order[j] = sp.order[j], sp.order[i] }
 
-// Properties represents the protocol-specific behavior of a single struct field.
 type Properties struct {
-	Name     string // name of the field, for error messages
-	OrigName string // original name before protocol compiler (always set)
-	JSONName string // name to use for JSON; determined by protoc
+	Name     string 
+	OrigName string 
+	JSONName string 
 	Wire     string
 	WireType int
 	Tag      int
 	Required bool
 	Optional bool
 	Repeated bool
-	Packed   bool   // relevant for repeated primitives only
-	Enum     string // set for enum types only
-	proto3   bool   // whether this is known to be a proto3 field; set for []byte only
-	oneof    bool   // whether this is a oneof field
+	Packed   bool   
+	Enum     string 
+	proto3   bool   
+	oneof    bool   
 
-	Default    string // default value
-	HasDefault bool   // whether an explicit default was provided
+	Default    string 
+	HasDefault bool   
 	def_uint64 uint64
 
 	enc           encoder
-	valEnc        valueEncoder // set for bool and numeric types only
+	valEnc        valueEncoder 
 	field         field
-	tagcode       []byte // encoding of EncodeVarint((Tag<<3)|WireType)
+	tagcode       []byte 
 	tagbuf        [8]byte
-	stype         reflect.Type      // set for struct types only
-	sprop         *StructProperties // set for struct types only
+	stype         reflect.Type      
+	sprop         *StructProperties 
 	isMarshaler   bool
 	isUnmarshaler bool
 
-	mtype    reflect.Type // set for map types only
-	mkeyprop *Properties  // set for map types only
-	mvalprop *Properties  // set for map types only
+	mtype    reflect.Type 
+	mkeyprop *Properties  
+	mvalprop *Properties  
 
 	size    sizer
-	valSize valueSizer // set for bool and numeric types only
+	valSize valueSizer 
 
 	dec    decoder
-	valDec valueDecoder // set for bool and numeric types only
+	valDec valueDecoder 
 
-	// If this is a packable field, this will be the decoder for the packed version of the field.
 	packedDec decoder
 }
 
-// String formats the properties in the protobuf struct field tag style.
 func (p *Properties) String() string {
 	s := p.Wire
 	s = ","
@@ -249,10 +182,9 @@ func (p *Properties) String() string {
 	return s
 }
 
-// Parse populates p by parsing a string in the protobuf struct field tag style.
 func (p *Properties) Parse(s string) {
-	// "bytes,49,opt,name=foo,def=hello!"
-	fields := strings.Split(s, ",") // breaks def=, but handled below.
+
+	fields := strings.Split(s, ",") 
 	if len(fields) < 2 {
 		fmt.Fprintf(os.Stderr, "proto: tag has too few fields: %q\n", s)
 		return
@@ -287,7 +219,7 @@ func (p *Properties) Parse(s string) {
 		p.valSize = sizeZigzag64
 	case "bytes", "group":
 		p.WireType = WireBytes
-		// no numeric converter for non-numeric types
+
 	default:
 		fmt.Fprintf(os.Stderr, "proto: tag has unknown wire type: %q\n", s)
 		return
@@ -322,9 +254,9 @@ func (p *Properties) Parse(s string) {
 			p.oneof = true
 		case strings.HasPrefix(f, "def="):
 			p.HasDefault = true
-			p.Default = f[4:] // rest of string
+			p.Default = f[4:] 
 			if i+1 < len(fields) {
-				// Commas aren't escaped, and def is always last.
+
 				p.Default += "," + strings.Join(fields[i+1:], ",")
 				break
 			}
@@ -338,7 +270,6 @@ func logNoSliceEnc(t1, t2 reflect.Type) {
 
 var protoMessageType = reflect.TypeOf((*Message)(nil)).Elem()
 
-// Initialize the fields for encoding and decoding.
 func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lockGetProp bool) {
 	p.enc = nil
 	p.dec = nil
@@ -347,8 +278,6 @@ func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lock
 	switch t1 := typ; t1.Kind() {
 	default:
 		fmt.Fprintf(os.Stderr, "proto: no coders for %v\n", t1)
-
-	// proto3 scalar types
 
 	case reflect.Bool:
 		p.enc = (*Buffer).enc_proto3_bool
@@ -360,18 +289,18 @@ func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lock
 		p.size = size_proto3_int32
 	case reflect.Uint32:
 		p.enc = (*Buffer).enc_proto3_uint32
-		p.dec = (*Buffer).dec_proto3_int32 // can reuse
+		p.dec = (*Buffer).dec_proto3_int32 
 		p.size = size_proto3_uint32
 	case reflect.Int64, reflect.Uint64:
 		p.enc = (*Buffer).enc_proto3_int64
 		p.dec = (*Buffer).dec_proto3_int64
 		p.size = size_proto3_int64
 	case reflect.Float32:
-		p.enc = (*Buffer).enc_proto3_uint32 // can just treat them as bits
+		p.enc = (*Buffer).enc_proto3_uint32 
 		p.dec = (*Buffer).dec_proto3_int32
 		p.size = size_proto3_uint32
 	case reflect.Float64:
-		p.enc = (*Buffer).enc_proto3_int64 // can just treat them as bits
+		p.enc = (*Buffer).enc_proto3_int64 
 		p.dec = (*Buffer).dec_proto3_int64
 		p.size = size_proto3_int64
 	case reflect.String:
@@ -394,18 +323,18 @@ func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lock
 			p.size = size_int32
 		case reflect.Uint32:
 			p.enc = (*Buffer).enc_uint32
-			p.dec = (*Buffer).dec_int32 // can reuse
+			p.dec = (*Buffer).dec_int32 
 			p.size = size_uint32
 		case reflect.Int64, reflect.Uint64:
 			p.enc = (*Buffer).enc_int64
 			p.dec = (*Buffer).dec_int64
 			p.size = size_int64
 		case reflect.Float32:
-			p.enc = (*Buffer).enc_uint32 // can just treat them as bits
+			p.enc = (*Buffer).enc_uint32 
 			p.dec = (*Buffer).dec_int32
 			p.size = size_uint32
 		case reflect.Float64:
-			p.enc = (*Buffer).enc_int64 // can just treat them as bits
+			p.enc = (*Buffer).enc_int64 
 			p.dec = (*Buffer).dec_int64
 			p.size = size_int64
 		case reflect.String:
@@ -484,7 +413,7 @@ func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lock
 		case reflect.Float32, reflect.Float64:
 			switch t2.Bits() {
 			case 32:
-				// can just treat them as bits
+
 				if p.Packed {
 					p.enc = (*Buffer).enc_slice_packed_uint32
 					p.size = size_slice_packed_uint32
@@ -495,7 +424,7 @@ func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lock
 				p.dec = (*Buffer).dec_slice_int32
 				p.packedDec = (*Buffer).dec_slice_packed_int32
 			case 64:
-				// can just treat them as bits
+
 				if p.Packed {
 					p.enc = (*Buffer).enc_slice_packed_int64
 					p.size = size_slice_packed_int64
@@ -555,14 +484,12 @@ func (p *Properties) setEncAndDec(typ reflect.Type, f *reflect.StructField, lock
 		p.mvalprop = &Properties{}
 		vtype := p.mtype.Elem()
 		if vtype.Kind() != reflect.Ptr && vtype.Kind() != reflect.Slice {
-			// The value type is not a message (*T) or bytes ([]byte),
-			// so we need encoders for the pointer to this type.
+
 			vtype = reflect.PtrTo(vtype)
 		}
 		p.mvalprop.init(vtype, "Value", f.Tag.Get("protobuf_val"), nil, lockGetProp)
 	}
 
-	// precalculate tag code
 	wire := p.WireType
 	if p.Packed {
 		wire = WireBytes
@@ -590,35 +517,28 @@ var (
 	unmarshalerType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
 )
 
-// isMarshaler reports whether type t implements Marshaler.
 func isMarshaler(t reflect.Type) bool {
-	// We're checking for (likely) pointer-receiver methods
-	// so if t is not a pointer, something is very wrong.
-	// The calls above only invoke isMarshaler on pointer types.
+
 	if t.Kind() != reflect.Ptr {
 		panic("proto: misuse of isMarshaler")
 	}
 	return t.Implements(marshalerType)
 }
 
-// isUnmarshaler reports whether type t implements Unmarshaler.
 func isUnmarshaler(t reflect.Type) bool {
-	// We're checking for (likely) pointer-receiver methods
-	// so if t is not a pointer, something is very wrong.
-	// The calls above only invoke isUnmarshaler on pointer types.
+
 	if t.Kind() != reflect.Ptr {
 		panic("proto: misuse of isUnmarshaler")
 	}
 	return t.Implements(unmarshalerType)
 }
 
-// Init populates the properties from a protocol buffer struct tag.
 func (p *Properties) Init(typ reflect.Type, name, tag string, f *reflect.StructField) {
 	p.init(typ, name, tag, f, true)
 }
 
 func (p *Properties) init(typ reflect.Type, name, tag string, f *reflect.StructField, lockGetProp bool) {
-	// "bytes,49,opt,def=hello!"
+
 	p.Name = name
 	p.OrigName = name
 	if f != nil {
@@ -636,15 +556,11 @@ var (
 	propertiesMap = make(map[reflect.Type]*StructProperties)
 )
 
-// GetProperties returns the list of properties for the type represented by t.
-// t must represent a generated struct type of a protocol message.
 func GetProperties(t reflect.Type) *StructProperties {
 	if t.Kind() != reflect.Struct {
 		panic("proto: type must have kind struct")
 	}
 
-	// Most calls to GetProperties in a long-running program will be
-	// retrieving details for types we have seen before.
 	propertiesMu.RLock()
 	sprop, ok := propertiesMap[t]
 	propertiesMu.RUnlock()
@@ -661,7 +577,6 @@ func GetProperties(t reflect.Type) *StructProperties {
 	return sprop
 }
 
-// getPropertiesLocked requires that propertiesMu is held.
 func getPropertiesLocked(t reflect.Type) *StructProperties {
 	if prop, ok := propertiesMap[t]; ok {
 		if collectStats {
@@ -674,10 +589,9 @@ func getPropertiesLocked(t reflect.Type) *StructProperties {
 	}
 
 	prop := new(StructProperties)
-	// in case of recursive protos, fill this in now.
+
 	propertiesMap[t] = prop
 
-	// build properties
 	prop.extendable = reflect.PtrTo(t).Implements(extendableProtoType) ||
 		reflect.PtrTo(t).Implements(extendableProtoV1Type)
 	prop.unrecField = invalidField
@@ -690,20 +604,20 @@ func getPropertiesLocked(t reflect.Type) *StructProperties {
 		name := f.Name
 		p.init(f.Type, name, f.Tag.Get("protobuf"), &f, false)
 
-		if f.Name == "XXX_InternalExtensions" { // special case
+		if f.Name == "XXX_InternalExtensions" { 
 			p.enc = (*Buffer).enc_exts
-			p.dec = nil // not needed
+			p.dec = nil 
 			p.size = size_exts
-		} else if f.Name == "XXX_extensions" { // special case
+		} else if f.Name == "XXX_extensions" { 
 			p.enc = (*Buffer).enc_map
-			p.dec = nil // not needed
+			p.dec = nil 
 			p.size = size_map
-		} else if f.Name == "XXX_unrecognized" { // special case
+		} else if f.Name == "XXX_unrecognized" { 
 			prop.unrecField = toField(&f)
 		}
-		oneof := f.Tag.Get("protobuf_oneof") // special case
+		oneof := f.Tag.Get("protobuf_oneof") 
 		if oneof != "" {
-			// Oneof fields don't use the traditional protobuf tag.
+
 			p.OrigName = oneof
 		}
 		prop.Prop[i] = p
@@ -720,7 +634,6 @@ func getPropertiesLocked(t reflect.Type) *StructProperties {
 		}
 	}
 
-	// Re-order prop.order.
 	sort.Sort(prop)
 
 	type oneofMessage interface {
@@ -731,18 +644,16 @@ func getPropertiesLocked(t reflect.Type) *StructProperties {
 		prop.oneofMarshaler, prop.oneofUnmarshaler, prop.oneofSizer, oots = om.XXX_OneofFuncs()
 		prop.stype = t
 
-		// Interpret oneof metadata.
 		prop.OneofTypes = make(map[string]*OneofProperties)
 		for _, oot := range oots {
 			oop := &OneofProperties{
-				Type: reflect.ValueOf(oot).Type(), // *T
+				Type: reflect.ValueOf(oot).Type(), 
 				Prop: new(Properties),
 			}
 			sft := oop.Type.Elem().Field(0)
 			oop.Prop.Name = sft.Name
 			oop.Prop.Parse(sft.Tag.Get("protobuf"))
-			// There will be exactly one interface field that
-			// this new value is assignable to.
+
 			for i := 0; i < t.NumField(); i++ {
 				f := t.Field(i)
 				if f.Type.Kind() != reflect.Interface {
@@ -758,14 +669,11 @@ func getPropertiesLocked(t reflect.Type) *StructProperties {
 		}
 	}
 
-	// build required counts
-	// build tags
 	reqCount := 0
 	prop.decoderOrigNames = make(map[string]int)
 	for i, p := range prop.Prop {
 		if strings.HasPrefix(p.Name, "XXX_") {
-			// Internal fields should not appear in tags/origNames maps.
-			// They are handled specially when encoding and decoding.
+
 			continue
 		}
 		if p.Required {
@@ -779,7 +687,6 @@ func getPropertiesLocked(t reflect.Type) *StructProperties {
 	return prop
 }
 
-// Return the Properties object for the x[0]'th field of the structure.
 func propByIndex(t reflect.Type, x []int) *Properties {
 	if len(x) != 1 {
 		fmt.Fprintf(os.Stderr, "proto: field index dimension %d (not 1) for type %s\n", len(x), t)
@@ -789,27 +696,21 @@ func propByIndex(t reflect.Type, x []int) *Properties {
 	return prop.Prop[x[0]]
 }
 
-// Get the address and type of a pointer to a struct from an interface.
 func getbase(pb Message) (t reflect.Type, b structPointer, err error) {
 	if pb == nil {
 		err = ErrNil
 		return
 	}
-	// get the reflect type of the pointer to the struct.
+
 	t = reflect.TypeOf(pb)
-	// get the address of the struct.
+
 	value := reflect.ValueOf(pb)
 	b = toStructPointer(value)
 	return
 }
 
-// A global registry of enum types.
-// The generated code will register the generated maps by calling RegisterEnum.
-
 var enumValueMaps = make(map[string]map[string]int32)
 
-// RegisterEnum is called from the generated code to install the enum descriptor
-// maps into the global table to aid parsing text format protocol buffers.
 func RegisterEnum(typeName string, unusedNameMap map[int32]string, valueMap map[string]int32) {
 	if _, ok := enumValueMaps[typeName]; ok {
 		panic("proto: duplicate enum registered: " + typeName)
@@ -817,24 +718,18 @@ func RegisterEnum(typeName string, unusedNameMap map[int32]string, valueMap map[
 	enumValueMaps[typeName] = valueMap
 }
 
-// EnumValueMap returns the mapping from names to integers of the
-// enum type enumType, or a nil if not found.
 func EnumValueMap(enumType string) map[string]int32 {
 	return enumValueMaps[enumType]
 }
 
-// A registry of all linked message types.
-// The string is a fully-qualified proto name ("pkg.Message").
 var (
 	protoTypes    = make(map[string]reflect.Type)
 	revProtoTypes = make(map[reflect.Type]string)
 )
 
-// RegisterType is called from generated code and maps from the fully qualified
-// proto name to the type (pointer to struct) of the protocol buffer.
 func RegisterType(x Message, name string) {
 	if _, ok := protoTypes[name]; ok {
-		// TODO: Some day, make this a panic.
+
 		log.Printf("proto: duplicate proto type registered: %s", name)
 		return
 	}
@@ -843,7 +738,6 @@ func RegisterType(x Message, name string) {
 	revProtoTypes[t] = name
 }
 
-// MessageName returns the fully-qualified proto name for the given message type.
 func MessageName(x Message) string {
 	type xname interface {
 		XXX_MessageName() string
@@ -854,19 +748,14 @@ func MessageName(x Message) string {
 	return revProtoTypes[reflect.TypeOf(x)]
 }
 
-// MessageType returns the message type (pointer to struct) for a named message.
 func MessageType(name string) reflect.Type { return protoTypes[name] }
 
-// A registry of all linked proto files.
 var (
-	protoFiles = make(map[string][]byte) // file name => fileDescriptor
+	protoFiles = make(map[string][]byte) 
 )
 
-// RegisterFile is called from generated code and maps from the
-// full file name of a .proto file to its compressed FileDescriptorProto.
 func RegisterFile(filename string, fileDescriptor []byte) {
 	protoFiles[filename] = fileDescriptor
 }
 
-// FileDescriptor returns the compressed FileDescriptorProto for a .proto file.
 func FileDescriptor(filename string) []byte { return protoFiles[filename] }

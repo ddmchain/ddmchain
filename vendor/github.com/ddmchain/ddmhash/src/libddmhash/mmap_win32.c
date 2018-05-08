@@ -1,15 +1,3 @@
-/* mmap() replacement for Windows
- *
- * Author: Mike Frysinger <vapier@gentoo.org>
- * Placed into the public domain
- */
-
-/* References:
- * CreateFileMapping: http://msdn.microsoft.com/en-us/library/aa366537(VS.85).aspx
- * CloseHandle:       http://msdn.microsoft.com/en-us/library/ms724211(VS.85).aspx
- * MapViewOfFile:     http://msdn.microsoft.com/en-us/library/aa366761(VS.85).aspx
- * UnmapViewOfFile:   http://msdn.microsoft.com/en-us/library/aa366882(VS.85).aspx
- */
 
 #include <io.h>
 #include <windows.h>
@@ -70,7 +58,7 @@ void* mmap(void* start, size_t length, int prot, int flags, int fd, off_t offset
 	if (ret == NULL) {
 		ret = MAP_FAILED;
 	}
-	// since we are handling the file ourselves with fd, close the Windows Handle here
+
 	CloseHandle(h);
 	return ret;
 }

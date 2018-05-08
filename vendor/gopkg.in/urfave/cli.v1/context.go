@@ -8,10 +8,6 @@ import (
 	"syscall"
 )
 
-// Context is a type that is passed through to
-// each Handler action in a cli application. Context
-// can be used to retrieve context-specific Args and
-// parsed command-line options.
 type Context struct {
 	App           *App
 	Command       Command
@@ -21,7 +17,6 @@ type Context struct {
 	parentContext *Context
 }
 
-// NewContext creates a new context. For use in when invoking an App or Command action.
 func NewContext(app *App, set *flag.FlagSet, parentCtx *Context) *Context {
 	c := &Context{App: app, flagSet: set, parentContext: parentCtx}
 
@@ -32,24 +27,20 @@ func NewContext(app *App, set *flag.FlagSet, parentCtx *Context) *Context {
 	return c
 }
 
-// NumFlags returns the number of flags set
 func (c *Context) NumFlags() int {
 	return c.flagSet.NFlag()
 }
 
-// Set sets a context flag to a value.
 func (c *Context) Set(name, value string) error {
 	c.setFlags = nil
 	return c.flagSet.Set(name, value)
 }
 
-// GlobalSet sets a context flag to a value on the global flagset
 func (c *Context) GlobalSet(name, value string) error {
 	globalContext(c).setFlags = nil
 	return globalContext(c).flagSet.Set(name, value)
 }
 
-// IsSet determines if the flag was actually set
 func (c *Context) IsSet(name string) bool {
 	if c.setFlags == nil {
 		c.setFlags = make(map[string]bool)
@@ -65,19 +56,8 @@ func (c *Context) IsSet(name string) bool {
 			c.setFlags[f.Name] = false
 		})
 
-		// XXX hack to support IsSet for flags with EnvVar
-		//
-		// There isn't an easy way to do this with the current implementation since
-		// whether a flag was set via an environment variable is very difficult to
-		// determine here. Instead, we intend to introduce a backwards incompatible
-		// change in version 2 to add `IsSet` to the Flag interface to push the
-		// responsibility closer to where the information required to determine
-		// whether a flag is set by non-standard means such as environment
-		// variables is avaliable.
-		//
-		// See https://github.com/urfave/cli/issues/294 for additional discussion
 		flags := c.Command.Flags
-		if c.Command.Name == "" { // cannot == Command{} since it contains slice types
+		if c.Command.Name == "" { 
 			if c.App != nil {
 				flags = c.App.Flags
 			}
@@ -112,7 +92,6 @@ func (c *Context) IsSet(name string) bool {
 	return c.setFlags[name]
 }
 
-// GlobalIsSet determines if the global flag was actually set
 func (c *Context) GlobalIsSet(name string) bool {
 	ctx := c
 	if ctx.parentContext != nil {
@@ -127,7 +106,6 @@ func (c *Context) GlobalIsSet(name string) bool {
 	return false
 }
 
-// FlagNames returns a slice of flag names used in this context.
 func (c *Context) FlagNames() (names []string) {
 	for _, flag := range c.Command.Flags {
 		name := strings.Split(flag.GetName(), ",")[0]
@@ -139,7 +117,6 @@ func (c *Context) FlagNames() (names []string) {
 	return
 }
 
-// GlobalFlagNames returns a slice of global flag names used by the app.
 func (c *Context) GlobalFlagNames() (names []string) {
 	for _, flag := range c.App.Flags {
 		name := strings.Split(flag.GetName(), ",")[0]
@@ -151,31 +128,25 @@ func (c *Context) GlobalFlagNames() (names []string) {
 	return
 }
 
-// Parent returns the parent context, if any
 func (c *Context) Parent() *Context {
 	return c.parentContext
 }
 
-// value returns the value of the flag coressponding to `name`
 func (c *Context) value(name string) interface{} {
 	return c.flagSet.Lookup(name).Value.(flag.Getter).Get()
 }
 
-// Args contains apps console arguments
 type Args []string
 
-// Args returns the command line arguments associated with the context.
 func (c *Context) Args() Args {
 	args := Args(c.flagSet.Args())
 	return args
 }
 
-// NArg returns the number of the command line arguments.
 func (c *Context) NArg() int {
 	return len(c.Args())
 }
 
-// Get returns the nth argument, or else a blank string
 func (a Args) Get(n int) string {
 	if len(a) > n {
 		return a[n]
@@ -183,13 +154,10 @@ func (a Args) Get(n int) string {
 	return ""
 }
 
-// First returns the first argument, or else a blank string
 func (a Args) First() string {
 	return a.Get(0)
 }
 
-// Tail returns the rest of the arguments (not the first one)
-// or else an empty string slice
 func (a Args) Tail() []string {
 	if len(a) >= 2 {
 		return []string(a)[1:]
@@ -197,12 +165,10 @@ func (a Args) Tail() []string {
 	return []string{}
 }
 
-// Present checks if there are any arguments present
 func (a Args) Present() bool {
 	return len(a) != 0
 }
 
-// Swap swaps arguments at the given indexes
 func (a Args) Swap(from, to int) error {
 	if from >= len(a) || to >= len(a) {
 		return errors.New("index out of range")

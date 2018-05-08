@@ -1,16 +1,5 @@
 
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Package ed25519 implements the Ed25519 signature algorithm. See
-// https://ed25519.cr.yp.to/.
-//
-// These functions are also compatible with the “Ed25519” function defined in
-// RFC 8032.
 package ed25519
-
-// This code is a port of the public domain, “ref10” implementation of ed25519
-// from SUPERCOP.
 
 import (
 	"bytes"
@@ -25,32 +14,24 @@ import (
 )
 
 const (
-	// PublicKeySize is the size, in bytes, of public keys as used in this package.
+
 	PublicKeySize = 32
-	// PrivateKeySize is the size, in bytes, of private keys as used in this package.
+
 	PrivateKeySize = 64
-	// SignatureSize is the size, in bytes, of signatures generated and verified by this package.
+
 	SignatureSize = 64
 )
 
-// PublicKey is the type of Ed25519 public keys.
 type PublicKey []byte
 
-// PrivateKey is the type of Ed25519 private keys. It implements crypto.Signer.
 type PrivateKey []byte
 
-// Public returns the PublicKey corresponding to priv.
 func (priv PrivateKey) Public() crypto.PublicKey {
 	publicKey := make([]byte, PublicKeySize)
 	copy(publicKey, priv[32:])
 	return PublicKey(publicKey)
 }
 
-// Sign signs the given message with priv.
-// Ed25519 performs two passes over messages to be signed and therefore cannot
-// handle pre-hashed messages. Thus opts.HashFunc() must return zero to
-// indicate the message hasn't been hashed. This can be achieved by passing
-// crypto.Hash(0) as the value for opts.
 func (priv PrivateKey) Sign(rand io.Reader, message []byte, opts crypto.SignerOpts) (signature []byte, err error) {
 	if opts.HashFunc() != crypto.Hash(0) {
 		return nil, errors.New("ed25519: cannot sign hashed message")
@@ -59,8 +40,6 @@ func (priv PrivateKey) Sign(rand io.Reader, message []byte, opts crypto.SignerOp
 	return Sign(priv, message), nil
 }
 
-// GenerateKey generates a public/private key pair using entropy from rand.
-// If rand is nil, crypto/rand.Reader will be used.
 func GenerateKey(rand io.Reader) (publicKey PublicKey, privateKey PrivateKey, err error) {
 	if rand == nil {
 		rand = cryptorand.Reader
@@ -91,8 +70,6 @@ func GenerateKey(rand io.Reader) (publicKey PublicKey, privateKey PrivateKey, er
 	return publicKey, privateKey, nil
 }
 
-// Sign signs the message with privateKey and returns a signature. It will
-// panic if len(privateKey) is not PrivateKeySize.
 func Sign(privateKey PrivateKey, message []byte) []byte {
 	if l := len(privateKey); l != PrivateKeySize {
 		panic("ed25519: bad private key length: " + strconv.Itoa(l))
@@ -140,8 +117,6 @@ func Sign(privateKey PrivateKey, message []byte) []byte {
 	return signature
 }
 
-// Verify reports whether sig is a valid signature of message by publicKey. It
-// will panic if len(publicKey) is not PublicKeySize.
 func Verify(publicKey PublicKey, message, sig []byte) bool {
 	if l := len(publicKey); l != PublicKeySize {
 		panic("ed25519: bad public key length: " + strconv.Itoa(l))

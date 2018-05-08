@@ -1,7 +1,5 @@
-// termbox is a library for creating cross-platform text-based interfaces
-package termbox
 
-// public API, common OS agnostic part
+package termbox
 
 type (
 	InputMode  int
@@ -12,37 +10,29 @@ type (
 	Attribute  uint16
 )
 
-// This type represents a termbox event. The 'Mod', 'Key' and 'Ch' fields are
-// valid if 'Type' is EventKey. The 'Width' and 'Height' fields are valid if
-// 'Type' is EventResize. The 'Err' field is valid if 'Type' is EventError.
 type Event struct {
-	Type   EventType // one of Event* constants
-	Mod    Modifier  // one of Mod* constants or 0
-	Key    Key       // one of Key* constants, invalid if 'Ch' is not 0
-	Ch     rune      // a unicode character
-	Width  int       // width of the screen
-	Height int       // height of the screen
-	Err    error     // error in case if input failed
-	MouseX int       // x coord of mouse
-	MouseY int       // y coord of mouse
-	N      int       // number of bytes written when getting a raw event
+	Type   EventType 
+	Mod    Modifier  
+	Key    Key       
+	Ch     rune      
+	Width  int       
+	Height int       
+	Err    error     
+	MouseX int       
+	MouseY int       
+	N      int       
 }
 
-// A cell, single conceptual entity on the screen. The screen is basically a 2d
-// array of cells. 'Ch' is a unicode character, 'Fg' and 'Bg' are foreground
-// and background attributes respectively.
 type Cell struct {
 	Ch rune
 	Fg Attribute
 	Bg Attribute
 }
 
-// To know if termbox has been initialized or not
 var (
 	IsInit bool = false
 )
 
-// Key constants, see Event.Key field.
 const (
 	KeyF1 Key = 0xFFFF - iota
 	KeyF2
@@ -66,7 +56,7 @@ const (
 	KeyArrowDown
 	KeyArrowLeft
 	KeyArrowRight
-	key_min // see terminfo
+	key_min 
 	MouseLeft
 	MouseMiddle
 	MouseRight
@@ -124,14 +114,11 @@ const (
 	KeyCtrl8          Key = 0x7F
 )
 
-// Alt modifier constant, see Event.Mod field and SetInputMode function.
 const (
 	ModAlt Modifier = 1 << iota
 	ModMotion
 )
 
-// Cell colors, you can combine a color with multiple attributes using bitwise
-// OR ('|').
 const (
 	ColorDefault Attribute = iota
 	ColorBlack
@@ -144,21 +131,12 @@ const (
 	ColorWhite
 )
 
-// Cell attributes, it is possible to use multiple attributes by combining them
-// using bitwise OR ('|'). Although, colors cannot be combined. But you can
-// combine attributes and a single color.
-//
-// It's worth mentioning that some platforms don't support certain attibutes.
-// For example windows console doesn't support AttrUnderline. And on some
-// terminals applying AttrBold to background may result in blinking text. Use
-// them with caution and test your code on various terminals.
 const (
 	AttrBold Attribute = 1 << (iota + 9)
 	AttrUnderline
 	AttrReverse
 )
 
-// Input mode. See SetInputMode function.
 const (
 	InputEsc InputMode = 1 << iota
 	InputAlt
@@ -166,7 +144,6 @@ const (
 	InputCurrent InputMode = 0
 )
 
-// Output mode. See SetOutputMode function.
 const (
 	OutputCurrent OutputMode = iota
 	OutputNormal
@@ -175,7 +152,6 @@ const (
 	OutputGrayscale
 )
 
-// Event type. See Event.Type field.
 const (
 	EventKey EventType = iota
 	EventResize

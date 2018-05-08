@@ -1,25 +1,3 @@
-/*
- * windows UsbDk backend for libusb 1.0
- 
-
- * Authors:
- * Dmitry Fleytman <dmitry@daynix.com>
- * Pavel Gurvich <pavel@daynix.com>
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
 
 #include <config.h>
 
@@ -200,7 +178,7 @@ static int usbdk_init(struct libusb_context *ctx)
 {
 	int r;
 
-	if (++concurrent_usage == 0) { // First init?
+	if (++concurrent_usage == 0) { 
 		r = load_usbdk_helper_dll(ctx);
 		if (r)
 			goto init_exit;
@@ -211,18 +189,18 @@ static int usbdk_init(struct libusb_context *ctx)
 		if (r)
 			goto init_exit;
 	}
-	// At this stage, either we went through full init successfully, or didn't need to
+
 	r = LIBUSB_SUCCESS;
 
 init_exit:
-	if (!concurrent_usage && r != LIBUSB_SUCCESS) { // First init failed?
+	if (!concurrent_usage && r != LIBUSB_SUCCESS) { 
 		exit_polling();
 		windows_common_exit();
 		unload_usbdk_helper_dll();
 	}
 
 	if (r != LIBUSB_SUCCESS)
-		--concurrent_usage; // Not expected to call libusb_exit if we failed.
+		--concurrent_usage; 
 
 	return r;
 }
@@ -296,7 +274,6 @@ static void usbdk_device_init(libusb_device *dev, PUSB_DK_DEVICE_INFO info)
 	dev->port_number = (uint8_t)info->Port;
 	dev->parent_dev = NULL;
 
-	//Addresses in libusb are 1-based
 	dev->device_address = (uint8_t)(info->Port + 1);
 
 	dev->num_configurations = info->DeviceDescriptor.bNumConfigurations;
@@ -560,7 +537,7 @@ static int usbdk_do_control_transfer(struct usbi_transfer *itransfer)
 	sysHandle = usbdk_helper.GetRedirectorSystemHandle(priv->redirector_handle);
 
 	wfd = usbi_create_fd(sysHandle, RW_READ, NULL, NULL);
-	// Always use the handle returned from usbi_create_fd (wfd.handle)
+
 	if (wfd.fd < 0)
 		return LIBUSB_ERROR_NO_MEM;
 
@@ -588,7 +565,6 @@ static int usbdk_do_control_transfer(struct usbi_transfer *itransfer)
 		return LIBUSB_ERROR_IO;
 	}
 
-	// Use priv_transfer to store data needed for async polling
 	transfer_priv->pollable_fd = wfd;
 	usbi_add_pollfd(ctx, transfer_priv->pollable_fd.fd, POLLIN);
 
@@ -626,7 +602,7 @@ static int usbdk_do_bulk_transfer(struct usbi_transfer *itransfer)
 	sysHandle = usbdk_helper.GetRedirectorSystemHandle(priv->redirector_handle);
 
 	wfd = usbi_create_fd(sysHandle, IS_XFERIN(transfer) ? RW_READ : RW_WRITE, NULL, NULL);
-	// Always use the handle returned from usbi_create_fd (wfd.handle)
+
 	if (wfd.fd < 0)
 		return LIBUSB_ERROR_NO_MEM;
 
@@ -692,7 +668,7 @@ static int usbdk_do_iso_transfer(struct usbi_transfer *itransfer)
 	sysHandle = usbdk_helper.GetRedirectorSystemHandle(priv->redirector_handle);
 
 	wfd = usbi_create_fd(sysHandle, IS_XFERIN(transfer) ? RW_READ : RW_WRITE, NULL, NULL);
-	// Always use the handle returned from usbi_create_fd (wfd.handle)
+
 	if (wfd.fd < 0) {
 		free(transfer_priv->IsochronousPacketsArray);
 		free(transfer_priv->IsochronousResultsArray);
@@ -734,7 +710,7 @@ static int usbdk_submit_transfer(struct usbi_transfer *itransfer)
 	case LIBUSB_TRANSFER_TYPE_BULK:
 	case LIBUSB_TRANSFER_TYPE_INTERRUPT:
 		if (IS_XFEROUT(transfer) && (transfer->flags & LIBUSB_TRANSFER_ADD_ZERO_PACKET))
-			return LIBUSB_ERROR_NOT_SUPPORTED; //TODO: Check whether we can support this in UsbDk
+			return LIBUSB_ERROR_NOT_SUPPORTED; 
 		else
 			return usbdk_do_bulk_transfer(itransfer);
 	case LIBUSB_TRANSFER_TYPE_ISOCHRONOUS:
@@ -765,8 +741,7 @@ static int usbdk_cancel_transfer(struct usbi_transfer *itransfer)
 
 	switch (transfer->type) {
 	case LIBUSB_TRANSFER_TYPE_CONTROL:
-		// Control transfers cancelled by IoCancelXXX() API
-		// No special treatment needed
+
 		return LIBUSB_SUCCESS;
 	case LIBUSB_TRANSFER_TYPE_BULK:
 	case LIBUSB_TRANSFER_TYPE_INTERRUPT:
@@ -811,8 +786,8 @@ static DWORD usbdk_translate_usbd_status(USBD_STATUS UsbdStatus)
 
 void windows_get_overlapped_result(struct usbi_transfer *transfer, struct winfd *pollable_fd, DWORD *io_result, DWORD *io_size)
 {
-	if (HasOverlappedIoCompletedSync(pollable_fd->overlapped) // Handle async requests that completed synchronously first
-			|| GetOverlappedResult(pollable_fd->handle, pollable_fd->overlapped, io_size, false)) { // Regular async overlapped
+	if (HasOverlappedIoCompletedSync(pollable_fd->overlapped) 
+			|| GetOverlappedResult(pollable_fd->handle, pollable_fd->overlapped, io_size, false)) { 
 		struct libusb_transfer *ltransfer = USBI_TRANSFER_TO_LIBUSB_TRANSFER(transfer);
 		struct usbdk_transfer_priv *transfer_priv = _usbdk_transfer_priv(transfer);
 
@@ -825,10 +800,10 @@ void windows_get_overlapped_result(struct usbi_transfer *transfer, struct winfd 
 				case STATUS_SUCCESS:
 				case STATUS_CANCELLED:
 				case STATUS_REQUEST_CANCELED:
-					lib_desc->status = LIBUSB_TRANSFER_COMPLETED; // == ERROR_SUCCESS
+					lib_desc->status = LIBUSB_TRANSFER_COMPLETED; 
 					break;
 				default:
-					lib_desc->status = LIBUSB_TRANSFER_ERROR; // ERROR_UNKNOWN_EXCEPTION;
+					lib_desc->status = LIBUSB_TRANSFER_ERROR; 
 					break;
 				}
 
@@ -877,8 +852,8 @@ const struct usbi_os_backend usbdk_backend = {
 	NULL,
 	NULL,
 
-	NULL,	// dev_mem_alloc()
-	NULL,	// dev_mem_free()
+	NULL,	
+	NULL,	
 
 	usbdk_kernel_driver_active,
 	usbdk_detach_kernel_driver,
@@ -902,4 +877,4 @@ const struct usbi_os_backend usbdk_backend = {
 	sizeof(struct usbdk_transfer_priv),
 };
 
-#endif /* USE_USBDK */
+#endif 

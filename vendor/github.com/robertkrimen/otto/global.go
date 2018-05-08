@@ -13,7 +13,7 @@ var (
 		},
 	}
 	prototypeValueString = _stringASCII("")
-	// TODO Make this just false?
+
 	prototypeValueBoolean = Value{
 		kind:  valueBoolean,
 		value: false,
@@ -159,7 +159,6 @@ func (runtime *_runtime) _newRegExp(pattern string, flags string) *_object {
 	return self
 }
 
-// TODO Should (probably) be one argument, right? This is redundant
 func (runtime *_runtime) newDate(epoch float64) *_object {
 	self := runtime.newDateObject(epoch)
 	self.prototype = runtime.global.DatePrototype
@@ -201,7 +200,7 @@ func (runtime *_runtime) newNativeFunction(name, file string, line int, _nativeF
 }
 
 func (runtime *_runtime) newNodeFunction(node *_nodeFunctionLiteral, scopeEnvironment _stash) *_object {
-	// TODO Implement 13.2 fully
+
 	self := runtime.newNodeFunctionObject(node, scopeEnvironment)
 	self.prototype = runtime.global.FunctionPrototype
 	prototype := runtime.newObject()
@@ -210,7 +209,6 @@ func (runtime *_runtime) newNodeFunction(node *_nodeFunctionLiteral, scopeEnviro
 	return self
 }
 
-// FIXME Only in one place...
 func (runtime *_runtime) newBoundFunction(target *_object, this Value, argumentList []Value) *_object {
 	self := runtime.newBoundFunctionObject(target, this, argumentList)
 	self.prototype = runtime.global.FunctionPrototype

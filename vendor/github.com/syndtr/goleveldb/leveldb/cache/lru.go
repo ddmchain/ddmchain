@@ -1,9 +1,4 @@
 
-// All rights reserved.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package cache
 
 import (
@@ -187,7 +182,6 @@ func (r *lru) Close() error {
 	return nil
 }
 
-// NewLRU create a new LRU-cache.
 func NewLRU(capacity int) Cacher {
 	r := &lru{capacity: capacity}
 	r.reset()

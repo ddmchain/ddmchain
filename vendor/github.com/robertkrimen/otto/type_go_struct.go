@@ -5,17 +5,9 @@ import (
 	"reflect"
 )
 
-// FIXME Make a note about not being able to modify a struct unless it was
-// passed as a pointer-to: &struct{ ... }
-// This seems to be a limitation of the reflect package.
-// This goes for the other Go constructs too.
-// I guess we could get around it by either:
-// 1. Creating a new struct every time
-// 2. Creating an addressable? struct in the constructor
-
 func (runtime *_runtime) newGoStructObject(value reflect.Value) *_object {
 	self := runtime.newObject()
-	self.class = "Object" // TODO Should this be something else?
+	self.class = "Object" 
 	self.objectClass = _classGoStruct
 	self.value = _newGoStructObject(value)
 	return self
@@ -37,7 +29,7 @@ func _newGoStructObject(value reflect.Value) *_goStructObject {
 
 func (self _goStructObject) getValue(name string) reflect.Value {
 	if validGoStructName(name) {
-		// Do not reveal hidden or unexported fields
+
 		if field := reflect.Indirect(self.value).FieldByName(name); (field != reflect.Value{}) {
 			return field
 		}
@@ -87,13 +79,12 @@ func validGoStructName(name string) bool {
 	if name == "" {
 		return false
 	}
-	return 'A' <= name[0] && name[0] <= 'Z' // TODO What about Unicode?
+	return 'A' <= name[0] && name[0] <= 'Z' 
 }
 
 func goStructEnumerate(self *_object, all bool, each func(string) bool) {
 	object := self.value.(*_goStructObject)
 
-	// Enumerate fields
 	for index := 0; index < reflect.Indirect(object.value).NumField(); index++ {
 		name := reflect.Indirect(object.value).Type().Field(index).Name
 		if validGoStructName(name) {
@@ -103,7 +94,6 @@ func goStructEnumerate(self *_object, all bool, each func(string) bool) {
 		}
 	}
 
-	// Enumerate methods
 	for index := 0; index < object.value.NumMethod(); index++ {
 		name := object.value.Type().Method(index).Name
 		if validGoStructName(name) {

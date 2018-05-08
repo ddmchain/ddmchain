@@ -17,8 +17,7 @@ func handleMountFusefsStderr(errCh chan<- error) func(line string) (ignore bool)
 			noMountpointSuffix = `: No such file or directory`
 		)
 		if strings.HasPrefix(line, noMountpointPrefix) && strings.HasSuffix(line, noMountpointSuffix) {
-			// re-extract it from the error message in case some layer
-			// changed the path
+
 			mountpoint := line[len(noMountpointPrefix) : len(line)-len(noMountpointSuffix)]
 			err := &MountpointDoesNotExistError{
 				Path: mountpoint,
@@ -27,7 +26,7 @@ func handleMountFusefsStderr(errCh chan<- error) func(line string) (ignore bool)
 			case errCh <- err:
 				return true
 			default:
-				// not the first error; fall back to logging it
+
 				return false
 			}
 		}
@@ -36,8 +35,6 @@ func handleMountFusefsStderr(errCh chan<- error) func(line string) (ignore bool)
 	}
 }
 
-// isBoringMountFusefsError returns whether the Wait error is
-// uninteresting; exit status 1 is.
 func isBoringMountFusefsError(err error) bool {
 	if err, ok := err.(*exec.ExitError); ok && err.Exited() {
 		if status, ok := err.Sys().(syscall.WaitStatus); ok && status.ExitStatus() == 1 {
@@ -50,8 +47,7 @@ func isBoringMountFusefsError(err error) bool {
 func mount(dir string, conf *mountConfig, ready chan<- struct{}, errp *error) (*os.File, error) {
 	for k, v := range conf.options {
 		if strings.Contains(k, ",") || strings.Contains(v, ",") {
-			// Silly limitation but the mount helper does not
-			// understand any escaping. See TestMountOptionCommaError.
+
 			return nil, fmt.Errorf("mount options cannot contain commas on FreeBSD: %q=%q", k, v)
 		}
 	}
@@ -90,18 +86,17 @@ func mount(dir string, conf *mountConfig, ready chan<- struct{}, errp *error) (*
 	go lineLogger(&wg, "mount helper error", handleMountFusefsStderr(helperErrCh), stderr)
 	wg.Wait()
 	if err := cmd.Wait(); err != nil {
-		// see if we have a better error to report
+
 		select {
 		case helperErr := <-helperErrCh:
-			// log the Wait error if it's not what we expected
+
 			if !isBoringMountFusefsError(err) {
 				log.Printf("mount helper failed: %v", err)
 			}
-			// and now return what we grabbed from stderr as the real
-			// error
+
 			return nil, helperErr
 		default:
-			// nope, fall back to generic message
+
 		}
 		return nil, fmt.Errorf("mount_fusefs: %v", err)
 	}

@@ -18,48 +18,21 @@ const (
 	tagSkip      = "-"
 )
 
-// Marshal returns the TOML encoding of v.
-//
-// Struct values encode as TOML. Each exported struct field becomes a field of
-// the TOML structure unless
-//   - the field's tag is "-", or
-//   - the field is empty and its tag specifies the "omitempty" option.
-//
-// The "toml" key in the struct field's tag value is the key name, followed by
-// an optional comma and options. Examples:
-//
-//   // Field is ignored by this package.
-//   Field int `toml:"-"`
-//
-//   // Field appears in TOML as key "myName".
-//   Field int `toml:"myName"`
-//
-//   // Field appears in TOML as key "myName" and the field is omitted from the
-//   // result of encoding if its value is empty.
-//   Field int `toml:"myName,omitempty"`
-//
-//   // Field appears in TOML as key "field", but the field is skipped if
-//   // empty. Note the leading comma.
-//   Field int `toml:",omitempty"`
 func (cfg *Config) Marshal(v interface{}) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := cfg.NewEncoder(buf).Encode(v)
 	return buf.Bytes(), err
 }
 
-// A Encoder writes TOML to an output stream.
 type Encoder struct {
 	w   io.Writer
 	cfg *Config
 }
 
-// NewEncoder returns a new Encoder that writes to w.
 func (cfg *Config) NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{w, cfg}
 }
 
-// Encode writes the TOML of v to the stream.
-// See the documentation for Marshal for details about the conversion of Go values to TOML.
 func (e *Encoder) Encode(v interface{}) error {
 	rv := reflect.ValueOf(v)
 	for rv.Kind() == reflect.Ptr {
@@ -84,23 +57,16 @@ func (e *Encoder) Encode(v interface{}) error {
 	return buf.writeTo(e.w, "")
 }
 
-// Marshaler can be implemented to override the encoding of TOML values. The returned text
-// must be a simple TOML value (i.e. not a table) and is inserted into marshaler output.
-//
-// This interface exists for backwards-compatibility reasons. You probably want to
-// implement encoding.TextMarshaler or MarshalerRec instead.
 type Marshaler interface {
 	MarshalTOML() ([]byte, error)
 }
 
-// MarshalerRec can be implemented to override the TOML encoding of a type.
-// The returned value is marshaled in place of the receiver.
 type MarshalerRec interface {
 	MarshalTOML() (interface{}, error)
 }
 
 type tableBuf struct {
-	name       string // already escaped / quoted
+	name       string 
 	body       []byte
 	children   []*tableBuf
 	typ        ast.TableType
@@ -108,7 +74,7 @@ type tableBuf struct {
 }
 
 func (b *tableBuf) writeTo(w io.Writer, prefix string) error {
-	key := b.name // TODO: escape dots
+	key := b.name 
 	if prefix != "" {
 		key = prefix + "." + key
 	}
@@ -149,9 +115,7 @@ func (b *tableBuf) newChild(name string) *tableBuf {
 }
 
 func (b *tableBuf) addChild(child *tableBuf) {
-	// Empty table elision: we can avoid writing a table that doesn't have any keys on its
-	// own. Array tables can't be elided because they define array elements (which would
-	// be missing if elided).
+
 	if len(child.body) == 0 && child.typ == ast.TableTypeNormal {
 		for _, gchild := range child.children {
 			gchild.name = child.name + "." + gchild.name
@@ -166,7 +130,7 @@ func (b *tableBuf) structFields(cfg *Config, rv reflect.Value) error {
 	rt := rv.Type()
 	for i := 0; i < rv.NumField(); i++ {
 		ft := rt.Field(i)
-		if ft.PkgPath != "" && !ft.Anonymous { // not exported
+		if ft.PkgPath != "" && !ft.Anonymous { 
 			continue
 		}
 		name, rest := extractTag(ft.Tag.Get(fieldTagName))
@@ -223,7 +187,7 @@ func (b *tableBuf) field(cfg *Config, name string, rv reflect.Value) error {
 	b.body = append(b.body, " = "...)
 	isTable, err := b.value(cfg, rv, name)
 	if isTable {
-		b.body = b.body[:off] // rub out "key ="
+		b.body = b.body[:off] 
 	} else {
 		b.body = append(b.body, '\n')
 	}
@@ -276,7 +240,7 @@ func (b *tableBuf) value(cfg *Config, rv reflect.Value, name string) (bool, erro
 			}
 		}
 		if !wroteElem {
-			b.body = b.body[:len(b.body)-1] // rub out '['
+			b.body = b.body[:len(b.body)-1] 
 		}
 		b.arrayDepth--
 		return !wroteElem, nil
@@ -324,7 +288,7 @@ func (b *tableBuf) marshaler(cfg *Config, rv reflect.Value, name string) (handle
 }
 
 func encodeTextMarshaler(buf []byte, v string) []byte {
-	// Emit the value without quotes if possible.
+
 	if v == "true" || v == "false" {
 		return append(buf, v...)
 	} else if _, err := time.Parse(time.RFC3339Nano, v); err == nil {
@@ -359,8 +323,7 @@ func encodeMapKey(rv reflect.Value) (string, error) {
 func isEmptyValue(v reflect.Value) bool {
 	switch v.Kind() {
 	case reflect.Array:
-		// encoding/json treats all arrays with non-zero length as non-empty. We check the
-		// array content here because zero-length arrays are almost never used.
+
 		len := v.Len()
 		for i := 0; i < len; i++ {
 			if !isEmptyValue(v.Index(i)) {

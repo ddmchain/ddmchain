@@ -8,7 +8,7 @@ import (
 )
 
 type _dateObject struct {
-	time  Time.Time // Time from the "time" package, a cached version of time
+	time  Time.Time 
 	epoch int64
 	value Value
 	isNaN bool
@@ -31,7 +31,7 @@ type _ecmaTime struct {
 	minute      int
 	second      int
 	millisecond int
-	location    *Time.Location // Basically, either local or UTC
+	location    *Time.Location 
 }
 
 func ecmaTime(goTime Time.Time) _ecmaTime {
@@ -72,7 +72,6 @@ func (self *_dateObject) Value() Value {
 	return self.value
 }
 
-// FIXME A date should only be in the range of -100,000,000 to +100,000,000 (1970): 15.9.1.1
 func (self *_dateObject) SetNaN() {
 	self.time = Time.Time{}
 	self.epoch = -1
@@ -91,14 +90,12 @@ func epoch2dateObject(epoch float64) _dateObject {
 }
 
 func (self *_dateObject) Set(epoch float64) {
-	// epoch
+
 	self.epoch = epochToInteger(epoch)
 
-	// time
 	time, err := epochToTime(epoch)
-	self.time = time // Is either a valid time, or the zero-value for time.Time
+	self.time = time 
 
-	// value & isNaN
 	if err != nil {
 		self.isNaN = true
 		self.epoch = -1
@@ -137,7 +134,6 @@ func (runtime *_runtime) newDateObject(epoch float64) *_object {
 	self := runtime.newObject()
 	self.class = "Date"
 
-	// FIXME This is ugly...
 	date := _dateObject{}
 	date.Set(epoch)
 	self.value = date
@@ -156,7 +152,6 @@ func dateObjectOf(rt *_runtime, _dateObject *_object) _dateObject {
 	return _dateObject.dateValue()
 }
 
-// JavaScript is 0-based, Go is 1-based (15.9.1.4)
 func dateToGoMonth(month int) Time.Month {
 	return Time.Month(month + 1)
 }
@@ -165,7 +160,6 @@ func dateFromGoMonth(month Time.Month) int {
 	return int(month) - 1
 }
 
-// Both JavaScript & Go are 0-based (Sunday == 0)
 func dateToGoDay(day int) Time.Weekday {
 	return Time.Weekday(day)
 }
@@ -187,7 +181,7 @@ func newDateTime(argumentList []Value, location *Time.Location) (epoch float64) 
 		return value, false
 	}
 
-	if len(argumentList) >= 2 { // 2-argument, 3-argument, ...
+	if len(argumentList) >= 2 { 
 		var year, month, day, hour, minute, second, millisecond float64
 		var invalid bool
 		if year, invalid = pick(0, 1900.0); invalid {
@@ -219,10 +213,10 @@ func newDateTime(argumentList []Value, location *Time.Location) (epoch float64) 
 		time := Time.Date(int(year), dateToGoMonth(int(month)), int(day), int(hour), int(minute), int(second), int(millisecond)*1000*1000, location)
 		return timeToEpoch(time)
 
-	} else if len(argumentList) == 0 { // 0-argument
+	} else if len(argumentList) == 0 { 
 		time := Time.Now().UTC()
 		return timeToEpoch(time)
-	} else { // 1-argument
+	} else { 
 		value := valueOfArrayIndex(argumentList, 0)
 		value = toPrimitive(value)
 		if value.IsString() {
@@ -273,7 +267,7 @@ var (
 )
 
 func dateParse(date string) (epoch float64) {
-	// YYYY-MM-DDTHH:mm:ss.sssZ
+
 	var time Time.Time
 	var err error
 	{
@@ -295,5 +289,5 @@ func dateParse(date string) (epoch float64) {
 	if err != nil {
 		return math.NaN()
 	}
-	return float64(time.UnixNano()) / (1000 * 1000) // UnixMilli()
+	return float64(time.UnixNano()) / (1000 * 1000) 
 }

@@ -10,7 +10,6 @@ const nAT_PMP_PORT = 5351
 const nAT_TRIES = 9
 const nAT_INITIAL_MS = 250
 
-// A caller that implements the NAT-PMP RPC protocol.
 type network struct {
 	gateway net.IP
 }
@@ -25,7 +24,6 @@ func (n *network) call(msg []byte, timeout time.Duration) (result []byte, err er
 	}
 	defer conn.Close()
 
-	// 16 bytes is the maximum result size.
 	result = make([]byte, 16)
 
 	var finalTimeout time.Time
@@ -61,11 +59,10 @@ func (n *network) call(msg []byte, timeout time.Duration) (result []byte, err er
 			return
 		}
 		if !remoteAddr.IP.Equal(n.gateway) {
-			// Ignore this packet.
-			// Continue without increasing retransmission timeout or deadline.
+
 			continue
 		}
-		// Trim result to actual number of bytes received
+
 		if bytesRead < len(result) {
 			result = result[:bytesRead]
 		}

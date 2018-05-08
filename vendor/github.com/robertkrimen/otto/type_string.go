@@ -102,7 +102,7 @@ func stringGetOwnProperty(self *_object, name string) *_property {
 	if property := objectGetOwnProperty(self, name); property != nil {
 		return property
 	}
-	// TODO Test a string of length >= +int32 + 1?
+
 	if index := stringToArrayIndex(name); index >= 0 {
 		if chr := stringAt(self.stringValue(), int(index)); chr != utf8.RuneError {
 			return &_property{toValue_string(string(chr)), 0}

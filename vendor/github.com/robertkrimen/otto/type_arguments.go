@@ -27,11 +27,7 @@ func (runtime *_runtime) newArgumentsObject(indexOfParameterName []string, stash
 
 type _argumentsObject struct {
 	indexOfParameterName []string
-	// function(abc, def, ghi)
-	// indexOfParameterName[0] = "abc"
-	// indexOfParameterName[1] = "def"
-	// indexOfParameterName[2] = "ghi"
-	// ...
+
 	stash _stash
 }
 

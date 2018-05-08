@@ -1,9 +1,4 @@
 
-// All rights reserved.
-//
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package leveldb
 
 import (
@@ -24,17 +19,17 @@ func dupOptions(o *opt.Options) *opt.Options {
 
 func (s *session) setOptions(o *opt.Options) {
 	no := dupOptions(o)
-	// Alternative filters.
+
 	if filters := o.GetAltFilters(); len(filters) > 0 {
 		no.AltFilters = make([]filter.Filter, len(filters))
 		for i, filter := range filters {
 			no.AltFilters[i] = &iFilter{filter}
 		}
 	}
-	// Comparer.
+
 	s.icmp = &iComparer{o.GetComparer()}
 	no.Comparer = s.icmp
-	// Filter.
+
 	if filter := o.GetFilter(); filter != nil {
 		no.Filter = &iFilter{filter}
 	}
