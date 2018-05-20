@@ -20,10 +20,10 @@ import (
 )
 
 var (
-	FrontierBlockReward    *big.Int = big.NewInt(5e+18) 
-	ByzantiumBlockReward   *big.Int = big.NewInt(3e+18) 
-	maxUncles                       = 2                 
-	allowedFutureBlockTime          = 15 * time.Second  
+	FrontierBlockReward    *big.Int = big.NewInt(5e+18)
+	ByzantiumBlockReward   *big.Int = big.NewInt(3e+18)
+	maxUncles                       = 2
+	allowedFutureBlockTime          = 15 * time.Second
 )
 
 var (
@@ -132,7 +132,7 @@ func (ddmhash *DDMhash) verifyHeaderWorker(chain consensus.ChainReader, headers 
 		return consensus.ErrUnknownAncestor
 	}
 	if chain.GetHeader(headers[index].Hash(), headers[index].Number.Uint64()) != nil {
-		return nil 
+		return nil
 	}
 	return ddmhash.verifyHeader(chain, headers[index], parent, false, seals[index])
 }
@@ -192,19 +192,19 @@ func (ddmhash *DDMhash) verifyHeader(chain consensus.ChainReader, header, parent
 	}
 
 	if uncle {
-		if header.Time.Cmp(math.MaxBig256) > 0 {
+		if header.TimeMS.Cmp(math.MaxBig256) > 0 {
 			return errLargeBlockTime
 		}
 	} else {
-		if header.Time.Cmp(big.NewInt(time.Now().Add(allowedFutureBlockTime).Unix())) > 0 {
+		if header.TimeMS.Cmp(big.NewInt(time.Now().Add(allowedFutureBlockTime).UnixNano()/1000000)) > 0 {
 			return consensus.ErrFutureBlock
 		}
 	}
-	if header.Time.Cmp(parent.Time) <= 0 {
+	if header.TimeMS.Cmp(parent.TimeMS) <= 0 {
 		return errZeroBlockTime
 	}
 
-	expected := ddmhash.CalcDifficulty(chain, header.Time.Uint64(), parent)
+	expected := ddmhash.CalcDifficulty(chain, header.TimeMS.Uint64(), parent)
 
 	if expected.Cmp(header.Difficulty) != 0 {
 		return fmt.Errorf("invalid difficulty: have %v, want %v", header.Difficulty, expected)
@@ -276,8 +276,8 @@ var (
 
 func calcDifficultyByzantium(time uint64, parent *types.Header) *big.Int {
 
-	bigTime := new(big.Int).SetUint64(time)
-	bigParentTime := new(big.Int).Set(parent.Time)
+	bigTime := new(big.Int).SetUint64(time/1000)
+	bigParentTime := new(big.Int).Set(parent.TimeMS/1000)
 
 	x := new(big.Int)
 	y := new(big.Int)
@@ -304,7 +304,7 @@ func calcDifficultyByzantium(time uint64, parent *types.Header) *big.Int {
 
 	fakeBlockNumber := new(big.Int)
 	if parent.Number.Cmp(big2999999) >= 0 {
-		fakeBlockNumber = fakeBlockNumber.Sub(parent.Number, big2999999) 
+		fakeBlockNumber = fakeBlockNumber.Sub(parent.Number, big2999999)
 	}
 
 	periodCount := fakeBlockNumber
@@ -320,8 +320,8 @@ func calcDifficultyByzantium(time uint64, parent *types.Header) *big.Int {
 
 func calcDifficultyHomestead(time uint64, parent *types.Header) *big.Int {
 
-	bigTime := new(big.Int).SetUint64(time)
-	bigParentTime := new(big.Int).Set(parent.Time)
+	bigTime := new(big.Int).SetUint64(time/1000)
+	bigParentTime := new(big.Int).Set(parent.TimeMS/1000)
 
 	x := new(big.Int)
 	y := new(big.Int)
@@ -359,8 +359,8 @@ func calcDifficultyFrontier(time uint64, parent *types.Header) *big.Int {
 	bigTime := new(big.Int)
 	bigParentTime := new(big.Int)
 
-	bigTime.SetUint64(time)
-	bigParentTime.Set(parent.Time)
+	bigTime.SetUint64(time/1000)
+	bigParentTime.Set(parent.TimeMS/1000)
 
 	if bigTime.Sub(bigTime, bigParentTime).Cmp(params.DurationLimit) < 0 {
 		diff.Add(parent.Difficulty, adjust)
@@ -431,7 +431,7 @@ func (ddmhash *DDMhash) Prepare(chain consensus.ChainReader, header *types.Heade
 	if parent == nil {
 		return consensus.ErrUnknownAncestor
 	}
-	header.Difficulty = ddmhash.CalcDifficulty(chain, header.Time.Uint64(), parent)
+	header.Difficulty = ddmhash.CalcDifficulty(chain, header.TimeMS.Uint64(), parent)
 	return nil
 }
 

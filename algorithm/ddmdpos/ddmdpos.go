@@ -31,6 +31,8 @@ const (
 	inmemorySignatures = 4096
 
 	wiggleTime = 500 * time.Millisecond
+	baseTime 	= 100 * time.Millisecond
+	futureTime 	= 5 * time.Second
 )
 
 var (
@@ -84,7 +86,7 @@ func sigHash(header *types.Header) (hash common.Hash) {
 		header.Number,
 		header.GasLimit,
 		header.GasUsed,
-		header.Time,
+		header.TimeMS,
 		header.Extra[:len(header.Extra)-65],
 		header.MixDigest,
 		header.Nonce,
@@ -177,7 +179,7 @@ func (c *DPos) verifyHeader(chain consensus.ChainReader, header *types.Header, p
 	}
 	number := header.Number.Uint64()
 
-	if header.Time.Cmp(big.NewInt(time.Now().Unix())) > 0 {
+	if header.TimeMS.Cmp(big.NewInt(time.Now().Add(futureTime).UnixNano()/1000000)) > 0 {
 		return consensus.ErrFutureBlock
 	}
 	checkpoint := (number % c.config.Epoch) == 0
@@ -234,7 +236,7 @@ func (c *DPos) verifyCascadingFields(chain consensus.ChainReader, header *types.
 	if parent == nil || parent.Number.Uint64() != number-1 || parent.Hash() != header.ParentHash {
 		return consensus.ErrUnknownAncestor
 	}
-	if parent.Time.Uint64()+c.config.Period > header.Time.Uint64() {
+	if parent.TimeMS.Uint64()+c.config.Period > header.TimeMS.Uint64() {
 		return ErrInvalidTimestamp
 	}
 	arch, err := c.archive(chain, number-1, header.ParentHash, parents)
@@ -414,9 +416,9 @@ func (c *DPos) Prepare(chain consensus.ChainReader, header *types.Header) error 
 	if parent == nil {
 		return consensus.ErrUnknownAncestor
 	}
-	header.Time = new(big.Int).Add(parent.Time, new(big.Int).SetUint64(c.config.Period))
-	if header.Time.Int64() < time.Now().Unix() {
-		header.Time = big.NewInt(time.Now().Unix())
+	header.TimeMS = new(big.Int).Add(parent.TimeMS, new(big.Int).SetUint64(c.config.Period))
+	if header.TimeMS.Int64() < time.Now().UnixNano()/1000000 {
+		header.TimeMS = big.NewInt(time.Now().UnixNano()/1000000)
 	}
 	return nil
 }
@@ -466,10 +468,10 @@ func (c *DPos) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan
 			}
 		}
 	}
-	delay := time.Unix(header.Time.Int64(), 0).Sub(time.Now()) // nolint: gosimple
+	delay := time.Unix(0, header.TimeMS.Int64()*1000000).Sub(time.Now())
 	if header.Difficulty.Cmp(diffNoTurn) == 0 {
-		wiggle := time.Duration(len(arch.Signers)/2+1) * wiggleTime
-		delay += time.Duration(rand.Int63n(int64(wiggle)))
+		wiggle := time.Duration(int64(baseTime) + rand.Int63n(int64(wiggleTime)))
+		delay += wiggle
 
 		log.Trace("Out-of-turn signing requested", "wiggle", common.PrettyDuration(wiggle))
 	}
