@@ -39,7 +39,7 @@ const (
 	bodyCacheLimit      = 256
 	blockCacheLimit     = 256
 	maxFutureBlocks     = 256
-	maxTimeFutureBlocks = 30
+	maxTimeFutureBlocks = 30 * 1000
 	badBlockLimit       = 10
 	triesInMemory       = 128
 
@@ -47,18 +47,18 @@ const (
 )
 
 type CacheConfig struct {
-	Disabled      bool          
-	TrieNodeLimit int           
-	TrieTimeLimit time.Duration 
+	Disabled      bool
+	TrieNodeLimit int
+	TrieTimeLimit time.Duration
 }
 
 type BlockChain struct {
-	chainConfig *params.ChainConfig 
-	cacheConfig *CacheConfig        
+	chainConfig *params.ChainConfig
+	cacheConfig *CacheConfig
 
-	db     ddmdb.Database 
-	triegc *prque.Prque   
-	gcproc time.Duration  
+	db     ddmdb.Database
+	triegc *prque.Prque
+	gcproc time.Duration
 
 	hc            *HeaderChain
 	rmLogsFeed    event.Feed
@@ -69,32 +69,32 @@ type BlockChain struct {
 	scope         event.SubscriptionScope
 	genesisBlock  *types.Block
 
-	mu      sync.RWMutex 
-	chainmu sync.RWMutex 
-	procmu  sync.RWMutex 
+	mu      sync.RWMutex
+	chainmu sync.RWMutex
+	procmu  sync.RWMutex
 
-	checkpoint       int          
-	currentBlock     *types.Block 
-	currentFastBlock *types.Block 
+	checkpoint       int
+	currentBlock     *types.Block
+	currentFastBlock *types.Block
 
-	stateCache   state.Database 
-	bodyCache    *lru.Cache     
-	bodyRLPCache *lru.Cache     
-	blockCache   *lru.Cache     
-	futureBlocks *lru.Cache     
+	stateCache   state.Database
+	bodyCache    *lru.Cache
+	bodyRLPCache *lru.Cache
+	blockCache   *lru.Cache
+	futureBlocks *lru.Cache
 
-	quit    chan struct{} 
-	running int32         
+	quit    chan struct{}
+	running int32
 
-	procInterrupt int32          
-	wg            sync.WaitGroup 
+	procInterrupt int32
+	wg            sync.WaitGroup
 
 	engine    consensus.Engine
-	processor Processor 
-	validator Validator 
+	processor Processor
+	validator Validator
 	vmConfig  vm.Config
 
-	badBlocks *lru.Cache 
+	badBlocks *lru.Cache
 }
 
 func NewBlockChain(db ddmdb.Database, cacheConfig *CacheConfig, chainConfig *params.ChainConfig, engine consensus.Engine, vmConfig vm.Config) (*BlockChain, error) {
@@ -706,7 +706,7 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 
 	bc.mu.Lock()
 	head := blockChain[len(blockChain)-1]
-	if td := bc.GetTd(head.Hash(), head.NumberU64()); td != nil { 
+	if td := bc.GetTd(head.Hash(), head.NumberU64()); td != nil {
 		if bc.GetTd(bc.currentFastBlock.Hash(), bc.currentFastBlock.NumberU64()).Cmp(td) < 0 {
 			if err := WriteHeadFastBlockHash(bc.db, head.Hash()); err != nil {
 				log.Crit("Failed to update head fast block hash", "err", err)
@@ -776,7 +776,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		}
 	} else {
 
-		triedb.Reference(root, common.Hash{}) 
+		triedb.Reference(root, common.Hash{})
 		bc.triegc.Push(root, -float32(block.NumberU64()))
 
 		if current := block.NumberU64(); current > triesInMemory {
@@ -925,9 +925,9 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 
 		case err == consensus.ErrFutureBlock:
 
-			max := big.NewInt(time.Now().Unix() + maxTimeFutureBlocks)
-			if block.Time().Cmp(max) > 0 {
-				return i, events, coalescedLogs, fmt.Errorf("future block: %v > %v", block.Time(), max)
+			max := big.NewInt(time.Now().UnixNano()/1000000 + maxTimeFutureBlocks)
+			if block.TimeMS().Cmp(max) > 0 {
+				return i, events, coalescedLogs, fmt.Errorf("future block: %v > %v", block.TimeMS(), max)
 			}
 			bc.futureBlocks.Add(block.Hash(), block)
 			stats.queued++

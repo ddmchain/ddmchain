@@ -94,12 +94,12 @@ func (b *BlockGen) PrevBlock(index int) *types.Block {
 	return b.chain[index]
 }
 
-func (b *BlockGen) OffsetTime(seconds int64) {
-	b.header.Time.Add(b.header.Time, new(big.Int).SetInt64(seconds))
-	if b.header.Time.Cmp(b.parent.Header().Time) <= 0 {
+func (b *BlockGen) OffsetTime(ms int64) {
+	b.header.TimeMS.Add(b.header.TimeMS, new(big.Int).SetInt64(ms))
+	if b.header.TimeMS.Cmp(b.parent.Header().TimeMS) <= 0 {
 		panic("block time out of range")
 	}
-	b.header.Difficulty = b.engine.CalcDifficulty(b.chainReader, b.header.Time.Uint64(), b.parent.Header())
+	b.header.Difficulty = b.engine.CalcDifficulty(b.chainReader, b.header.TimeMS.Uint64(), b.parent.Header())
 }
 
 func GenerateChain(config *params.ChainConfig, parent *types.Block, engine consensus.Engine, db ddmdb.Database, n int, gen func(int, *BlockGen)) ([]*types.Block, []types.Receipts) {
@@ -159,10 +159,10 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 
 func makeHeader(chain consensus.ChainReader, parent *types.Block, state *state.StateDB, engine consensus.Engine) *types.Header {
 	var time *big.Int
-	if parent.Time() == nil {
-		time = big.NewInt(10)
+	if parent.TimeMS() == nil {
+		time = big.NewInt(10*1000)
 	} else {
-		time = new(big.Int).Add(parent.Time(), big.NewInt(10)) 
+		time = new(big.Int).Add(parent.TimeMS(), big.NewInt(10*1000))
 	}
 
 	return &types.Header{
@@ -171,13 +171,13 @@ func makeHeader(chain consensus.ChainReader, parent *types.Block, state *state.S
 		Coinbase:   parent.Coinbase(),
 		Difficulty: engine.CalcDifficulty(chain, time.Uint64(), &types.Header{
 			Number:     parent.Number(),
-			Time:       new(big.Int).Sub(time, big.NewInt(10)),
+			TimeMS:     new(big.Int).Sub(time, big.NewInt(10*1000)),
 			Difficulty: parent.Difficulty(),
 			UncleHash:  parent.UncleHash(),
 		}),
 		GasLimit: CalcGasLimit(parent),
 		Number:   new(big.Int).Add(parent.Number(), common.Big1),
-		Time:     time,
+		TimeMS:   time,
 	}
 }
 
