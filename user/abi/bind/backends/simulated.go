@@ -337,7 +337,7 @@ func (b *SimulatedBackend) AdjustTime(adjustment time.Duration) error {
 		for _, tx := range b.pendingBlock.Transactions() {
 			block.AddTx(tx)
 		}
-		block.OffsetTime(int64(adjustment.Seconds()))
+		block.OffsetTime(int64(adjustment.Nanoseconds()/1000000))
 	})
 	statedb, _ := b.blockchain.State()
 

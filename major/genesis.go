@@ -61,7 +61,7 @@ type GenesisAccount struct {
 	Storage    map[common.Hash]common.Hash `json:"storage,omitempty"`
 	Balance    *big.Int                    `json:"balance" gencodec:"required"`
 	Nonce      uint64                      `json:"nonce,omitempty"`
-	PrivateKey []byte                      `json:"secretKey,omitempty"` 
+	PrivateKey []byte                      `json:"secretKey,omitempty"`
 }
 
 type genesisSpecMarshaling struct {
@@ -90,7 +90,7 @@ func (h *storageJSON) UnmarshalText(text []byte) error {
 	if len(text) > 64 {
 		return fmt.Errorf("too many hex characters in storage key/value %q", text)
 	}
-	offset := len(h) - len(text)/2 
+	offset := len(h) - len(text)/2
 	if _, err := hex.Decode(h[offset:], text); err != nil {
 		fmt.Println(err)
 		return fmt.Errorf("invalid hex storage key/value %q", text)
@@ -190,7 +190,7 @@ func (g *Genesis) ToBlock(db ddmdb.Database) *types.Block {
 	head := &types.Header{
 		Number:     new(big.Int).SetUint64(g.Number),
 		Nonce:      types.EncodeNonce(g.Nonce),
-		Time:       new(big.Int).SetUint64(g.Timestamp),
+		TimeMS:     new(big.Int).SetUint64(g.Timestamp),
 		ParentHash: g.ParentHash,
 		Extra:      g.ExtraData,
 		GasLimit:   g.GasLimit,
@@ -260,7 +260,7 @@ func DefaultGenesisBlock() *Genesis {
 		Config:     params.MainnetChainConfig,
 		Timestamp:  1519957335,
 		ExtraData:  hexutil.MustDecode("0x0000000000000000000000000000000000000000000000000000000000000000d8b06e69a939154b6fbced56e407adc9e4721842c3402ef48ba5e8bbba9c4ef8223a1b81486ef045d2edeb3c991d569e9bf3453032d9bf40fc5f99030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-		GasLimit:   4712388, 
+		GasLimit:   4712388,
 		Difficulty: big.NewInt(1),
 		Alloc:      decodePrealloc(mainnetAllocData),
 	}
@@ -299,14 +299,14 @@ func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {
 		GasLimit:   6283185,
 		Difficulty: big.NewInt(1),
 		Alloc: map[common.Address]GenesisAccount{
-			common.BytesToAddress([]byte{1}): {Balance: big.NewInt(1)}, 
-			common.BytesToAddress([]byte{2}): {Balance: big.NewInt(1)}, 
-			common.BytesToAddress([]byte{3}): {Balance: big.NewInt(1)}, 
-			common.BytesToAddress([]byte{4}): {Balance: big.NewInt(1)}, 
-			common.BytesToAddress([]byte{5}): {Balance: big.NewInt(1)}, 
-			common.BytesToAddress([]byte{6}): {Balance: big.NewInt(1)}, 
-			common.BytesToAddress([]byte{7}): {Balance: big.NewInt(1)}, 
-			common.BytesToAddress([]byte{8}): {Balance: big.NewInt(1)}, 
+			common.BytesToAddress([]byte{1}): {Balance: big.NewInt(1)},
+			common.BytesToAddress([]byte{2}): {Balance: big.NewInt(1)},
+			common.BytesToAddress([]byte{3}): {Balance: big.NewInt(1)},
+			common.BytesToAddress([]byte{4}): {Balance: big.NewInt(1)},
+			common.BytesToAddress([]byte{5}): {Balance: big.NewInt(1)},
+			common.BytesToAddress([]byte{6}): {Balance: big.NewInt(1)},
+			common.BytesToAddress([]byte{7}): {Balance: big.NewInt(1)},
+			common.BytesToAddress([]byte{8}): {Balance: big.NewInt(1)},
 			faucet: {Balance: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))},
 		},
 	}

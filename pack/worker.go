@@ -46,13 +46,13 @@ type Work struct {
 	config *params.ChainConfig
 	signer types.Signer
 
-	state     *state.StateDB 
-	ancestors *set.Set       
-	family    *set.Set       
-	uncles    *set.Set       
-	tcount    int            
+	state     *state.StateDB
+	ancestors *set.Set
+	family    *set.Set
+	uncles    *set.Set
+	tcount    int
 
-	Block *types.Block 
+	Block *types.Block
 
 	header   *types.Header
 	txs      []*types.Transaction
@@ -98,7 +98,7 @@ type worker struct {
 	uncleMu        sync.Mutex
 	possibleUncles map[common.Hash]*types.Block
 
-	unconfirmed *unconfirmedBlocks 
+	unconfirmed *unconfirmedBlocks
 
 	mining int32
 	atWork int32
@@ -363,13 +363,13 @@ func (self *worker) commitNewWork() {
 	tstart := time.Now()
 	parent := self.chain.CurrentBlock()
 
-	tstamp := tstart.Unix()
-	if parent.Time().Cmp(new(big.Int).SetInt64(tstamp)) >= 0 {
-		tstamp = parent.Time().Int64() + 1
+	tstamp := tstart.UnixNano()/1000000
+	if parent.TimeMS().Cmp(new(big.Int).SetInt64(tstamp)) >= 0 {
+		tstamp = parent.TimeMS().Int64() + 1
 	}
 
-	if now := time.Now().Unix(); tstamp > now+1 {
-		wait := time.Duration(tstamp-now) * time.Second
+	if now := time.Now().UnixNano()/1000000; tstamp > now+1 {
+		wait := time.Duration(tstamp-now) * time.Millisecond
 		log.Info("Mining too far in the future", "wait", common.PrettyDuration(wait))
 		time.Sleep(wait)
 	}
@@ -380,7 +380,7 @@ func (self *worker) commitNewWork() {
 		Number:     num.Add(num, common.Big1),
 		GasLimit:   core.CalcGasLimit(parent),
 		Extra:      self.extra,
-		Time:       big.NewInt(tstamp),
+		TimeMS:     big.NewInt(tstamp),
 	}
 
 	if atomic.LoadInt32(&self.mining) == 1 {
@@ -399,7 +399,7 @@ func (self *worker) commitNewWork() {
 			if self.config.DAOForkSupport {
 				header.Extra = common.CopyBytes(params.DAOForkBlockExtra)
 			} else if bytes.Equal(header.Extra, params.DAOForkBlockExtra) {
-				header.Extra = []byte{} 
+				header.Extra = []byte{}
 			}
 		}
 	}

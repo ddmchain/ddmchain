@@ -277,7 +277,7 @@ var (
 func calcDifficultyByzantium(time uint64, parent *types.Header) *big.Int {
 
 	bigTime := new(big.Int).SetUint64(time/1000)
-	bigParentTime := new(big.Int).Set(parent.TimeMS/1000)
+	bigParentTime := new(big.Int).SetUint64(parent.TimeMS.Uint64()/1000)
 
 	x := new(big.Int)
 	y := new(big.Int)
@@ -321,7 +321,7 @@ func calcDifficultyByzantium(time uint64, parent *types.Header) *big.Int {
 func calcDifficultyHomestead(time uint64, parent *types.Header) *big.Int {
 
 	bigTime := new(big.Int).SetUint64(time/1000)
-	bigParentTime := new(big.Int).Set(parent.TimeMS/1000)
+	bigParentTime := new(big.Int).SetUint64(parent.TimeMS.Uint64()/1000)
 
 	x := new(big.Int)
 	y := new(big.Int)
@@ -360,7 +360,7 @@ func calcDifficultyFrontier(time uint64, parent *types.Header) *big.Int {
 	bigParentTime := new(big.Int)
 
 	bigTime.SetUint64(time/1000)
-	bigParentTime.Set(parent.TimeMS/1000)
+	bigParentTime.SetUint64(parent.TimeMS.Uint64()/1000)
 
 	if bigTime.Sub(bigTime, bigParentTime).Cmp(params.DurationLimit) < 0 {
 		diff.Add(parent.Difficulty, adjust)

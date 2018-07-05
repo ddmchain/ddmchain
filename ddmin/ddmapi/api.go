@@ -147,7 +147,7 @@ func NewPublicAccountAPI(am *accounts.Manager) *PublicAccountAPI {
 }
 
 func (s *PublicAccountAPI) Accounts() []common.Address {
-	addresses := make([]common.Address, 0) 
+	addresses := make([]common.Address, 0)
 	for _, wallet := range s.am.Wallets() {
 		for _, account := range wallet.Accounts() {
 			addresses = append(addresses, account.Address)
@@ -171,7 +171,7 @@ func NewPrivateAccountAPI(b Backend, nonceLock *AddrLocker) *PrivateAccountAPI {
 }
 
 func (s *PrivateAccountAPI) ListAccounts() []common.Address {
-	addresses := make([]common.Address, 0) 
+	addresses := make([]common.Address, 0)
 	for _, wallet := range s.am.Wallets() {
 		for _, account := range wallet.Accounts() {
 			addresses = append(addresses, account.Address)
@@ -188,7 +188,7 @@ type rawWallet struct {
 }
 
 func (s *PrivateAccountAPI) ListWallets() []rawWallet {
-	wallets := make([]rawWallet, 0) 
+	wallets := make([]rawWallet, 0)
 	for _, wallet := range s.am.Wallets() {
 		status, failure := wallet.Status()
 
@@ -345,7 +345,7 @@ func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr c
 	if err != nil {
 		return nil, err
 	}
-	signature[64] += 27 
+	signature[64] += 27
 	return signature, nil
 }
 
@@ -356,7 +356,7 @@ func (s *PrivateAccountAPI) EcRecover(ctx context.Context, data, sig hexutil.Byt
 	if sig[64] != 27 && sig[64] != 28 {
 		return common.Address{}, fmt.Errorf("invalid DDMchain signature (V is not 27 or 28)")
 	}
-	sig[64] -= 27 
+	sig[64] -= 27
 
 	rpk, err := crypto.Ecrecover(signHash(data), sig)
 	if err != nil {
@@ -380,7 +380,7 @@ func NewPublicBlockChainAPI(b Backend) *PublicBlockChainAPI {
 }
 
 func (s *PublicBlockChainAPI) BlockNumber() *big.Int {
-	header, _ := s.b.HeaderByNumber(context.Background(), rpc.LatestBlockNumber) 
+	header, _ := s.b.HeaderByNumber(context.Background(), rpc.LatestBlockNumber)
 	return header.Number
 }
 
@@ -648,7 +648,7 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 }
 
 func (s *PublicBlockChainAPI) rpcOutputBlock(b *types.Block, inclTx bool, fullTx bool) (map[string]interface{}, error) {
-	head := b.Header() 
+	head := b.Header()
 	fields := map[string]interface{}{
 		"number":           (*hexutil.Big)(head.Number),
 		"hash":             b.Hash(),
@@ -665,7 +665,7 @@ func (s *PublicBlockChainAPI) rpcOutputBlock(b *types.Block, inclTx bool, fullTx
 		"size":             hexutil.Uint64(b.Size()),
 		"gasLimit":         hexutil.Uint64(head.GasLimit),
 		"gasUsed":          hexutil.Uint64(head.GasUsed),
-		"timestamp":        (*hexutil.Big)(head.Time),
+		"timestamp":        (*hexutil.Big)(head.TimeMS),
 		"transactionsRoot": head.TxHash,
 		"receiptsRoot":     head.ReceiptHash,
 	}
@@ -871,7 +871,7 @@ func (s *PublicTransactionPoolAPI) GetTransactionReceipt(hash common.Hash) (map[
 	if tx == nil {
 		return nil, errors.New("unknown transaction")
 	}
-	receipt, _, _, _ := core.GetReceipt(s.b.ChainDb(), hash) 
+	receipt, _, _, _ := core.GetReceipt(s.b.ChainDb(), hash)
 	if receipt == nil {
 		return nil, errors.New("unknown receipt")
 	}
@@ -1049,7 +1049,7 @@ func (s *PublicTransactionPoolAPI) Sign(addr common.Address, data hexutil.Bytes)
 
 	signature, err := wallet.SignHash(account, signHash(data))
 	if err == nil {
-		signature[64] += 27 
+		signature[64] += 27
 	}
 	return signature, err
 }
@@ -1236,7 +1236,7 @@ func NewPublicNetAPI(net *p2p.Server, networkVersion uint64) *PublicNetAPI {
 }
 
 func (s *PublicNetAPI) Listening() bool {
-	return true 
+	return true
 }
 
 func (s *PublicNetAPI) PeerCount() hexutil.Uint {
