@@ -7,7 +7,7 @@ import (
 
 const (
 
-	builtinDate_goDateTimeLayout = Time.RFC1123
+	builtinDate_goDateTimeLayout = Time.RFC1123 
 	builtinDate_goDateLayout     = "Mon, 02 Jan 2006"
 	builtinDate_goTimeLayout     = "15:04:05 MST"
 )

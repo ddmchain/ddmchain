@@ -60,6 +60,7 @@ func (t TimeRFC1123) ToTime() time.Time {
 }
 
 func (t TimeRFC1123) String() string {
+
 	b, err := t.MarshalText()
 	if err != nil {
 		return ""

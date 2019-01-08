@@ -15,7 +15,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/sign"
 	"github.com/ddmchain/go-ddmchain/part"
 	"github.com/ddmchain/go-ddmchain/ptl"
-	"github.com/ddmchain/go-ddmchain/trie"
+	"github.com/ddmchain/go-ddmchain/tree"
 )
 
 const (

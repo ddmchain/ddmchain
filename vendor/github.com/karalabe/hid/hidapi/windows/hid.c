@@ -320,7 +320,7 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 		if (write_handle == INVALID_HANDLE_VALUE) {
 
 			goto cont_close;
-		}
+		}		
 
 		attrib.Size = sizeof(HIDD_ATTRIBUTES);
 		HidD_GetAttributes(write_handle, &attrib);
@@ -509,7 +509,7 @@ HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path)
 	}
 	nt_res = HidP_GetCaps(pp_data, &caps);
 	if (nt_res != HIDP_STATUS_SUCCESS) {
-		register_error(dev, "HidP_GetCaps");
+		register_error(dev, "HidP_GetCaps");	
 		goto err_pp_data;
 	}
 	dev->output_report_length = caps.OutputReportByteLength;
@@ -522,7 +522,7 @@ HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path)
 
 err_pp_data:
 		HidD_FreePreparsedData(pp_data);
-err:
+err:	
 		free_hid_device(dev);
 		return NULL;
 }
@@ -765,7 +765,7 @@ HID_API_EXPORT const wchar_t * HID_API_CALL  hid_error(hid_device *dev)
 }
 
 #define P32
-#ifdef S11
+#ifdef S11 
   unsigned short VendorID = 0xa0a0;
 	unsigned short ProductID = 0x0001;
 #endif

@@ -75,7 +75,7 @@ struct duk_number_list_entry {
 };
 
 struct duk_time_components {
-	duk_double_t year;
+	duk_double_t year;          
 	duk_double_t month;         
 	duk_double_t day;           
 	duk_double_t hours;         

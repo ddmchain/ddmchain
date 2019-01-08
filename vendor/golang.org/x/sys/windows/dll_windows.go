@@ -249,6 +249,7 @@ var canDoSearchSystem32Once struct {
 }
 
 func initCanDoSearchSystem32() {
+
 	canDoSearchSystem32Once.v = (modkernel32.NewProc("AddDllDirectory").Find() == nil)
 }
 

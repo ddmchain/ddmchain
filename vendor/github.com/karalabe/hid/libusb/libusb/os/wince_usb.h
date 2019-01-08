@@ -87,3 +87,4 @@ struct wince_transfer_priv {
 	struct winfd pollable_fd;
 	uint8_t interface_number;
 };
+

@@ -58,6 +58,7 @@ func (t *Time) UnmarshalText(data []byte) (err error) {
 }
 
 func (t Time) String() string {
+
 	b, err := t.MarshalText()
 	if err != nil {
 		return ""

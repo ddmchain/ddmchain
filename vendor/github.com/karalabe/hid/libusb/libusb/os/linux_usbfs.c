@@ -108,7 +108,7 @@ static int _get_usbfs_fd(struct libusb_device *dev, mode_t mode, int silent)
 		return fd; 
 
 	if (errno == ENOENT) {
-		if (!silent)
+		if (!silent) 
 			usbi_err(ctx, "File doesn't exist, wait %d ms and try again", delay/1000);
 
 		nanosleep(&(struct timespec){delay / 1000000, (delay * 1000) % 1000000000UL}, NULL);

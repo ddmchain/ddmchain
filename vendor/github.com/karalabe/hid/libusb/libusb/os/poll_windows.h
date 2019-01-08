@@ -73,7 +73,7 @@ int usbi_close(int fd);
 
 void init_polling(void);
 void exit_polling(void);
-struct winfd usbi_create_fd(HANDLE handle, int access_mode,
+struct winfd usbi_create_fd(HANDLE handle, int access_mode, 
 	struct usbi_transfer *transfer, cancel_transfer *cancel_fn);
 void usbi_free_fd(struct winfd* winfd);
 struct winfd fd_to_winfd(int fd);

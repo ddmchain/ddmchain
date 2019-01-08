@@ -13,7 +13,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/user/abi/bind"
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/general/math"
-	"github.com/ddmchain/go-ddmchain/algorithm/ddmhash"
+	"github.com/ddmchain/go-ddmchain/rule/ddmhash"
 	"github.com/ddmchain/go-ddmchain/major"
 	"github.com/ddmchain/go-ddmchain/major/bloombits"
 	"github.com/ddmchain/go-ddmchain/major/state"
@@ -337,7 +337,7 @@ func (b *SimulatedBackend) AdjustTime(adjustment time.Duration) error {
 		for _, tx := range b.pendingBlock.Transactions() {
 			block.AddTx(tx)
 		}
-		block.OffsetTime(int64(adjustment.Nanoseconds()/1000000))
+		block.OffsetTime(int64(adjustment.Seconds()))
 	})
 	statedb, _ := b.blockchain.State()
 
