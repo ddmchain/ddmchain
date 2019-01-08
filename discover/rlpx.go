@@ -67,6 +67,10 @@ func newRLPX(fd net.Conn) transport {
 func (t *rlpx) ReadMsg() (Msg, error) {
 	t.rmu.Lock()
 	defer t.rmu.Unlock()
+
+	tcpConn, _ := t.fd.(*net.TCPConn)
+	tcpConn.SetReadBuffer(64*1024*1024)
+
 	t.fd.SetReadDeadline(time.Now().Add(frameReadTimeout))
 	return t.rw.ReadMsg()
 }
@@ -74,6 +78,10 @@ func (t *rlpx) ReadMsg() (Msg, error) {
 func (t *rlpx) WriteMsg(msg Msg) error {
 	t.wmu.Lock()
 	defer t.wmu.Unlock()
+
+	tcpConn, _ := t.fd.(*net.TCPConn)
+	tcpConn.SetWriteBuffer(64*1024*1024)
+
 	t.fd.SetWriteDeadline(time.Now().Add(frameWriteTimeout))
 	return t.rw.WriteMsg(msg)
 }

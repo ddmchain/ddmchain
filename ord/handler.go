@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/ddmchain/go-ddmchain/general"
-	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/rule"
 	"github.com/ddmchain/go-ddmchain/major"
 	"github.com/ddmchain/go-ddmchain/major/state"
 	"github.com/ddmchain/go-ddmchain/major/types"
@@ -25,7 +25,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/discover/discv5"
 	"github.com/ddmchain/go-ddmchain/part"
 	"github.com/ddmchain/go-ddmchain/ptl"
-	"github.com/ddmchain/go-ddmchain/trie"
+	"github.com/ddmchain/go-ddmchain/tree"
 )
 
 const (

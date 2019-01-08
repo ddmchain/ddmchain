@@ -9,7 +9,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/user"
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/general/hexutil"
-	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/rule"
 	"github.com/ddmchain/go-ddmchain/major"
 	"github.com/ddmchain/go-ddmchain/major/bloombits"
 	"github.com/ddmchain/go-ddmchain/major/types"
@@ -46,9 +46,9 @@ type LightDDMchain struct {
 	reqDist         *requestDistributor
 	retriever       *retrieveManager
 
-	chainDb ddmdb.Database 
+	chainDb ddmdb.Database
 
-	bloomRequests                              chan chan *bloombits.Retrieval 
+	bloomRequests                              chan chan *bloombits.Retrieval
 	bloomIndexer, chtIndexer, bloomTrieIndexer *core.ChainIndexer
 
 	ApiBackend *LesApiBackend
@@ -72,7 +72,6 @@ func New(ctx *node.ServiceContext, config *ddm.Config) (*LightDDMchain, error) {
 	if _, isCompat := genesisErr.(*params.ConfigCompatError); genesisErr != nil && !isCompat {
 		return nil, genesisErr
 	}
-	log.Info("Initialised chain configuration", "config", chainConfig)
 
 	peers := newPeerSet()
 	quitSync := make(chan struct{})
@@ -154,7 +153,7 @@ func (s *LightDummyAPI) Mining() bool {
 }
 
 func (s *LightDDMchain) APIs() []rpc.API {
-	return append(ddmapi.GetAPIs(s.ApiBackend), []rpc.API{
+	return append(ddmapi.GetAPIs(s.ApiBackend, s.engine), []rpc.API{
 		{
 			Namespace: "ddm",
 			Version:   "1.0",

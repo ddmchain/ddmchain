@@ -3,17 +3,7 @@ package web3ext
 
 var Modules = map[string]string{
 	"admin":      Admin_JS,
-	"chequebook": Chequebook_JS,
-	"dpos":       DPos_JS,
-	"debug":      Debug_JS,
-	"ddm":        DDM_JS,
-	"miner":      Miner_JS,
-	"net":        Net_JS,
-	"personal":   Personal_JS,
-	"rpc":        RPC_JS,
-	"shh":        Shh_JS,
-	"swarmfs":    SWARMFS_JS,
-	"txpool":     TxPool_JS,
+	"dpos":     Dpos_JS,
 }
 
 const Chequebook_JS = `
@@ -47,19 +37,19 @@ web3._extend({
 });
 `
 
-const DPos_JS = `
+const Dpos_JS = `
 web3._extend({
 	property: 'dpos',
 	methods: [
 		new web3._extend.Method({
-			name: 'getArchive',
-			call: 'dpos_getArchive',
+			name: 'getSnapshot',
+			call: 'dpos_getSnapshot',
 			params: 1,
 			inputFormatter: [null]
 		}),
 		new web3._extend.Method({
-			name: 'getArchiveAtHash',
-			call: 'dpos_getArchiveAtHash',
+			name: 'getSnapshotAtHash',
+			call: 'dpos_getSnapshotAtHash',
 			params: 1
 		}),
 		new web3._extend.Method({

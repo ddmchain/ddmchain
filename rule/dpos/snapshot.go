@@ -1,8 +1,11 @@
-package ddmdpos
+
+package dpos
 
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/binary"
+	"math/rand"
 
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/major/types"
@@ -11,32 +14,32 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 )
 
-type Tally struct {
-	Authorize bool `json:"authorize"`
-	Votes     int  `json:"votes"`
-}
-
 type Vote struct {
-	Signer    common.Address `json:"signer"`
-	Block     uint64         `json:"block"`
-	Address   common.Address `json:"address"`
-	Authorize bool           `json:"authorize"`
+	Signer    common.Address `json:"signer"`    
+	Block     uint64         `json:"block"`     
+	Address   common.Address `json:"address"`   
+	Authorize bool           `json:"authorize"` 
 }
 
-type Archive struct {
-	config   *params.DPosConfig
-	sigcache *lru.ARCCache
-
-	Number  uint64                      `json:"number"`
-	Hash    common.Hash                 `json:"hash"`
-	Signers map[common.Address]struct{} `json:"signers"`
-	Recents map[uint64]common.Address   `json:"recents"`
-	Votes   []*Vote                     `json:"votes"`
-	Tally   map[common.Address]Tally    `json:"tally"`
+type Tally struct {
+	Authorize bool `json:"authorize"` 
+	Votes     int  `json:"votes"`     
 }
 
-func newArchive(config *params.DPosConfig, sigcache *lru.ARCCache, number uint64, hash common.Hash, signers []common.Address) *Archive {
-	archive := &Archive{
+type Snapshot struct {
+	config   *params.DposConfig 
+	sigcache *lru.ARCCache        
+
+	Number  uint64                      `json:"number"`  
+	Hash    common.Hash                 `json:"hash"`    
+	Signers map[common.Address]struct{} `json:"signers"` 
+	Recents map[uint64]common.Address   `json:"recents"` 
+	Votes   []*Vote                     `json:"votes"`   
+	Tally   map[common.Address]Tally    `json:"tally"`   
+}
+
+func newSnapshot(config *params.DposConfig, sigcache *lru.ARCCache, number uint64, hash common.Hash, signers []common.Address) *Snapshot {
+	snap := &Snapshot{
 		config:   config,
 		sigcache: sigcache,
 		Number:   number,
@@ -46,36 +49,36 @@ func newArchive(config *params.DPosConfig, sigcache *lru.ARCCache, number uint64
 		Tally:    make(map[common.Address]Tally),
 	}
 	for _, signer := range signers {
-		archive.Signers[signer] = struct{}{}
+		snap.Signers[signer] = struct{}{}
 	}
-	return archive
+	return snap
 }
 
-func loadArchive(config *params.DPosConfig, sigcache *lru.ARCCache, db ddmdb.Database, hash common.Hash) (*Archive, error) {
-	blob, err := db.Get(append([]byte("ddmdpos-"), hash[:]...))
+func loadSnapshot(config *params.DposConfig, sigcache *lru.ARCCache, db ddmdb.Database, hash common.Hash) (*Snapshot, error) {
+	blob, err := db.Get(append([]byte("dpos-"), hash[:]...))
 	if err != nil {
 		return nil, err
 	}
-	archive := new(Archive)
-	if err := json.Unmarshal(blob, archive); err != nil {
+	snap := new(Snapshot)
+	if err := json.Unmarshal(blob, snap); err != nil {
 		return nil, err
 	}
-	archive.config = config
-	archive.sigcache = sigcache
+	snap.config = config
+	snap.sigcache = sigcache
 
-	return archive, nil
+	return snap, nil
 }
 
-func (s *Archive) store(db ddmdb.Database) error {
+func (s *Snapshot) store(db ddmdb.Database) error {
 	blob, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
-	return db.Put(append([]byte("ddmdpos-"), s.Hash[:]...), blob)
+	return db.Put(append([]byte("dpos-"), s.Hash[:]...), blob)
 }
 
-func (s *Archive) copy() *Archive {
-	cpy := &Archive{
+func (s *Snapshot) copy() *Snapshot {
+	cpy := &Snapshot{
 		config:   s.config,
 		sigcache: s.sigcache,
 		Number:   s.Number,
@@ -99,15 +102,17 @@ func (s *Archive) copy() *Archive {
 	return cpy
 }
 
-func (s *Archive) validVote(address common.Address, authorize bool) bool {
+func (s *Snapshot) validVote(address common.Address, authorize bool) bool {
 	_, signer := s.Signers[address]
 	return (signer && !authorize) || (!signer && authorize)
 }
 
-func (s *Archive) cast(address common.Address, authorize bool) bool {
+func (s *Snapshot) cast(address common.Address, authorize bool) bool {
+
 	if !s.validVote(address, authorize) {
 		return false
 	}
+
 	if old, ok := s.Tally[address]; ok {
 		old.Votes++
 		s.Tally[address] = old
@@ -117,14 +122,17 @@ func (s *Archive) cast(address common.Address, authorize bool) bool {
 	return true
 }
 
-func (s *Archive) uncast(address common.Address, authorize bool) bool {
+func (s *Snapshot) uncast(address common.Address, authorize bool) bool {
+
 	tally, ok := s.Tally[address]
 	if !ok {
 		return false
 	}
+
 	if tally.Authorize != authorize {
 		return false
 	}
+
 	if tally.Votes > 1 {
 		tally.Votes--
 		s.Tally[address] = tally
@@ -134,10 +142,12 @@ func (s *Archive) uncast(address common.Address, authorize bool) bool {
 	return true
 }
 
-func (s *Archive) apply(headers []*types.Header) (*Archive, error) {
+func (s *Snapshot) apply(headers []*types.Header) (*Snapshot, error) {
+
 	if len(headers) == 0 {
 		return s, nil
 	}
+
 	for i := 0; i < len(headers)-1; i++ {
 		if headers[i+1].Number.Uint64() != headers[i].Number.Uint64()+1 {
 			return nil, errInvalidVotingChain
@@ -146,39 +156,45 @@ func (s *Archive) apply(headers []*types.Header) (*Archive, error) {
 	if headers[0].Number.Uint64() != s.Number+1 {
 		return nil, errInvalidVotingChain
 	}
-	archive := s.copy()
+
+	snap := s.copy()
 
 	for _, header := range headers {
+
 		number := header.Number.Uint64()
 		if number%s.config.Epoch == 0 {
-			archive.Votes = nil
-			archive.Tally = make(map[common.Address]Tally)
+			snap.Votes = nil
+			snap.Tally = make(map[common.Address]Tally)
 		}
-		if limit := uint64(len(archive.Signers)/2 + 1); number >= limit {
-			delete(archive.Recents, number-limit)
+
+		if limit := uint64(len(snap.Signers)/2 + 1); number >= limit {
+			delete(snap.Recents, number-limit)
 		}
+
 		signer, err := ecrecover(header, s.sigcache)
 		if err != nil {
 			return nil, err
 		}
-		if _, ok := archive.Signers[signer]; !ok {
+		if _, ok := snap.Signers[signer]; !ok {
 			return nil, errUnauthorized
 		}
-		for _, recent := range archive.Recents {
+		for _, recent := range snap.Recents {
 			if recent == signer {
 				return nil, errUnauthorized
 			}
 		}
-		archive.Recents[number] = signer
+		snap.Recents[number] = signer
 
-		for i, vote := range archive.Votes {
+		for i, vote := range snap.Votes {
 			if vote.Signer == signer && vote.Address == header.Coinbase {
-				archive.uncast(vote.Address, vote.Authorize)
 
-				archive.Votes = append(archive.Votes[:i], archive.Votes[i+1:]...)
-				break
+				snap.uncast(vote.Address, vote.Authorize)
+
+				snap.Votes = append(snap.Votes[:i], snap.Votes[i+1:]...)
+				break 
 			}
 		}
+
 		var authorize bool
 		switch {
 		case bytes.Equal(header.Nonce[:], nonceAuthVote):
@@ -188,49 +204,53 @@ func (s *Archive) apply(headers []*types.Header) (*Archive, error) {
 		default:
 			return nil, errInvalidVote
 		}
-		if archive.cast(header.Coinbase, authorize) {
-			archive.Votes = append(archive.Votes, &Vote{
+		if snap.cast(header.Coinbase, authorize) {
+			snap.Votes = append(snap.Votes, &Vote{
 				Signer:    signer,
 				Block:     number,
 				Address:   header.Coinbase,
 				Authorize: authorize,
 			})
 		}
-		if tally := archive.Tally[header.Coinbase]; tally.Votes > len(archive.Signers)/2 {
+
+		if tally := snap.Tally[header.Coinbase]; tally.Votes > len(snap.Signers)/2 {
 			if tally.Authorize {
-				archive.Signers[header.Coinbase] = struct{}{}
+				snap.Signers[header.Coinbase] = struct{}{}
 			} else {
-				delete(archive.Signers, header.Coinbase)
+				delete(snap.Signers, header.Coinbase)
 
-				if limit := uint64(len(archive.Signers)/2 + 1); number >= limit {
-					delete(archive.Recents, number-limit)
+				if limit := uint64(len(snap.Signers)/2 + 1); number >= limit {
+					delete(snap.Recents, number-limit)
 				}
-				for i := 0; i < len(archive.Votes); i++ {
-					if archive.Votes[i].Signer == header.Coinbase {
-						archive.uncast(archive.Votes[i].Address, archive.Votes[i].Authorize)
 
-						archive.Votes = append(archive.Votes[:i], archive.Votes[i+1:]...)
+				for i := 0; i < len(snap.Votes); i++ {
+					if snap.Votes[i].Signer == header.Coinbase {
+
+						snap.uncast(snap.Votes[i].Address, snap.Votes[i].Authorize)
+
+						snap.Votes = append(snap.Votes[:i], snap.Votes[i+1:]...)
 
 						i--
 					}
 				}
 			}
-			for i := 0; i < len(archive.Votes); i++ {
-				if archive.Votes[i].Address == header.Coinbase {
-					archive.Votes = append(archive.Votes[:i], archive.Votes[i+1:]...)
+
+			for i := 0; i < len(snap.Votes); i++ {
+				if snap.Votes[i].Address == header.Coinbase {
+					snap.Votes = append(snap.Votes[:i], snap.Votes[i+1:]...)
 					i--
 				}
 			}
-			delete(archive.Tally, header.Coinbase)
+			delete(snap.Tally, header.Coinbase)
 		}
 	}
-	archive.Number += uint64(len(headers))
-	archive.Hash = headers[len(headers)-1].Hash()
+	snap.Number += uint64(len(headers))
+	snap.Hash = headers[len(headers)-1].Hash()
 
-	return archive, nil
+	return snap, nil
 }
 
-func (s *Archive) signers() []common.Address {
+func (s *Snapshot) signers() []common.Address {
 	signers := make([]common.Address, 0, len(s.Signers))
 	for signer := range s.Signers {
 		signers = append(signers, signer)
@@ -245,7 +265,7 @@ func (s *Archive) signers() []common.Address {
 	return signers
 }
 
-func (s *Archive) ableSigners(number uint64) []common.Address {
+func (s *Snapshot) ableSigners(number uint64) []common.Address {
 	recents := make(map[uint64]common.Address)
 	for block, recent := range s.Recents {
 		recents[block] = recent
@@ -277,7 +297,7 @@ func (s *Archive) ableSigners(number uint64) []common.Address {
 	return signers
 }
 
-func (s *Archive) inturn(number uint64, signer common.Address, hash common.Hash) bool {
+func (s *Snapshot) inturn(number uint64, signer common.Address, hash common.Hash, confirmRand uint64) bool {
 	var lowHash int64
 	b_buf := bytes.NewBuffer(hash[len(hash)-8:])
 	binary.Read(b_buf, binary.BigEndian, &lowHash)
@@ -285,12 +305,17 @@ func (s *Archive) inturn(number uint64, signer common.Address, hash common.Hash)
 	signers, offset := s.ableSigners(number), 0
 	sigLen := len(signers)
 
+	var curTurn int
 	rand.Seed(lowHash)
- 	curTurn := rand.Intn(sigLen)
+	for i := uint64(0); i < confirmRand; i++ {
+		curTurn = rand.Intn(sigLen)
+	}
 
 	for offset < sigLen && signers[offset] != signer {
 		offset++
 	}
 
-	return (curTurn == offset)
+	ret := (curTurn == offset)
+
+	return ret
 }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/ptl"
-	"github.com/ddmchain/go-ddmchain/trie"
+	"github.com/ddmchain/go-ddmchain/tree"
 )
 
 type DerivableList interface {

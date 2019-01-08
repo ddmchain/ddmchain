@@ -17,7 +17,7 @@ import (
 	"unsafe"
 
 	mmap "github.com/edsrzf/mmap-go"
-	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/rule"
 	"github.com/ddmchain/go-ddmchain/sign"
 	"github.com/ddmchain/go-ddmchain/control"
 	"github.com/hashicorp/golang-lru/simplelru"

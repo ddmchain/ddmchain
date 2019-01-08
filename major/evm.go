@@ -5,7 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ddmchain/go-ddmchain/general"
-	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/rule"
 	"github.com/ddmchain/go-ddmchain/major/types"
 	"github.com/ddmchain/go-ddmchain/major/vm"
 )
@@ -21,7 +21,7 @@ func NewEVMContext(msg Message, header *types.Header, chain ChainContext, author
 
 	var beneficiary common.Address
 	if author == nil {
-		beneficiary, _ = chain.Engine().Author(header)
+		beneficiary, _ = chain.Engine().Author(header) 
 	} else {
 		beneficiary = *author
 	}
@@ -32,7 +32,7 @@ func NewEVMContext(msg Message, header *types.Header, chain ChainContext, author
 		Origin:      msg.From(),
 		Coinbase:    beneficiary,
 		BlockNumber: new(big.Int).Set(header.Number),
-		Time:        new(big.Int).SetUint64(header.TimeMS.Uint64()/1000),
+		Time:        new(big.Int).Set(header.Time),
 		Difficulty:  new(big.Int).Set(header.Difficulty),
 		GasLimit:    header.GasLimit,
 		GasPrice:    new(big.Int).Set(msg.GasPrice()),

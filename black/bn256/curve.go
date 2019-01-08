@@ -156,6 +156,7 @@ func (c *curvePoint) Add(a, b *curvePoint, pool *bnPool) {
 }
 
 func (c *curvePoint) Double(a *curvePoint, pool *bnPool) {
+
 	A := pool.Get().Mul(a.x, a.x)
 	A.Mod(A, P)
 	B := pool.Get().Mul(a.y, a.y)

@@ -190,7 +190,7 @@ func (g *Genesis) ToBlock(db ddmdb.Database) *types.Block {
 	head := &types.Header{
 		Number:     new(big.Int).SetUint64(g.Number),
 		Nonce:      types.EncodeNonce(g.Nonce),
-		TimeMS:     new(big.Int).SetUint64(g.Timestamp),
+		Time:       new(big.Int).SetUint64(g.Timestamp),
 		ParentHash: g.ParentHash,
 		Extra:      g.ExtraData,
 		GasLimit:   g.GasLimit,
@@ -258,9 +258,9 @@ func GenesisBlockForTesting(db ddmdb.Database, addr common.Address, balance *big
 func DefaultGenesisBlock() *Genesis {
 	return &Genesis{
 		Config:     params.MainnetChainConfig,
-		Timestamp:  1519957335,
-		ExtraData:  hexutil.MustDecode("0x0000000000000000000000000000000000000000000000000000000000000000d8b06e69a939154b6fbced56e407adc9e4721842c3402ef48ba5e8bbba9c4ef8223a1b81486ef045d2edeb3c991d569e9bf3453032d9bf40fc5f99030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-		GasLimit:   4712388,
+		Timestamp:  1545207620,
+		ExtraData:  hexutil.MustDecode("0x0000000000000000000000000000000000000000000000000000000000000000353b107a445883ab8019348fc50512d6889de0442ff4ea2f4b441603cad35b07cc49dd068f048ade2227b990be0ad303f3b1aaf03e84c83515d7cf85a7465e31d38c7a7d040219808d6864a727de721bac4b7ae8c60bf6a812099ae2f7c5efe894a8c2c57e796bc6ef93db00dd42385252df0ad54b74404accc19f2582a79582b60aab32da03cb81e9e87dac0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+		GasLimit:   47123880*5,
 		Difficulty: big.NewInt(1),
 		Alloc:      decodePrealloc(mainnetAllocData),
 	}
@@ -280,7 +280,7 @@ func DefaultTestnetGenesisBlock() *Genesis {
 func DefaultRinkebyGenesisBlock() *Genesis {
 	return &Genesis{
 		Config:     params.RinkebyChainConfig,
-		Timestamp:  1492009146,
+		Timestamp:  1523930607,
 		ExtraData:  hexutil.MustDecode("0x52657370656374206d7920617574686f7269746168207e452e436172746d616e42eb768f2244c8811c63729a21a3569731535f067ffc57839b00206d1ad20c69a1981b489f772031b279182d99e65703f0076e4812653aab85fca0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
 		GasLimit:   4700000,
 		Difficulty: big.NewInt(1),
@@ -290,8 +290,8 @@ func DefaultRinkebyGenesisBlock() *Genesis {
 
 func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {
 
-	config := *params.AllDPosProtocolChanges
-	config.DPos.Period = period
+	config := *params.AllDposProtocolChanges
+	config.Dpos.Period = period
 
 	return &Genesis{
 		Config:     &config,

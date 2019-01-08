@@ -23,8 +23,6 @@ import (
 const (
 
 	chainHeadChanSize = 10
-
-	rmTxChanSize = 10
 )
 
 var (
@@ -49,8 +47,8 @@ var (
 )
 
 var (
-	evictionInterval    = time.Minute     
-	statsReportInterval = 8 * time.Second 
+	evictionInterval = time.Minute 
+
 )
 
 var (
@@ -106,15 +104,15 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
 
-	PriceLimit: 1,
-	PriceBump:  10,
+	PriceLimit: 1,  
+	PriceBump:  10, 
 
-	AccountSlots: 16,
-	GlobalSlots:  4096,
-	AccountQueue: 64,
-	GlobalQueue:  1024,
+	AccountSlots: 16 *10,   
+	GlobalSlots:  4096 *10, 
+	AccountQueue: 64 *10,   
+	GlobalQueue:  1024 *10, 
 
-	Lifetime: 3 * time.Hour,
+	Lifetime: 3 * time.Hour, 
 }
 
 func (config *TxPoolConfig) sanitize() TxPoolConfig {
@@ -206,11 +204,6 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 func (pool *TxPool) loop() {
 	defer pool.wg.Done()
 
-	var prevPending, prevQueued, prevStales int
-
-	report := time.NewTicker(statsReportInterval)
-	defer report.Stop()
-
 	evict := time.NewTicker(evictionInterval)
 	defer evict.Stop()
 
@@ -228,25 +221,14 @@ func (pool *TxPool) loop() {
 				if pool.chainconfig.IsHomestead(ev.Block.Number()) {
 					pool.homestead = true
 				}
+
 				pool.reset(head.Header(), ev.Block.Header())
 				head = ev.Block
-
 				pool.mu.Unlock()
 			}
 
 		case <-pool.chainHeadSub.Err():
 			return
-
-		case <-report.C:
-			pool.mu.RLock()
-			pending, queued := pool.stats()
-			stales := pool.priced.stales
-			pool.mu.RUnlock()
-
-			if pending != prevPending || queued != prevQueued || stales != prevStales {
-				log.Debug("Transaction pool status report", "executable", pending, "queued", queued, "stales", stales)
-				prevPending, prevQueued, prevStales = pending, queued, stales
-			}
 
 		case <-evict.C:
 			pool.mu.Lock()
@@ -259,6 +241,7 @@ func (pool *TxPool) loop() {
 				if time.Since(pool.beats[addr]) > pool.config.Lifetime {
 					for _, tx := range pool.queue[addr].Flatten() {
 						pool.removeTx(tx.Hash())
+
 					}
 				}
 			}
@@ -388,6 +371,7 @@ func (pool *TxPool) SetGasPrice(price *big.Int) {
 	pool.gasPrice = price
 	for _, tx := range pool.priced.Cap(price, pool.locals) {
 		pool.removeTx(tx.Hash())
+
 	}
 	log.Info("Transaction pool price threshold updated", "price", price)
 }
@@ -440,7 +424,9 @@ func (pool *TxPool) Pending() (map[common.Address]types.Transactions, error) {
 	pending := make(map[common.Address]types.Transactions)
 	for addr, list := range pool.pending {
 		pending[addr] = list.Flatten()
+
 	}
+
 	return pending, nil
 }
 
@@ -512,7 +498,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 		return false, err
 	}
 
-	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
+	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue { 
 
 		if pool.priced.Underpriced(tx, pool.locals) {
 			log.Trace("Discarding underpriced transaction", "hash", hash, "price", tx.GasPrice())
@@ -525,10 +511,12 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Hash(), "price", tx.GasPrice())
 			underpricedTxCounter.Inc(1)
 			pool.removeTx(tx.Hash())
+
 		}
 	}
 
 	from, _ := types.Sender(pool.signer, tx) 
+
 	if list := pool.pending[from]; list != nil && list.Overlaps(tx) {
 
 		inserted, old := list.Add(tx, pool.config.PriceBump)
@@ -573,6 +561,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 	if pool.queue[from] == nil {
 		pool.queue[from] = newTxList(false)
 	}
+
 	inserted, old := pool.queue[from].Add(tx, pool.config.PriceBump)
 	if !inserted {
 
@@ -584,6 +573,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 		delete(pool.all, old.Hash())
 		pool.priced.Removed()
 		queuedReplaceCounter.Inc(1)
+
 	}
 	pool.all[hash] = tx
 	pool.priced.Put(tx)
@@ -608,6 +598,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	list := pool.pending[addr]
 
 	inserted, old := list.Add(tx, pool.config.PriceBump)
+
 	if !inserted {
 
 		delete(pool.all, hash)
@@ -618,6 +609,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	}
 
 	if old != nil {
+
 		delete(pool.all, old.Hash())
 		pool.priced.Removed()
 
@@ -668,7 +660,9 @@ func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
 }
 
 func (pool *TxPool) addTxs(txs []*types.Transaction, local bool) []error {
+
 	pool.mu.Lock()
+
 	defer pool.mu.Unlock()
 
 	return pool.addTxsLocked(txs, local)
@@ -685,6 +679,7 @@ func (pool *TxPool) addTxsLocked(txs []*types.Transaction, local bool) []error {
 			if !replace {
 				from, _ := types.Sender(pool.signer, tx) 
 				dirty[from] = struct{}{}
+
 			}
 		}
 	}
@@ -778,11 +773,13 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 			continue 
 		}
 
-		for _, tx := range list.Forward(pool.currentState.GetNonce(addr)) {
+		testcurnonce := pool.currentState.GetNonce(addr) 
+		for _, tx := range list.Forward(testcurnonce) {
 			hash := tx.Hash()
 			log.Trace("Removed old queued transaction", "hash", hash)
 			delete(pool.all, hash)
 			pool.priced.Removed()
+
 		}
 
 		drops, _ := list.Filter(pool.currentState.GetBalance(addr), pool.currentMaxGas)
@@ -792,6 +789,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 			delete(pool.all, hash)
 			pool.priced.Removed()
 			queuedNofundsCounter.Inc(1)
+
 		}
 
 		for _, tx := range list.Ready(pool.pendingState.GetNonce(addr)) {
@@ -801,12 +799,14 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 		}
 
 		if !pool.locals.contains(addr) {
+
 			for _, tx := range list.Cap(int(pool.config.AccountQueue)) {
 				hash := tx.Hash()
 				delete(pool.all, hash)
 				pool.priced.Removed()
 				queuedRateLimitCounter.Inc(1)
 				log.Trace("Removed cap-exceeding queued transaction", "hash", hash)
+
 			}
 		}
 
@@ -820,6 +820,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 		pending += uint64(list.Len())
 	}
 	if pending > pool.config.GlobalSlots {
+
 		pendingBeforeCap := pending
 
 		spammers := prque.New()
@@ -905,6 +906,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 			if size := uint64(list.Len()); size <= drop {
 				for _, tx := range list.Flatten() {
 					pool.removeTx(tx.Hash())
+
 				}
 				drop -= size
 				queuedRateLimitCounter.Inc(int64(size))
@@ -914,6 +916,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 			txs := list.Flatten()
 			for i := len(txs) - 1; i >= 0 && drop > 0; i-- {
 				pool.removeTx(txs[i].Hash())
+
 				drop--
 				queuedRateLimitCounter.Inc(1)
 			}
@@ -940,11 +943,13 @@ func (pool *TxPool) demoteUnexecutables() {
 			delete(pool.all, hash)
 			pool.priced.Removed()
 			pendingNofundsCounter.Inc(1)
+
 		}
 		for _, tx := range invalids {
 			hash := tx.Hash()
 			log.Trace("Demoting pending transaction", "hash", hash)
 			pool.enqueueTx(hash, tx)
+
 		}
 
 		if list.Len() > 0 && list.txs.Get(nonce) == nil {
@@ -952,6 +957,7 @@ func (pool *TxPool) demoteUnexecutables() {
 				hash := tx.Hash()
 				log.Error("Demoting invalidated transaction", "hash", hash)
 				pool.enqueueTx(hash, tx)
+
 			}
 		}
 

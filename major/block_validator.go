@@ -4,7 +4,7 @@ package core
 import (
 	"fmt"
 
-	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/rule"
 	"github.com/ddmchain/go-ddmchain/major/state"
 	"github.com/ddmchain/go-ddmchain/major/types"
 	"github.com/ddmchain/go-ddmchain/part"

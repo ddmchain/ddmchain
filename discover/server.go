@@ -76,6 +76,8 @@ type Config struct {
 	EnableMsgEvents bool
 
 	Logger log.Logger `toml:",omitempty"`
+
+	SuperNode	bool
 }
 
 type Server struct {
@@ -528,6 +530,7 @@ running:
 			if err == nil {
 
 				p := newPeer(c, srv.Protocols)
+				p.setSuperNode(srv.SuperNode)
 
 				if srv.EnableMsgEvents {
 					p.events = &srv.peerFeed

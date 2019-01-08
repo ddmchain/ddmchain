@@ -66,6 +66,7 @@ func (BitCurve *BitCurve) Add(x1, y1, x2, y2 *big.Int) (*big.Int, *big.Int) {
 }
 
 func (BitCurve *BitCurve) addJacobian(x1, y1, z1, x2, y2, z2 *big.Int) (*big.Int, *big.Int, *big.Int) {
+
 	z1z1 := new(big.Int).Mul(z1, z1)
 	z1z1.Mod(z1z1, BitCurve.P)
 	z2z2 := new(big.Int).Mul(z2, z2)

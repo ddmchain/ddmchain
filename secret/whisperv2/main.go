@@ -11,7 +11,7 @@ import (
 
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/black"
-	"github.com/ddmchain/go-ddmchain/logger"
+	"github.com/ddmchain/go-ddmchain/signger"
 	"github.com/ddmchain/go-ddmchain/discover"
 	"github.com/ddmchain/go-ddmchain/discover/nat"
 	"github.com/ddmchain/go-ddmchain/secret"

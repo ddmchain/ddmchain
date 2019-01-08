@@ -152,6 +152,7 @@ func (c *twistPoint) Add(a, b *twistPoint, pool *bnPool) {
 }
 
 func (c *twistPoint) Double(a *twistPoint, pool *bnPool) {
+
 	A := newGFp2(pool).Square(a.x, pool)
 	B := newGFp2(pool).Square(a.y, pool)
 	C_ := newGFp2(pool).Square(B, pool)

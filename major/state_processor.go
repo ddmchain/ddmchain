@@ -3,8 +3,8 @@ package core
 
 import (
 	"github.com/ddmchain/go-ddmchain/general"
-	"github.com/ddmchain/go-ddmchain/algorithm"
-	"github.com/ddmchain/go-ddmchain/algorithm/misc"
+	"github.com/ddmchain/go-ddmchain/rule"
+	"github.com/ddmchain/go-ddmchain/rule/misc"
 	"github.com/ddmchain/go-ddmchain/major/state"
 	"github.com/ddmchain/go-ddmchain/major/types"
 	"github.com/ddmchain/go-ddmchain/major/vm"

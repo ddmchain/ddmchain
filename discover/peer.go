@@ -78,8 +78,10 @@ type Peer struct {
 	protoErr chan error
 	closed   chan struct{}
 	disc     chan DiscReason
+	supernode	bool
 
 	events *event.Feed
+
 }
 
 func NewPeer(id discover.NodeID, name string, caps []Cap) *Peer {
@@ -88,6 +90,10 @@ func NewPeer(id discover.NodeID, name string, caps []Cap) *Peer {
 	peer := newPeer(conn, nil)
 	close(peer.closed) 
 	return peer
+}
+
+func (p *Peer) SuperNode() bool {
+	return p.supernode
 }
 
 func (p *Peer) ID() discover.NodeID {
@@ -140,6 +146,11 @@ func newPeer(conn *conn, protocols []Protocol) *Peer {
 	return p
 }
 
+func (p *Peer) setSuperNode(sn bool) error {
+	p.supernode = sn
+	return nil
+}
+
 func (p *Peer) Log() log.Logger {
 	return p.log
 }
@@ -165,6 +176,7 @@ loop:
 
 			if err != nil {
 				reason = DiscNetworkError
+
 				break loop
 			}
 			writeStart <- struct{}{}
@@ -175,11 +187,14 @@ loop:
 			} else {
 				reason = DiscNetworkError
 			}
+
 			break loop
 		case err = <-p.protoErr:
 			reason = discReasonForError(err)
+
 			break loop
 		case err = <-p.disc:
+
 			break loop
 		}
 	}
@@ -211,7 +226,9 @@ func (p *Peer) pingLoop() {
 func (p *Peer) readLoop(errc chan<- error) {
 	defer p.wg.Done()
 	for {
+
 		msg, err := p.rw.ReadMsg()
+
 		if err != nil {
 			errc <- err
 			return
@@ -221,6 +238,7 @@ func (p *Peer) readLoop(errc chan<- error) {
 			errc <- err
 			return
 		}
+
 	}
 }
 
@@ -245,6 +263,7 @@ func (p *Peer) handle(msg Msg) error {
 		}
 		select {
 		case proto.in <- msg:
+
 			return nil
 		case <-p.closed:
 			return io.EOF
@@ -351,9 +370,11 @@ func (rw *protoRW) WriteMsg(msg Msg) (err error) {
 }
 
 func (rw *protoRW) ReadMsg() (Msg, error) {
+
 	select {
 	case msg := <-rw.in:
 		msg.Code -= rw.offset
+
 		return msg, nil
 	case <-rw.closed:
 		return Msg{}, io.EOF

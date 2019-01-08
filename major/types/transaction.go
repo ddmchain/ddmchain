@@ -372,6 +372,14 @@ func (t *TransactionsByPriceAndNonce) Pop() {
 	heap.Pop(&t.heads)
 }
 
+func (t *TransactionsByPriceAndNonce) GetTxsLen() uint64 {
+	pendingNum := uint64(0)
+	for _, list := range t.txs {
+		pendingNum += uint64(list.Len())
+	}
+	return pendingNum
+}
+
 type Message struct {
 	to         *common.Address
 	from       common.Address

@@ -16,6 +16,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/signal"
 	"github.com/ddmchain/go-ddmchain/part"
 	"github.com/ddmchain/go-ddmchain/control"
+	"github.com/ddmchain/go-ddmchain/rule"
 )
 
 type Backend interface {
@@ -51,7 +52,7 @@ type Backend interface {
 	CurrentBlock() *types.Block
 }
 
-func GetAPIs(apiBackend Backend) []rpc.API {
+func GetAPIs(apiBackend Backend, engine consensus.Engine) []rpc.API {
 	nonceLock := new(AddrLocker)
 	return []rpc.API{
 		{
@@ -62,7 +63,7 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 		}, {
 			Namespace: "ddm",
 			Version:   "1.0",
-			Service:   NewPublicBlockChainAPI(apiBackend),
+			Service:   NewPublicBlockChainAPI(apiBackend, engine),
 			Public:    true,
 		}, {
 			Namespace: "ddm",

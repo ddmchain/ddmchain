@@ -6,7 +6,7 @@ import (
 
 	"sync/atomic"
 
-	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/rule"
 	"github.com/ddmchain/go-ddmchain/sign"
 )
 

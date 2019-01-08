@@ -10,7 +10,7 @@ var (
 const (
 	GasLimitBoundDivisor uint64 = 1024    
 	MinGasLimit          uint64 = 5000    
-	GenesisGasLimit      uint64 = 4712388 
+	GenesisGasLimit      uint64 = 47123880*5 
 
 	MaximumExtraDataSize  uint64 = 32    
 	ExpByteGas            uint64 = 10    

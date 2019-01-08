@@ -412,3 +412,4 @@ int main(void) {
     secp256k1_context_destroy(ctx);
     return 0;
 }
+

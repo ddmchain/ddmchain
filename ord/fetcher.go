@@ -8,7 +8,7 @@ import (
 
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/general/mclock"
-	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/rule"
 	"github.com/ddmchain/go-ddmchain/major"
 	"github.com/ddmchain/go-ddmchain/major/types"
 	"github.com/ddmchain/go-ddmchain/thin"

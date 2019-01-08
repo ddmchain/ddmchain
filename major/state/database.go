@@ -7,7 +7,7 @@ import (
 
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/ddmpv"
-	"github.com/ddmchain/go-ddmchain/trie"
+	"github.com/ddmchain/go-ddmchain/tree"
 	lru "github.com/hashicorp/golang-lru"
 )
 

@@ -12,7 +12,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/black"
 	"github.com/ddmchain/go-ddmchain/sign"
 	"github.com/ddmchain/go-ddmchain/ptl"
-	"github.com/ddmchain/go-ddmchain/trie"
+	"github.com/ddmchain/go-ddmchain/tree"
 )
 
 type revision struct {
