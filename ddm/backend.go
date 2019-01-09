@@ -12,9 +12,9 @@ import (
 	"github.com/ddmchain/go-ddmchain/user"
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/general/hexutil"
-	"github.com/ddmchain/go-ddmchain/rule"
-	"github.com/ddmchain/go-ddmchain/rule/dpos"
-	"github.com/ddmchain/go-ddmchain/rule/ddmhash"
+	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/algorithm/ddmdpos"
+	"github.com/ddmchain/go-ddmchain/algorithm/ddmhash"
 	"github.com/ddmchain/go-ddmchain/major"
 	"github.com/ddmchain/go-ddmchain/major/bloombits"
 	"github.com/ddmchain/go-ddmchain/major/types"
@@ -45,22 +45,22 @@ type DDMchain struct {
 	config      *Config
 	chainConfig *params.ChainConfig
 
-	shutdownChan  chan bool
-	stopDbUpgrade func() error
+	shutdownChan  chan bool    
+	stopDbUpgrade func() error 
 
 	txPool          *core.TxPool
 	blockchain      *core.BlockChain
 	protocolManager *ProtocolManager
 	lesServer       LesServer
 
-	chainDb ddmdb.Database
+	chainDb ddmdb.Database 
 
 	eventMux       *event.TypeMux
 	engine         consensus.Engine
 	accountManager *accounts.Manager
 
-	bloomRequests chan chan *bloombits.Retrieval
-	bloomIndexer  *core.ChainIndexer
+	bloomRequests chan chan *bloombits.Retrieval 
+	bloomIndexer  *core.ChainIndexer             
 
 	ApiBackend *DDMApiBackend
 
@@ -71,7 +71,7 @@ type DDMchain struct {
 	networkId     uint64
 	netRPCService *ddmapi.PublicNetAPI
 
-	lock sync.RWMutex
+	lock sync.RWMutex 
 }
 
 func (s *DDMchain) AddLesServer(ls LesServer) {
@@ -95,6 +95,7 @@ func New(ctx *node.ServiceContext, config *Config) (*DDMchain, error) {
 	if _, ok := genesisErr.(*params.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr
 	}
+	log.Info("Initialised chain configuration", "config", chainConfig)
 
 	ddm := &DDMchain{
 		config:         config,
@@ -187,9 +188,8 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ddmdb.Data
 }
 
 func CreateConsensusEngine(ctx *node.ServiceContext, config *ddmhash.Config, chainConfig *params.ChainConfig, db ddmdb.Database) consensus.Engine {
-
-	if chainConfig.Dpos != nil {
-		return dpos.New(chainConfig.Dpos, db)
+	if chainConfig.DPos != nil {
+		return ddmdpos.New(chainConfig.DPos, db)
 	}
 
 	switch {
@@ -211,13 +211,13 @@ func CreateConsensusEngine(ctx *node.ServiceContext, config *ddmhash.Config, cha
 			DatasetsInMem:  config.DatasetsInMem,
 			DatasetsOnDisk: config.DatasetsOnDisk,
 		})
-		engine.SetThreads(-1)
+		engine.SetThreads(-1) 
 		return engine
 	}
 }
 
 func (s *DDMchain) APIs() []rpc.API {
-	apis := ddmapi.GetAPIs(s.ApiBackend, s.engine)
+	apis := ddmapi.GetAPIs(s.ApiBackend)
 
 	apis = append(apis, s.engine.APIs(s.BlockChain())...)
 
@@ -310,7 +310,7 @@ func (s *DDMchain) StartMining(local bool) error {
 		log.Error("Cannot start mining without ddmxbase", "err", err)
 		return fmt.Errorf("ddmxbase missing: %v", err)
 	}
-	if dpos, ok := s.engine.(*dpos.Dpos); ok {
+	if dpos, ok := s.engine.(*ddmdpos.DPos); ok {
 		wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
 		if wallet == nil || err != nil {
 			log.Error("DDMXbase account unavailable locally", "err", err)
@@ -336,7 +336,7 @@ func (s *DDMchain) TxPool() *core.TxPool               { return s.txPool }
 func (s *DDMchain) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *DDMchain) Engine() consensus.Engine           { return s.engine }
 func (s *DDMchain) ChainDb() ddmdb.Database            { return s.chainDb }
-func (s *DDMchain) IsListening() bool                  { return true }
+func (s *DDMchain) IsListening() bool                  { return true } 
 func (s *DDMchain) DDMVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *DDMchain) NetVersion() uint64                 { return s.networkId }
 func (s *DDMchain) Downloader() *downloader.Downloader { return s.protocolManager.downloader }

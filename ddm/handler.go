@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/ddmchain/go-ddmchain/general"
-	"github.com/ddmchain/go-ddmchain/rule"
-	"github.com/ddmchain/go-ddmchain/rule/misc"
+	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/algorithm/misc"
 	"github.com/ddmchain/go-ddmchain/major"
 	"github.com/ddmchain/go-ddmchain/major/types"
 	"github.com/ddmchain/go-ddmchain/ddm/downloader"
@@ -28,10 +28,10 @@ import (
 )
 
 const (
-	softResponseLimit = 2 * 1024 * 1024 * 4 
+	softResponseLimit = 2 * 1024 * 1024 
 	estHeaderRlpSize  = 500             
 
-	txChanSize = 4096 *10	
+	txChanSize = 4096
 )
 
 var (
@@ -72,7 +72,6 @@ type ProtocolManager struct {
 	noMorePeers chan struct{}
 
 	wg sync.WaitGroup
-
 }
 
 func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, networkId uint64, mux *event.TypeMux, txpool txPool, engine consensus.Engine, blockchain *core.BlockChain, chaindb ddmdb.Database) (*ProtocolManager, error) {
@@ -228,18 +227,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		p.Log().Debug("DDMchain handshake failed", "err", err)
 		return err
 	}
-	if !p.SuperNode() {
-		lenLow, lenNormal := pm.peers.LenPeersWithConn()
-		if p.superNode {
-			if lenNormal >= pm.maxPeers / 3 {
-				return p2p.DiscTooManyPeers
-			}
-		} else {
-			if lenLow >= pm.maxPeers-(pm.maxPeers/3) {
-				return p2p.DiscTooManyPeers
-			}
-		}
-	}
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
 	}
@@ -276,29 +263,22 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 
 	for {
-
 		if err := pm.handleMsg(p); err != nil {
 			p.Log().Debug("DDMchain message handling failed", "err", err)
-
 			return err
 		}
-
 	}
 }
 
 func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	msg, err := p.rw.ReadMsg()
-
 	if err != nil {
-
 		return err
 	}
 	if msg.Size > ProtocolMaxMsgSize {
-
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
 	}
-
 	defer msg.Discard()
 
 	switch {
@@ -455,7 +435,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if data := pm.blockchain.GetBodyRLP(hash); len(data) != 0 {
 				bodies = append(bodies, data)
 				bytes += len(data)
-
 			}
 		}
 		return p.SendBlockBodiesRLP(bodies)
@@ -464,7 +443,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 		var request blockBodiesData
 		if err := msg.Decode(&request); err != nil {
-
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 
@@ -477,15 +455,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 		filter := len(trasactions) > 0 || len(uncles) > 0
-
 		if filter {
 			trasactions, uncles = pm.fetcher.FilterBodies(p.id, trasactions, uncles, time.Now())
 		}
-
 		if len(trasactions) > 0 || len(uncles) > 0 || !filter {
 			err := pm.downloader.DeliverBodies(p.id, trasactions, uncles)
 			if err != nil {
-				log.Debug("Failed to deliver bodies", "err", err, "peer.id", p.id)
+				log.Debug("Failed to deliver bodies", "err", err)
 			}
 		}
 
@@ -512,7 +488,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if entry, err := pm.blockchain.TrieNode(hash); err == nil {
 				data = append(data, entry)
 				bytes += len(entry)
-
 			}
 		}
 		return p.SendNodeData(data)
@@ -560,7 +535,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			} else {
 				receipts = append(receipts, encoded)
 				bytes += len(encoded)
-
 			}
 		}
 		return p.SendReceiptsRLP(receipts)
@@ -600,7 +574,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 		var request newBlockData
 		if err := msg.Decode(&request); err != nil {
-
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		request.Block.ReceivedAt = msg.ReceivedAt
@@ -619,7 +592,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 			currentBlock := pm.blockchain.CurrentBlock()
 			if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
-
 				go pm.synchronise(p)
 			}
 		}
@@ -665,9 +637,7 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 
 		transfer := peers[:int(math.Sqrt(float64(len(peers))))]
 		for _, peer := range transfer {
-
 			peer.SendNewBlock(block, td)
-
 		}
 		log.Trace("Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(block.ReceivedAt)))
 		return
@@ -686,9 +656,7 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *types.Transaction) 
 	peers := pm.peers.PeersWithoutTx(hash)
 
 	for _, peer := range peers {
-
 		peer.SendTransactions(types.Transactions{tx})
-
 	}
 	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 }

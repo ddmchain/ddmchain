@@ -13,7 +13,6 @@ import (
 	"github.com/ddmchain/go-ddmchain/discover"
 	"github.com/ddmchain/go-ddmchain/ptl"
 	"gopkg.in/fatih/set.v0"
-
 )
 
 var (
@@ -49,7 +48,6 @@ type peer struct {
 
 	knownTxs    *set.Set 
 	knownBlocks *set.Set 
-	superNode	bool
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -188,12 +186,11 @@ func (p *peer) Handshake(network uint64, td *big.Int, head common.Hash, genesis 
 
 	go func() {
 		errc <- p2p.Send(p.rw, StatusMsg, &statusData{
-			SuperNode:	 	p.SuperNode(),
-			ProtocolVersion:	uint32(p.version),
-			NetworkId:       	network,
-			TD:              	td,
-			CurrentBlock:    	head,
-			GenesisBlock:    	genesis,
+			ProtocolVersion: uint32(p.version),
+			NetworkId:       network,
+			TD:              td,
+			CurrentBlock:    head,
+			GenesisBlock:    genesis,
 		})
 	}()
 	go func() {
@@ -211,7 +208,7 @@ func (p *peer) Handshake(network uint64, td *big.Int, head common.Hash, genesis 
 			return p2p.DiscReadTimeout
 		}
 	}
-	p.td, p.head, p.superNode = status.TD, status.CurrentBlock, status.SuperNode
+	p.td, p.head = status.TD, status.CurrentBlock
 	return nil
 }
 
@@ -230,7 +227,6 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis common.Has
 	if err := msg.Decode(&status); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-
 	if status.GenesisBlock != genesis {
 		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisBlock[:8], genesis[:8])
 	}
@@ -271,7 +267,6 @@ func (ps *peerSet) Register(p *peer) error {
 	if _, ok := ps.peers[p.id]; ok {
 		return errAlreadyRegistered
 	}
-
 	ps.peers[p.id] = p
 	return nil
 }
@@ -283,7 +278,6 @@ func (ps *peerSet) Unregister(id string) error {
 	if _, ok := ps.peers[id]; !ok {
 		return errNotRegistered
 	}
-
 	delete(ps.peers, id)
 	return nil
 }
@@ -300,23 +294,6 @@ func (ps *peerSet) Len() int {
 	defer ps.lock.RUnlock()
 
 	return len(ps.peers)
-}
-
-func (ps *peerSet) LenPeersWithConn() (int, int) {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-
-	lenLow, lenNormal := 0, 0
-	for _, p := range ps.peers {
-		if !p.SuperNode() {
-			if p.superNode {
-				lenNormal ++
-			} else {
-				lenLow ++
-			}
-		}
-	}
-	return lenLow, lenNormal
 }
 
 func (ps *peerSet) PeersWithoutBlock(hash common.Hash) []*peer {
@@ -338,10 +315,8 @@ func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 
 	list := make([]*peer, 0, len(ps.peers))
 	for _, p := range ps.peers {
-		if p.superNode {
-			if !p.knownTxs.Has(hash) {
-				list = append(list, p)
-			}
+		if !p.knownTxs.Has(hash) {
+			list = append(list, p)
 		}
 	}
 	return list

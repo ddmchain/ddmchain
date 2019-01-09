@@ -147,7 +147,7 @@ func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
 
 func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error) {
 	var json *rpcTransaction
-	err = ec.c.CallContext(ctx, &json, "ddm_getTxByHash", hash)
+	err = ec.c.CallContext(ctx, &json, "ddm_getTransactionByHash", hash)
 	if err != nil {
 		return nil, false, err
 	} else if json == nil {
@@ -180,7 +180,7 @@ func (ec *Client) TransactionSender(ctx context.Context, tx *types.Transaction, 
 
 func (ec *Client) TransactionCount(ctx context.Context, blockHash common.Hash) (uint, error) {
 	var num hexutil.Uint
-	err := ec.c.CallContext(ctx, &num, "ddm_getBlockTxCountByHash", blockHash)
+	err := ec.c.CallContext(ctx, &num, "ddm_getBlockTransactionCountByHash", blockHash)
 	return uint(num), err
 }
 
@@ -200,7 +200,7 @@ func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash,
 
 func (ec *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 	var r *types.Receipt
-	err := ec.c.CallContext(ctx, &r, "ddm_getTxReceipt", txHash)
+	err := ec.c.CallContext(ctx, &r, "ddm_getTransactionReceipt", txHash)
 	if err == nil {
 		if r == nil {
 			return nil, ddmchain.NotFound
@@ -283,7 +283,7 @@ func (ec *Client) CodeAt(ctx context.Context, account common.Address, blockNumbe
 
 func (ec *Client) NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error) {
 	var result hexutil.Uint64
-	err := ec.c.CallContext(ctx, &result, "ddm_getNonce", account, toBlockNumArg(blockNumber))
+	err := ec.c.CallContext(ctx, &result, "ddm_getTransactionCount", account, toBlockNumArg(blockNumber))
 	return uint64(result), err
 }
 
@@ -330,13 +330,13 @@ func (ec *Client) PendingCodeAt(ctx context.Context, account common.Address) ([]
 
 func (ec *Client) PendingNonceAt(ctx context.Context, account common.Address) (uint64, error) {
 	var result hexutil.Uint64
-	err := ec.c.CallContext(ctx, &result, "ddm_getNonce", account, "pending")
+	err := ec.c.CallContext(ctx, &result, "ddm_getTransactionCount", account, "pending")
 	return uint64(result), err
 }
 
 func (ec *Client) PendingTransactionCount(ctx context.Context) (uint, error) {
 	var num hexutil.Uint
-	err := ec.c.CallContext(ctx, &num, "ddm_getBlockTxCountByNumber", "pending")
+	err := ec.c.CallContext(ctx, &num, "ddm_getBlockTransactionCountByNumber", "pending")
 	return uint(num), err
 }
 
@@ -380,7 +380,7 @@ func (ec *Client) SendTransaction(ctx context.Context, tx *types.Transaction) er
 	if err != nil {
 		return err
 	}
-	return ec.c.CallContext(ctx, nil, "ddm_sendRawTx", common.ToHex(data))
+	return ec.c.CallContext(ctx, nil, "ddm_sendRawTransaction", common.ToHex(data))
 }
 
 func toCallArg(msg ddmchain.CallMsg) interface{} {

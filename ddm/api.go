@@ -20,7 +20,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/part"
 	"github.com/ddmchain/go-ddmchain/ptl"
 	"github.com/ddmchain/go-ddmchain/control"
-	"github.com/ddmchain/go-ddmchain/tree"
+	"github.com/ddmchain/go-ddmchain/trie"
 )
 
 type PublicDDMchainAPI struct {
@@ -41,10 +41,6 @@ func (api *PublicDDMchainAPI) Coinbase() (common.Address, error) {
 
 func (api *PublicDDMchainAPI) Hashrate() hexutil.Uint64 {
 	return hexutil.Uint64(api.e.Miner().HashRate())
-}
-
-func (api *PublicDDMchainAPI) Version() string {
-	return fmt.Sprintf("%d", api.e.NetVersion())
 }
 
 type PublicMinerAPI struct {

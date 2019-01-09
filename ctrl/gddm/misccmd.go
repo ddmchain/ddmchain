@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/ddmchain/go-ddmchain/ctrl/utils"
-	"github.com/ddmchain/go-ddmchain/rule/ddmhash"
+	"github.com/ddmchain/go-ddmchain/algorithm/ddmhash"
 	"github.com/ddmchain/go-ddmchain/ddm"
 	"github.com/ddmchain/go-ddmchain/part"
 	"gopkg.in/urfave/cli.v1"

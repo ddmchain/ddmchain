@@ -12,6 +12,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/user"
 	"github.com/ddmchain/go-ddmchain/user/keystore"
 	"github.com/ddmchain/go-ddmchain/ctrl/utils"
+	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/cle"
 	"github.com/ddmchain/go-ddmchain/ddm"
 	"github.com/ddmchain/go-ddmchain/ddmct"
@@ -23,18 +24,24 @@ import (
 )
 
 const (
-	clientIdentifier = "gddm"
+	clientIdentifier = "gddm" 
 )
 
 var (
+
 	gitCommit = ""
+
+	relOracle = common.HexToAddress("0xfa7b9770ca4cb04296cac84f37736d4041251cdf")
+
 	app = utils.NewApp(gitCommit, "the go-ddmchain command line interface")
 
 	nodeFlags = []cli.Flag{
 		utils.IdentityFlag,
 		utils.UnlockedAccountFlag,
 		utils.PasswordFileFlag,
-
+		utils.BootnodesFlag,
+		utils.BootnodesV4Flag,
+		utils.BootnodesV5Flag,
 		utils.DataDirFlag,
 		utils.KeyStoreDirFlag,
 		utils.NoUSBFlag,
@@ -43,7 +50,12 @@ var (
 		utils.DashboardPortFlag,
 		utils.DashboardRefreshFlag,
 		utils.DashboardAssetsFlag,
-
+		utils.DDMhashCacheDirFlag,
+		utils.DDMhashCachesInMemoryFlag,
+		utils.DDMhashCachesOnDiskFlag,
+		utils.DDMhashDatasetDirFlag,
+		utils.DDMhashDatasetsInMemoryFlag,
+		utils.DDMhashDatasetsOnDiskFlag,
 		utils.TxPoolNoLocalsFlag,
 		utils.TxPoolJournalFlag,
 		utils.TxPoolRejournalFlag,
@@ -54,9 +66,13 @@ var (
 		utils.TxPoolAccountQueueFlag,
 		utils.TxPoolGlobalQueueFlag,
 		utils.TxPoolLifetimeFlag,
-
+		utils.FastSyncFlag,
+		utils.LightModeFlag,
+		utils.SyncModeFlag,
 		utils.GCModeFlag,
-
+		utils.LightServFlag,
+		utils.LightPeersFlag,
+		utils.LightKDFFlag,
 		utils.CacheFlag,
 		utils.CacheDatabaseFlag,
 		utils.CacheGCFlag,
@@ -64,24 +80,32 @@ var (
 		utils.ListenPortFlag,
 		utils.MaxPeersFlag,
 		utils.MaxPendingPeersFlag,
-
+		utils.DDMXbaseFlag,
+		utils.GasPriceFlag,
+		utils.MinerThreadsFlag,
+		utils.MiningEnabledFlag,
+		utils.TargetGasLimitFlag,
 		utils.NATFlag,
-
 		utils.NoDiscoverFlag,
-
+		utils.DiscoveryV5Flag,
 		utils.NetrestrictFlag,
 		utils.NodeKeyFileFlag,
-
+		utils.NodeKeyHexFlag,
+		utils.DeveloperFlag,
+		utils.DeveloperPeriodFlag,
+		utils.TestnetFlag,
+		utils.RinkebyFlag,
 		utils.VMEnableDebugFlag,
 		utils.NetworkIdFlag,
 		utils.RPCCORSDomainFlag,
 		utils.RPCVirtualHostsFlag,
 		utils.DDMStatsURLFlag,
 		utils.MetricsEnabledFlag,
-
+		utils.FakePoWFlag,
+		utils.NoCompactionFlag,
 		utils.GpoBlocksFlag,
 		utils.GpoPercentileFlag,
-
+		utils.ExtraDataFlag,
 		configFileFlag,
 	}
 
@@ -90,18 +114,26 @@ var (
 		utils.RPCListenAddrFlag,
 		utils.RPCPortFlag,
 		utils.RPCApiFlag,
-
+		utils.WSEnabledFlag,
+		utils.WSListenAddrFlag,
+		utils.WSPortFlag,
+		utils.WSApiFlag,
+		utils.WSAllowedOriginsFlag,
+		utils.IPCDisabledFlag,
+		utils.IPCPathFlag,
 	}
 
 	whisperFlags = []cli.Flag{
-
+		utils.WhisperEnabledFlag,
+		utils.WhisperMaxMessageSizeFlag,
+		utils.WhisperMinPOWFlag,
 	}
 )
 
 func init() {
 
 	app.Action = gddm
-	app.HideVersion = true
+	app.HideVersion = true 
 	app.Copyright = "Copyright The go-ddmchain Authors"
 	app.Commands = []cli.Command{
 
@@ -121,6 +153,8 @@ func init() {
 		attachCommand,
 		javascriptCommand,
 
+		makecacheCommand,
+		makedagCommand,
 		versionCommand,
 		bugCommand,
 		licenseCommand,
@@ -149,7 +183,7 @@ func init() {
 
 	app.After = func(ctx *cli.Context) error {
 		debug.Exit()
-		console.Stdin.Close()
+		console.Stdin.Close() 
 		return nil
 	}
 }

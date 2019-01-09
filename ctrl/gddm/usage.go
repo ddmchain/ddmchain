@@ -52,11 +52,32 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.KeyStoreDirFlag,
 			utils.NoUSBFlag,
 			utils.NetworkIdFlag,
-
+			utils.TestnetFlag,
+			utils.RinkebyFlag,
+			utils.SyncModeFlag,
 			utils.GCModeFlag,
 			utils.DDMStatsURLFlag,
 			utils.IdentityFlag,
-
+			utils.LightServFlag,
+			utils.LightPeersFlag,
+			utils.LightKDFFlag,
+		},
+	},
+	{Name: "DEVELOPER CHAIN",
+		Flags: []cli.Flag{
+			utils.DeveloperFlag,
+			utils.DeveloperPeriodFlag,
+		},
+	},
+	{
+		Name: "DDMHASH",
+		Flags: []cli.Flag{
+			utils.DDMhashCacheDirFlag,
+			utils.DDMhashCachesInMemoryFlag,
+			utils.DDMhashCachesOnDiskFlag,
+			utils.DDMhashDatasetDirFlag,
+			utils.DDMhashDatasetsInMemoryFlag,
+			utils.DDMhashDatasetsOnDiskFlag,
 		},
 	},
 
@@ -98,7 +119,13 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.RPCListenAddrFlag,
 			utils.RPCPortFlag,
 			utils.RPCApiFlag,
-
+			utils.WSEnabledFlag,
+			utils.WSListenAddrFlag,
+			utils.WSPortFlag,
+			utils.WSApiFlag,
+			utils.WSAllowedOriginsFlag,
+			utils.IPCDisabledFlag,
+			utils.IPCPathFlag,
 			utils.RPCCORSDomainFlag,
 			utils.RPCVirtualHostsFlag,
 			utils.JSpathFlag,
@@ -109,19 +136,31 @@ var AppHelpFlagGroups = []flagGroup{
 	{
 		Name: "NETWORKING",
 		Flags: []cli.Flag{
-
+			utils.BootnodesFlag,
+			utils.BootnodesV4Flag,
+			utils.BootnodesV5Flag,
 			utils.ListenPortFlag,
 			utils.MaxPeersFlag,
 			utils.MaxPendingPeersFlag,
 			utils.NATFlag,
 			utils.NoDiscoverFlag,
-
+			utils.DiscoveryV5Flag,
 			utils.NetrestrictFlag,
 			utils.NodeKeyFileFlag,
-
+			utils.NodeKeyHexFlag,
 		},
 	},
-
+	{
+		Name: "MINER",
+		Flags: []cli.Flag{
+			utils.MiningEnabledFlag,
+			utils.MinerThreadsFlag,
+			utils.DDMXbaseFlag,
+			utils.TargetGasLimitFlag,
+			utils.GasPriceFlag,
+			utils.ExtraDataFlag,
+		},
+	},
 	{
 		Name: "GAS PRICE ORACLE",
 		Flags: []cli.Flag{
@@ -139,14 +178,21 @@ var AppHelpFlagGroups = []flagGroup{
 		Name: "LOGGING AND DEBUGGING",
 		Flags: append([]cli.Flag{
 			utils.MetricsEnabledFlag,
-
+			utils.FakePoWFlag,
+			utils.NoCompactionFlag,
 		}, debug.Flags...),
 	},
 	{
 		Name:  "WHISPER (EXPERIMENTAL)",
 		Flags: whisperFlags,
 	},
-
+	{
+		Name: "DEPRECATED",
+		Flags: []cli.Flag{
+			utils.FastSyncFlag,
+			utils.LightModeFlag,
+		},
+	},
 	{
 		Name: "MISC",
 	},

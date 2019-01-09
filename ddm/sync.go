@@ -121,7 +121,6 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-
 			go pm.synchronise(pm.peers.BestPeer())
 
 		case <-forceSync.C:
@@ -137,7 +136,6 @@ func (pm *ProtocolManager) syncer() {
 func (pm *ProtocolManager) synchronise(peer *peer) {
 
 	if peer == nil {
-
 		return
 	}
 
@@ -146,7 +144,6 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 
 	pHead, pTd := peer.Head()
 	if pTd.Cmp(td) <= 0 {
-
 		return
 	}
 
@@ -161,7 +158,6 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	}
 
 	if err := pm.downloader.Synchronise(peer.id, pHead, pTd, mode); err != nil {
-
 		return
 	}
 	if atomic.LoadUint32(&pm.fastSync) == 1 {
@@ -173,5 +169,4 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 
 		go pm.BroadcastBlock(head, false)
 	}
-
 }

@@ -1,7 +1,6 @@
 
 // +build amd64,!appengine,!gccgo
 
-
 // Offsets in state
 #define _ba  (0*8)
 #define _be  (1*8)

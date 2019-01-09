@@ -12,7 +12,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/black/sha3"
 	"github.com/ddmchain/go-ddmchain/ddmpv"
 	"github.com/ddmchain/go-ddmchain/sign"
-	"github.com/ddmchain/go-ddmchain/tree"
+	"github.com/ddmchain/go-ddmchain/trie"
 )
 
 type stateReq struct {

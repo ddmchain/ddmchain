@@ -6,7 +6,7 @@ import (
 
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/general/hexutil"
-	"github.com/ddmchain/go-ddmchain/rule/ddmhash"
+	"github.com/ddmchain/go-ddmchain/algorithm/ddmhash"
 	"github.com/ddmchain/go-ddmchain/major"
 	"github.com/ddmchain/go-ddmchain/ddm/downloader"
 	"github.com/ddmchain/go-ddmchain/ddm/gasprice"

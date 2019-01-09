@@ -295,19 +295,16 @@ func (q *queue) Schedule(headers []*types.Header, from uint64) []*types.Header {
 }
 
 func (q *queue) Results(block bool) []*fetchResult {
-
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	nproc := q.countProcessableItems()
-
 	for nproc == 0 && !q.closed {
 		if !block {
 			return nil
 		}
 		q.active.Wait()
 		nproc = q.countProcessableItems()
-
 	}
 
 	if nproc > maxResultsProcess {
@@ -315,7 +312,6 @@ func (q *queue) Results(block bool) []*fetchResult {
 	}
 	results := make([]*fetchResult, nproc)
 	copy(results, q.resultCache[:nproc])
-
 	if len(results) > 0 {
 
 		for _, result := range results {
@@ -345,7 +341,6 @@ func (q *queue) Results(block bool) []*fetchResult {
 			q.resultSize = common.StorageSize(blockCacheSizeWeight)*size + (1-common.StorageSize(blockCacheSizeWeight))*q.resultSize
 		}
 	}
-
 	return results
 }
 
@@ -449,7 +444,6 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 				Hash:    hash,
 				Header:  header,
 			}
-
 		}
 
 		if isNoop(header) {
@@ -459,7 +453,6 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 			space, proc = space-1, proc-1
 			q.resultCache[index].Pending--
 			progress = true
-
 			continue
 		}
 
@@ -571,7 +564,6 @@ func (q *queue) expire(timeout time.Duration, pendPool map[string]*fetchRequest,
 			}
 
 			expiries[id] = len(request.Headers)
-
 		}
 	}
 
@@ -711,24 +703,19 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*types.Header, taskQ
 		failure  error
 		useful   bool
 	)
-
 	for i, header := range request.Headers {
 
 		if i >= results {
-
 			break
 		}
 
 		index := int(header.Number.Int64() - int64(q.resultOffset))
-
 		if index >= len(q.resultCache) || index < 0 || q.resultCache[index] == nil {
 			failure = errInvalidChain
-
 			break
 		}
 		if err := reconstruct(header, i, q.resultCache[index]); err != nil {
 			failure = err
-
 			break
 		}
 		hash := header.Hash()
@@ -740,7 +727,6 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*types.Header, taskQ
 
 		request.Headers[i] = nil
 		delete(taskPool, hash)
-
 	}
 
 	for _, header := range request.Headers {
@@ -750,7 +736,6 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*types.Header, taskQ
 	}
 
 	if accepted > 0 {
-
 		q.active.Signal()
 	}
 

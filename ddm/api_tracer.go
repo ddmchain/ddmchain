@@ -22,7 +22,7 @@ import (
 	"github.com/ddmchain/go-ddmchain/sign"
 	"github.com/ddmchain/go-ddmchain/ptl"
 	"github.com/ddmchain/go-ddmchain/control"
-	"github.com/ddmchain/go-ddmchain/tree"
+	"github.com/ddmchain/go-ddmchain/trie"
 )
 
 const (

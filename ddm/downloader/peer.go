@@ -149,7 +149,6 @@ func (p *peerConnection) FetchBodies(request *fetchRequest) error {
 	hashes := make([]common.Hash, 0, len(request.Headers))
 	for _, header := range request.Headers {
 		hashes = append(hashes, header.Hash())
-
 	}
 	go p.peer.RequestBodies(hashes)
 
@@ -170,7 +169,6 @@ func (p *peerConnection) FetchReceipts(request *fetchRequest) error {
 	hashes := make([]common.Hash, 0, len(request.Headers))
 	for _, header := range request.Headers {
 		hashes = append(hashes, header.Hash())
-
 	}
 	go p.peer.RequestReceipts(hashes)
 
@@ -194,7 +192,6 @@ func (p *peerConnection) FetchNodeData(hashes []common.Hash) error {
 }
 
 func (p *peerConnection) SetHeadersIdle(delivered int) {
-
 	p.setIdle(p.headerStarted, delivered, &p.headerThroughput, &p.headerIdle)
 }
 
@@ -203,12 +200,10 @@ func (p *peerConnection) SetBlocksIdle(delivered int) {
 }
 
 func (p *peerConnection) SetBodiesIdle(delivered int) {
-
 	p.setIdle(p.blockStarted, delivered, &p.blockThroughput, &p.blockIdle)
 }
 
 func (p *peerConnection) SetReceiptsIdle(delivered int) {
-
 	p.setIdle(p.receiptStarted, delivered, &p.receiptThroughput, &p.receiptIdle)
 }
 
@@ -328,7 +323,6 @@ func (ps *peerSet) Register(p *peerConnection) error {
 		ps.lock.Unlock()
 		return errAlreadyRegistered
 	}
-
 	if len(ps.peers) > 0 {
 		p.headerThroughput, p.blockThroughput, p.receiptThroughput, p.stateThroughput = 0, 0, 0, 0
 
@@ -359,7 +353,6 @@ func (ps *peerSet) Unregister(id string) error {
 		defer ps.lock.Unlock()
 		return errNotRegistered
 	}
-
 	delete(ps.peers, id)
 	ps.lock.Unlock()
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/general/hexutil"
-	"github.com/ddmchain/go-ddmchain/rule/ddmhash"
+	"github.com/ddmchain/go-ddmchain/algorithm/ddmhash"
 	"github.com/ddmchain/go-ddmchain/major"
 	"github.com/ddmchain/go-ddmchain/ddm/downloader"
 	"github.com/ddmchain/go-ddmchain/ddm/gasprice"
@@ -27,13 +27,12 @@ var DefaultConfig = Config{
 		DatasetsInMem:  1,
 		DatasetsOnDisk: 2,
 	},
-	NetworkId:     101,
+	NetworkId:     1,
 	LightPeers:    100,
 	DatabaseCache: 768,
 	TrieCache:     256,
 	TrieTimeout:   5 * time.Minute,
-
-	GasPrice:      big.NewInt(5 * params.Shannon),
+	GasPrice:      big.NewInt(18 * params.Shannon),
 
 	TxPool: core.DefaultTxPoolConfig,
 	GPO: gasprice.Config{
