@@ -9,25 +9,25 @@ import (
 )
 
 var (
-	MainnetGenesisHash = common.HexToHash("0x589cab45b83a5e0c304e8812341d57a73ca0480ae5267daa5bfdb0355665dc5d") 
-	TestnetGenesisHash = common.HexToHash("0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d") 
+	MainnetGenesisHash = common.HexToHash("0x23707e8feaf2e1698ec6250aa6eaa51f2a06fddf3beecbe4fe3c18f35184bbe3")
+	TestnetGenesisHash = common.HexToHash("0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d")
 )
 
 var (
 
 	MainnetChainConfig = &ChainConfig{
-		ChainId:        big.NewInt(1),
+		ChainId:        big.NewInt(101),
 		HomesteadBlock: big.NewInt(1),
 		DAOForkBlock:   nil,
 		DAOForkSupport: true,
 		EIP150Block:    big.NewInt(2),
-		EIP150Hash:     common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
+		EIP150Hash:     common.HexToHash("0x05ff48f6a66afc733b6e33147b3db10445990cefafa18270578ea0a761c0de7a"),
 		EIP155Block:    big.NewInt(3),
 		EIP158Block:    big.NewInt(3),
 		ByzantiumBlock: big.NewInt(4),
 
-		DPos: &DPosConfig{
-			Period: 10,
+		Dpos: &DposConfig{
+			Period: 5,
 			Epoch:  30000,
 		},
 	}
@@ -41,7 +41,7 @@ var (
 		EIP150Hash:     common.HexToHash("0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d"),
 		EIP155Block:    big.NewInt(10),
 		EIP158Block:    big.NewInt(10),
-		ByzantiumBlock: big.NewInt(1700000),
+		ByzantiumBlock: big.NewInt(11),
 
 		DDMhash: new(DDMhashConfig),
 	}
@@ -55,39 +55,40 @@ var (
 		EIP150Hash:     common.HexToHash("0x9b095b36c15eaf13044373aef8ee0bd3a382a5abb92e402afa44b8249c3a90e9"),
 		EIP155Block:    big.NewInt(3),
 		EIP158Block:    big.NewInt(3),
-		ByzantiumBlock: big.NewInt(1035301),
+		ByzantiumBlock: big.NewInt(4),
 
-		DPos: &DPosConfig{
+		Dpos: &DposConfig{
 			Period: 15,
 			Epoch:  30000,
 		},
 	}
 
 	AllDDMhashProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), new(DDMhashConfig), nil}
-	AllDPosProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, &DPosConfig{Period: 0, Epoch: 30000}}
+
+	AllDposProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, &DposConfig{Period: 0, Epoch: 30000}}
 
 	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), new(DDMhashConfig), nil}
 	TestRules       = TestChainConfig.Rules(new(big.Int))
 )
 
 type ChainConfig struct {
-	ChainId *big.Int `json:"chainId"` 
+	ChainId *big.Int `json:"chainId"`
 
-	HomesteadBlock *big.Int `json:"homesteadBlock,omitempty"` 
+	HomesteadBlock *big.Int `json:"homesteadBlock,omitempty"`
 
-	DAOForkBlock   *big.Int `json:"daoForkBlock,omitempty"`   
-	DAOForkSupport bool     `json:"daoForkSupport,omitempty"` 
+	DAOForkBlock   *big.Int `json:"daoForkBlock,omitempty"`
+	DAOForkSupport bool     `json:"daoForkSupport,omitempty"`
 
-	EIP150Block *big.Int    `json:"eip150Block,omitempty"` 
-	EIP150Hash  common.Hash `json:"eip150Hash,omitempty"`  
+	EIP150Block *big.Int    `json:"eip150Block,omitempty"`
+	EIP150Hash  common.Hash `json:"eip150Hash,omitempty"`
 
-	EIP155Block *big.Int `json:"eip155Block,omitempty"` 
-	EIP158Block *big.Int `json:"eip158Block,omitempty"` 
+	EIP155Block *big.Int `json:"eip155Block,omitempty"`
+	EIP158Block *big.Int `json:"eip158Block,omitempty"`
 
-	ByzantiumBlock *big.Int `json:"byzantiumBlock,omitempty"` 
+	ByzantiumBlock *big.Int `json:"byzantiumBlock,omitempty"`
 
 	DDMhash *DDMhashConfig `json:"ddmhash,omitempty"`
-	DPos *DPosConfig `json:"dpos,omitempty"`
+	Dpos *DposConfig `json:"dpos,omitempty"`
 }
 
 type DDMhashConfig struct{}
@@ -96,12 +97,12 @@ func (c *DDMhashConfig) String() string {
 	return "ddmhash"
 }
 
-type DPosConfig struct {
+type DposConfig struct {
 	Period uint64 `json:"period"`
 	Epoch  uint64 `json:"epoch"`
 }
 
-func (c *DPosConfig) String() string {
+func (c *DposConfig) String() string {
 	return "dpos"
 }
 
@@ -110,8 +111,8 @@ func (c *ChainConfig) String() string {
 	switch {
 	case c.DDMhash != nil:
 		engine = c.DDMhash
-	case c.DPos != nil:
-		engine = c.DPos
+	case c.Dpos != nil:
+		engine = c.Dpos
 	default:
 		engine = "unknown"
 	}

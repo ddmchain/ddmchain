@@ -267,7 +267,7 @@ func (d *Downloader) Synchronise(id string, head common.Hash, td *big.Int, mode 
 
 			log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", id)
 		} else {
-			d.dropPeer(id)
+			d.dropPeer(id)	
 		}
 	default:
 		log.Warn("Synchronisation failed, retrying", "err", err)
@@ -282,6 +282,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 	}
 
 	if !atomic.CompareAndSwapInt32(&d.synchronising, 0, 1) {
+
 		return errBusy
 	}
 	defer atomic.StoreInt32(&d.synchronising, 0)
@@ -292,7 +293,6 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 
 	d.queue.Reset()
 	d.peers.Reset()
-
 	for _, ch := range []chan bool{d.bodyWakeCh, d.receiptWakeCh} {
 		select {
 		case <-ch:
@@ -333,6 +333,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 }
 
 func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.Int) (err error) {
+
 	d.mux.Post(StartEvent{})
 	defer func() {
 
@@ -343,6 +344,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 		}
 	}()
 	if p.version < 62 {
+
 		return errTooOld
 	}
 
@@ -353,14 +355,16 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 
 	latest, err := d.fetchHeight(p)
 	if err != nil {
+
 		return err
 	}
 	height := latest.Number.Uint64()
-
 	origin, err := d.findAncestor(p, height)
 	if err != nil {
+
 		return err
 	}
+
 	d.syncStatsLock.Lock()
 	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
 		d.syncStatsChainOrigin = origin
@@ -388,7 +392,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 	if d.syncInitHook != nil {
 		d.syncInitHook(origin, height)
 	}
-
 	fetchers := []func() error{
 		func() error { return d.fetchHeaders(p, origin+1, pivot) }, 
 		func() error { return d.fetchBodies(origin + 1) },          
@@ -404,6 +407,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 }
 
 func (d *Downloader) spawnSync(fetchers []func() error) error {
+
 	var wg sync.WaitGroup
 	errc := make(chan error, len(fetchers))
 	wg.Add(len(fetchers))
@@ -425,6 +429,7 @@ func (d *Downloader) spawnSync(fetchers []func() error) error {
 	d.queue.Close()
 	d.Cancel()
 	wg.Wait()
+
 	return err
 }
 
@@ -801,6 +806,7 @@ func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*types.Header) (
 }
 
 func (d *Downloader) fetchBodies(from uint64) error {
+
 	log.Debug("Downloading block bodies", "origin", from)
 
 	var (
@@ -818,6 +824,7 @@ func (d *Downloader) fetchBodies(from uint64) error {
 		d.bodyFetchHook, fetch, d.queue.CancelBodies, capacity, d.peers.BodyIdlePeers, setIdle, "bodies")
 
 	log.Debug("Block body download terminated", "err", err)
+
 	return err
 }
 
@@ -839,6 +846,7 @@ func (d *Downloader) fetchReceipts(from uint64) error {
 		d.receiptFetchHook, fetch, d.queue.CancelReceipts, capacity, d.peers.ReceiptIdlePeers, setIdle, "receipts")
 
 	log.Debug("Transaction receipt download terminated", "err", err)
+
 	return err
 }
 
@@ -868,6 +876,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				}
 
 				if err != errStaleDelivery {
+
 					setIdle(peer, accepted)
 				}
 
@@ -907,16 +916,20 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 		case <-update:
 
 			if d.peers.Len() == 0 {
+
 				return errNoPeers
 			}
 
 			for pid, fails := range expire() {
+
 				if peer := d.peers.Peer(pid); peer != nil {
 
 					if fails > 2 {
+
 						peer.log.Trace("Data delivery timed out", "type", kind)
 						setIdle(peer, 0)
 					} else {
+
 						peer.log.Debug("Stalling delivery, dropping", "type", kind)
 						if d.dropPeer == nil {
 
@@ -931,8 +944,10 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			if pending() == 0 {
 				if !inFlight() && finished {
 					log.Debug("Data fetching completed", "type", kind)
+
 					return nil
 				}
+
 				break
 			}
 
@@ -943,21 +958,25 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 
 				if throttle() {
 					throttled = true
+
 					break
 				}
 
 				if pending() == 0 {
+
 					break
 				}
 
 				request, progress, err := reserve(peer, capacity(peer))
 				if err != nil {
+
 					return err
 				}
 				if progress {
 					progressed = true
 				}
 				if request == nil {
+
 					continue
 				}
 				if request.From > 0 {
@@ -969,15 +988,19 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				if fetchHook != nil {
 					fetchHook(request.Headers)
 				}
+
 				if err := fetch(peer, request); err != nil {
 
 					panic(fmt.Sprintf("%v: %s fetch assignment failed", peer, kind))
+
 				}
 				running = true
 			}
 
-			if !progressed && !throttled && !running && len(idles) == total && pending() > 0 {
-				return errPeersUnavailable
+			if !progressed && !throttled && !running && pending() > 0 {
+				if (len(idles) == total || (len(idles) == 0 && !inFlight())) {
+					return errPeersUnavailable
+				}
 			}
 		}
 	}
@@ -1027,7 +1050,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, td *big.Int) er
 					case ch <- false:
 					case <-d.cancelCh:
 					}
-			  }
+				}
 
 				if d.mode != LightSync {
 					head := d.blockchain.CurrentBlock()
@@ -1122,15 +1145,18 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, td *big.Int) er
 }
 
 func (d *Downloader) processFullSyncContent() error {
+
 	for {
 		results := d.queue.Results(true)
 		if len(results) == 0 {
+
 			return nil
 		}
 		if d.chainInsertHook != nil {
 			d.chainInsertHook(results)
 		}
 		if err := d.importBlockResults(results); err != nil {
+
 			return err
 		}
 	}

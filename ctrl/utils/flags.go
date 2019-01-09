@@ -16,9 +16,9 @@ import (
 	"github.com/ddmchain/go-ddmchain/user/keystore"
 	"github.com/ddmchain/go-ddmchain/general"
 	"github.com/ddmchain/go-ddmchain/general/fdlimit"
-	"github.com/ddmchain/go-ddmchain/algorithm"
-	"github.com/ddmchain/go-ddmchain/algorithm/ddmdpos"
-	"github.com/ddmchain/go-ddmchain/algorithm/ddmhash"
+	"github.com/ddmchain/go-ddmchain/rule"
+	"github.com/ddmchain/go-ddmchain/rule/dpos"
+	"github.com/ddmchain/go-ddmchain/rule/ddmhash"
 	"github.com/ddmchain/go-ddmchain/major"
 	"github.com/ddmchain/go-ddmchain/major/state"
 	"github.com/ddmchain/go-ddmchain/major/vm"
@@ -104,7 +104,7 @@ var (
 	}
 	NetworkIdFlag = cli.Uint64Flag{
 		Name:  "networkid",
-		Usage: "Network identifier (integer, 1=Frontier, 2=Morden (disused), 3=Ropsten, 4=Rinkeby)",
+		Usage: "Network identifier",
 		Value: ddm.DefaultConfig.NetworkId,
 	}
 	TestnetFlag = cli.BoolFlag{
@@ -113,11 +113,11 @@ var (
 	}
 	RinkebyFlag = cli.BoolFlag{
 		Name:  "rinkeby",
-		Usage: "Rinkeby network: pre-configured dpos test network",
+		Usage: "Rinkeby network: pre-configured proof-of-authority test network",
 	}
 	DeveloperFlag = cli.BoolFlag{
 		Name:  "dev",
-		Usage: "Ephemeral dpos network with a pre-funded developer account, mining enabled",
+		Usage: "Ephemeral proof-of-authority network with a pre-funded developer account, mining enabled",
 	}
 	DeveloperPeriodFlag = cli.IntFlag{
 		Name:  "dev.period",
@@ -467,6 +467,10 @@ var (
 		Usage: "NAT port mapping mechanism (any|none|upnp|pmp|extip:<IP>)",
 		Value: "any",
 	}
+	SuperNodeFlag = cli.BoolFlag{
+		Name:  "supernode",
+		Usage: "Super Node",
+	}
 	NoDiscoverFlag = cli.BoolFlag{
 		Name:  "nodiscover",
 		Usage: "Disables the peer discovery mechanism (manual peer addition)",
@@ -784,6 +788,9 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	}
 	if ctx.GlobalIsSet(NoDiscoverFlag.Name) || lightClient {
 		cfg.NoDiscovery = true
+	}
+	if ctx.GlobalIsSet(SuperNodeFlag.Name) {
+		cfg.SuperNode = ctx.GlobalBool(SuperNodeFlag.Name)
 	}
 
 	forceV5Discovery := (lightClient || lightServer) && !ctx.GlobalBool(NoDiscoverFlag.Name)
@@ -1148,8 +1155,8 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 		Fatalf("%v", err)
 	}
 	var engine consensus.Engine
-	if config.DPos != nil {
-		engine = ddmdpos.New(config.DPos, chainDb)
+	if config.Dpos != nil {
+		engine = dpos.New(config.Dpos, chainDb)
 	} else {
 		engine = ddmhash.NewFaker()
 		if !ctx.GlobalBool(FakePoWFlag.Name) {

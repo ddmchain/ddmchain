@@ -20,9 +20,10 @@ import (
 	"github.com/ddmchain/go-ddmchain/ddmpv"
 	"github.com/ddmchain/go-ddmchain/signal"
 	"github.com/ddmchain/go-ddmchain/sign"
-	"github.com/ddmchain/go-ddmchain/trie"
+	"github.com/ddmchain/go-ddmchain/tree"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"gopkg.in/urfave/cli.v1"
+
 )
 
 var (
@@ -374,3 +375,4 @@ func hashish(x string) bool {
 	_, err := strconv.Atoi(x)
 	return err != nil
 }
+
