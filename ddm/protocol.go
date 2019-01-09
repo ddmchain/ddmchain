@@ -83,6 +83,7 @@ type txPool interface {
 }
 
 type statusData struct {
+	SuperNode		bool
 	ProtocolVersion uint32
 	NetworkId       uint64
 	TD              *big.Int

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ddmchain/go-ddmchain/general"
-	"github.com/ddmchain/go-ddmchain/algorithm"
+	"github.com/ddmchain/go-ddmchain/rule"
 	"github.com/ddmchain/go-ddmchain/major/types"
 	"github.com/ddmchain/go-ddmchain/sign"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
@@ -246,6 +246,7 @@ func (f *Fetcher) loop() {
 
 			number := op.block.NumberU64()
 			if number > height+1 {
+
 				f.queue.Push(op, -float32(op.block.NumberU64()))
 				if f.queueChangeHook != nil {
 					f.queueChangeHook(op.block.Hash(), true)
@@ -255,6 +256,7 @@ func (f *Fetcher) loop() {
 
 			hash := op.block.Hash()
 			if number+maxUncleDist < height || f.getBlock(hash) != nil {
+
 				f.forgetBlock(hash)
 				continue
 			}
@@ -540,6 +542,7 @@ func (f *Fetcher) enqueue(peer string, block *types.Block) {
 		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.Number(), "hash", hash, "limit", blockLimit)
 		propBroadcastDOSMeter.Mark(1)
 		f.forgetHash(hash)
+
 		return
 	}
 
@@ -547,6 +550,7 @@ func (f *Fetcher) enqueue(peer string, block *types.Block) {
 		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number(), "hash", hash, "distance", dist)
 		propBroadcastDropMeter.Mark(1)
 		f.forgetHash(hash)
+
 		return
 	}
 
@@ -562,6 +566,7 @@ func (f *Fetcher) enqueue(peer string, block *types.Block) {
 			f.queueChangeHook(op.block.Hash(), true)
 		}
 		log.Debug("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
+
 	}
 }
 

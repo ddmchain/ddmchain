@@ -37,7 +37,7 @@ const (
 
 const (
 
-	txChanSize = 4096
+	txChanSize = 4096 *10 
 
 	rmLogsChanSize = 10
 
